@@ -1,18 +1,17 @@
-
-import React, { useEffect, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { useAuth } from "@/app/components/auth/AuthContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import { useAuth } from "@/app/components/common/AuthContext";
+import React, { useEffect, useState } from "react";
+import {
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    View,
+} from "react-native";
 
 interface SignInModalProps {
   visible: boolean;
@@ -96,10 +95,7 @@ export default function SignInModal({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         {/* Dark background */}
-        <Pressable
-          className="absolute inset-0 bg-black/70"
-          onPress={onClose}
-        />
+        <Pressable className="absolute inset-0 bg-black/70" onPress={onClose} />
 
         {/* Bottom Sheet */}
         <View className="max-h-[90%] w-full rounded-t-3xl border-t border-[#292929] bg-[#111111]">
@@ -122,9 +118,7 @@ export default function SignInModal({
               {/* Header */}
               <View className="mb-6 flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="text-2xl font-bold text-white">
-                    Sign In
-                  </Text>
+                  <Text className="text-2xl font-bold text-white">Sign In</Text>
 
                   <Text className="mt-1 text-sm text-gray-400">
                     Sign in to view full property details.
@@ -137,11 +131,7 @@ export default function SignInModal({
                   accessibilityLabel="Close sign in"
                   className="ml-4 h-10 w-10 items-center justify-center rounded-full bg-[#222222] active:opacity-70"
                 >
-                  <Ionicons
-                    name="close"
-                    size={22}
-                    color="#ffffff"
-                  />
+                  <Ionicons name="close" size={22} color="#ffffff" />
                 </Pressable>
               </View>
 
@@ -167,11 +157,7 @@ export default function SignInModal({
                 </Text>
 
                 <View className="h-13 flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color="#9ca3af"
-                  />
+                  <Ionicons name="mail-outline" size={20} color="#9ca3af" />
 
                   <TextInput
                     value={email}
@@ -224,23 +210,15 @@ export default function SignInModal({
                   />
 
                   <Pressable
-                    onPress={() =>
-                      setShowPassword((previous) => !previous)
-                    }
+                    onPress={() => setShowPassword((previous) => !previous)}
                     accessibilityRole="button"
                     accessibilityLabel={
-                      showPassword
-                        ? "Hide password"
-                        : "Show password"
+                      showPassword ? "Hide password" : "Show password"
                     }
                     className="ml-2 h-10 w-10 items-center justify-center active:opacity-70"
                   >
                     <Ionicons
-                      name={
-                        showPassword
-                          ? "eye-off-outline"
-                          : "eye-outline"
-                      }
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
                       size={21}
                       color="#9ca3af"
                     />
@@ -272,11 +250,7 @@ export default function SignInModal({
                 }`}
               >
                 <View className="flex-row items-center">
-                  <Ionicons
-                    name="log-in-outline"
-                    size={20}
-                    color="#ffffff"
-                  />
+                  <Ionicons name="log-in-outline" size={20} color="#ffffff" />
 
                   <Text className="ml-2 text-[15px] font-bold text-white">
                     Sign In
@@ -306,4 +280,3 @@ export default function SignInModal({
     </Modal>
   );
 }
-

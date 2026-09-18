@@ -1,17 +1,16 @@
-
+import { useAuth } from "@/app/components/auth/AuthContext";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useEffect, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { useAuth } from "@/app/components/common/AuthContext";
 
 interface RegisterModalProps {
   visible: boolean;
@@ -21,7 +20,7 @@ interface RegisterModalProps {
     email: string,
     phoneNumber: string,
     password: string,
-    confirmPassword: string
+    confirmPassword: string,
   ) => void;
   onSignIn?: () => void;
 }
@@ -72,9 +71,7 @@ export default function RegisterModal({
 
   const handleRegister = () => {
     if (!isFormValid) {
-      setError(
-        "Please complete all fields and make sure the passwords match."
-      );
+      setError("Please complete all fields and make sure the passwords match.");
       return;
     }
 
@@ -89,7 +86,7 @@ export default function RegisterModal({
       trimmedEmail,
       trimmedPhoneNumber,
       password,
-      confirmPassword
+      confirmPassword,
     );
 
     if (!result.success) {
@@ -102,7 +99,7 @@ export default function RegisterModal({
       trimmedEmail,
       trimmedPhoneNumber,
       password,
-      confirmPassword
+      confirmPassword,
     );
 
     // Registration automatically signs the user in.
@@ -133,10 +130,7 @@ export default function RegisterModal({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         {/* BACKDROP */}
-        <Pressable
-          className="absolute inset-0 bg-black/70"
-          onPress={onClose}
-        />
+        <Pressable className="absolute inset-0 bg-black/70" onPress={onClose} />
 
         {/* BOTTOM SHEET */}
         <View className="max-h-[92%] w-full rounded-t-3xl border-t border-[#292929] bg-[#111111]">
@@ -174,11 +168,7 @@ export default function RegisterModal({
                   accessibilityLabel="Close register"
                   className="ml-4 h-10 w-10 items-center justify-center rounded-full bg-[#222222] active:opacity-70"
                 >
-                  <Ionicons
-                    name="close"
-                    size={22}
-                    color="#ffffff"
-                  />
+                  <Ionicons name="close" size={22} color="#ffffff" />
                 </Pressable>
               </View>
 
@@ -215,11 +205,7 @@ export default function RegisterModal({
                 </Text>
 
                 <View className="flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color="#9ca3af"
-                  />
+                  <Ionicons name="person-outline" size={20} color="#9ca3af" />
 
                   <TextInput
                     value={fullName}
@@ -244,11 +230,7 @@ export default function RegisterModal({
                 </Text>
 
                 <View className="flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color="#9ca3af"
-                  />
+                  <Ionicons name="mail-outline" size={20} color="#9ca3af" />
 
                   <TextInput
                     value={email}
@@ -274,11 +256,7 @@ export default function RegisterModal({
                 </Text>
 
                 <View className="flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
-                  <Ionicons
-                    name="call-outline"
-                    size={20}
-                    color="#9ca3af"
-                  />
+                  <Ionicons name="call-outline" size={20} color="#9ca3af" />
 
                   <TextInput
                     value={phoneNumber}
@@ -326,9 +304,7 @@ export default function RegisterModal({
                   />
 
                   <Pressable
-                    onPress={() =>
-                      setShowPassword((previous) => !previous)
-                    }
+                    onPress={() => setShowPassword((previous) => !previous)}
                     accessibilityRole="button"
                     accessibilityLabel={
                       showPassword ? "Hide password" : "Show password"
@@ -336,11 +312,7 @@ export default function RegisterModal({
                     className="ml-2 h-10 w-10 items-center justify-center active:opacity-70"
                   >
                     <Ionicons
-                      name={
-                        showPassword
-                          ? "eye-off-outline"
-                          : "eye-outline"
-                      }
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
                       size={21}
                       color="#9ca3af"
                     />
@@ -387,9 +359,7 @@ export default function RegisterModal({
 
                   <Pressable
                     onPress={() =>
-                      setShowConfirmPassword(
-                        (previous) => !previous
-                      )
+                      setShowConfirmPassword((previous) => !previous)
                     }
                     accessibilityRole="button"
                     accessibilityLabel={
@@ -401,9 +371,7 @@ export default function RegisterModal({
                   >
                     <Ionicons
                       name={
-                        showConfirmPassword
-                          ? "eye-off-outline"
-                          : "eye-outline"
+                        showConfirmPassword ? "eye-off-outline" : "eye-outline"
                       }
                       size={21}
                       color="#9ca3af"
@@ -416,24 +384,14 @@ export default function RegisterModal({
               {confirmPassword.length > 0 && (
                 <View className="mb-4 mt-2 flex-row items-center">
                   <Ionicons
-                    name={
-                      passwordsMatch
-                        ? "checkmark-circle"
-                        : "close-circle"
-                    }
+                    name={passwordsMatch ? "checkmark-circle" : "close-circle"}
                     size={16}
-                    color={
-                      passwordsMatch
-                        ? "#22c55e"
-                        : "#ef4444"
-                    }
+                    color={passwordsMatch ? "#22c55e" : "#ef4444"}
                   />
 
                   <Text
                     className={`ml-1.5 text-xs font-medium ${
-                      passwordsMatch
-                        ? "text-green-500"
-                        : "text-red-500"
+                      passwordsMatch ? "text-green-500" : "text-red-500"
                     }`}
                   >
                     {passwordsMatch
@@ -488,4 +446,3 @@ export default function RegisterModal({
     </Modal>
   );
 }
-

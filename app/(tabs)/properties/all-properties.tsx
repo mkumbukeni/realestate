@@ -1,22 +1,21 @@
-
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
-  Text,
-  TextInput,
-  FlatList,
-  View,
-  Image,
-  Pressable,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
+    FlatList,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    StatusBar,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
 
-import SideMenu from "@/app/components/common/SideMenu";
-import AuthRequiredModal from "@/app/components/common/AuthRequiredModal";
+import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
+import SideMenu from "@/app/components/sidebar/SideMenu";
 
 // ============================================================
 // TYPES
@@ -25,10 +24,7 @@ import AuthRequiredModal from "@/app/components/common/AuthRequiredModal";
 type PropertyTag = "Sale" | "Rent";
 
 type PropertyType =
-  | "Residential"
-  | "Industrial"
-  | "Commercial"
-  | "Agricultural";
+  "Residential" | "Industrial" | "Commercial" | "Agricultural";
 
 type Property = {
   id: string;
@@ -47,11 +43,7 @@ type Property = {
 type FilterKey = "all" | "sale" | "rent";
 
 type PropertyTypeFilter =
-  | "All Types"
-  | "Residential"
-  | "Industrial"
-  | "Commercial"
-  | "Agricultural";
+  "All Types" | "Residential" | "Industrial" | "Commercial" | "Agricultural";
 
 // ============================================================
 // PROPERTY DATA
@@ -64,8 +56,7 @@ const PROPERTIES: Property[] = [
     location: "Area 47, Lilongwe",
     price: "MWK 180,000,000",
     period: "",
-    image:
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900",
+    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900",
     tag: "Sale",
     type: "Residential",
     bedrooms: 4,
@@ -78,8 +69,7 @@ const PROPERTIES: Property[] = [
     location: "Area 10, Lilongwe",
     price: "MWK 850,000",
     period: "/month",
-    image:
-      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=900",
+    image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=900",
     tag: "Rent",
     type: "Residential",
     bedrooms: 3,
@@ -92,8 +82,7 @@ const PROPERTIES: Property[] = [
     location: "Kanengo, Lilongwe",
     price: "MWK 250,000,000",
     period: "",
-    image:
-      "https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=900",
+    image: "https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=900",
     tag: "Sale",
     type: "Industrial",
     bedrooms: 0,
@@ -106,8 +95,7 @@ const PROPERTIES: Property[] = [
     location: "Nyambadwe, Blantyre",
     price: "MWK 220,000,000",
     period: "",
-    image:
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=900",
+    image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=900",
     tag: "Sale",
     type: "Residential",
     bedrooms: 5,
@@ -120,8 +108,7 @@ const PROPERTIES: Property[] = [
     location: "City Centre, Blantyre",
     price: "MWK 2,500,000",
     period: "/month",
-    image:
-      "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=900",
+    image: "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=900",
     tag: "Rent",
     type: "Commercial",
     bedrooms: 0,
@@ -134,8 +121,7 @@ const PROPERTIES: Property[] = [
     location: "Area 43, Lilongwe",
     price: "MWK 120,000,000",
     period: "",
-    image:
-      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=900",
+    image: "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=900",
     tag: "Sale",
     type: "Residential",
     bedrooms: 3,
@@ -148,8 +134,7 @@ const PROPERTIES: Property[] = [
     location: "Area 12, Lilongwe",
     price: "MWK 1,200,000",
     period: "/month",
-    image:
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=900",
+    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=900",
     tag: "Rent",
     type: "Residential",
     bedrooms: 4,
@@ -162,8 +147,7 @@ const PROPERTIES: Property[] = [
     location: "Limbe, Blantyre",
     price: "MWK 450,000,000",
     period: "",
-    image:
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900",
+    image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=900",
     tag: "Sale",
     type: "Commercial",
     bedrooms: 0,
@@ -176,8 +160,7 @@ const PROPERTIES: Property[] = [
     location: "Area 3, Lilongwe",
     price: "MWK 750,000",
     period: "/month",
-    image:
-      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900",
+    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900",
     tag: "Rent",
     type: "Residential",
     bedrooms: 2,
@@ -190,8 +173,7 @@ const PROPERTIES: Property[] = [
     location: "Area 25, Lilongwe",
     price: "MWK 150,000,000",
     period: "",
-    image:
-      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=900",
+    image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=900",
     tag: "Sale",
     type: "Residential",
     bedrooms: 4,
@@ -204,8 +186,7 @@ const PROPERTIES: Property[] = [
     location: "CBD, Lilongwe",
     price: "MWK 4,000,000",
     period: "/month",
-    image:
-      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=900",
+    image: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=900",
     tag: "Rent",
     type: "Commercial",
     bedrooms: 0,
@@ -218,8 +199,7 @@ const PROPERTIES: Property[] = [
     location: "Area 9, Lilongwe",
     price: "MWK 300,000,000",
     period: "",
-    image:
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=900",
+    image: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=900",
     tag: "Sale",
     type: "Residential",
     bedrooms: 5,
@@ -232,8 +212,7 @@ const PROPERTIES: Property[] = [
     location: "Dedza",
     price: "MWK 80,000,000",
     period: "",
-    image:
-      "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=900",
+    image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=900",
     tag: "Sale",
     type: "Agricultural",
     bedrooms: 0,
@@ -246,8 +225,7 @@ const PROPERTIES: Property[] = [
     location: "Area 18, Lilongwe",
     price: "MWK 650,000",
     period: "/month",
-    image:
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=900",
+    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=900",
     tag: "Rent",
     type: "Residential",
     bedrooms: 2,
@@ -260,8 +238,7 @@ const PROPERTIES: Property[] = [
     location: "Blantyre CBD",
     price: "MWK 1,500,000",
     period: "/month",
-    image:
-      "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=900",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=900",
     tag: "Rent",
     type: "Commercial",
     bedrooms: 0,
@@ -274,8 +251,7 @@ const PROPERTIES: Property[] = [
     location: "Mchinji",
     price: "MWK 350,000,000",
     period: "",
-    image:
-      "https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=900",
+    image: "https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=900",
     tag: "Sale",
     type: "Industrial",
     bedrooms: 0,
@@ -347,35 +323,28 @@ export default function AllPropertiesScreen() {
    */
   const isLoggedIn = false;
 
-  const [authModalVisible, setAuthModalVisible] =
-    useState(false);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
 
   // ==========================================================
   // FILTER STATE
   // ==========================================================
 
-  const [activeFilter, setActiveFilter] =
-    useState<FilterKey>("all");
+  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
   const [propertyType, setPropertyType] =
     useState<PropertyTypeFilter>("All Types");
 
-  const [showTypeDropdown, setShowTypeDropdown] =
-    useState(false);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
-  const [searchQuery, setSearchQuery] =
-    useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [menuVisible, setMenuVisible] =
-    useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // ==========================================================
   // PROPERTY CARD PRESS
   // ==========================================================
 
-  const handlePropertyPress = (
-    propertyId: string,
-  ) => {
+  const handlePropertyPress = (propertyId: string) => {
     if (!isLoggedIn) {
       setAuthModalVisible(true);
       return;
@@ -399,70 +368,44 @@ export default function AllPropertiesScreen() {
     return PROPERTIES.filter((property) => {
       const matchesMainFilter =
         activeFilter === "all" ||
-        (activeFilter === "sale" &&
-          property.tag === "Sale") ||
-        (activeFilter === "rent" &&
-          property.tag === "Rent");
+        (activeFilter === "sale" && property.tag === "Sale") ||
+        (activeFilter === "rent" && property.tag === "Rent");
 
       const matchesType =
-        propertyType === "All Types" ||
-        property.type === propertyType;
+        propertyType === "All Types" || property.type === propertyType;
 
       const matchesCategory =
-        !params.category ||
-        property.category === params.category;
+        !params.category || property.category === params.category;
 
       const matchesSearch =
         !query ||
-        property.location
-          .toLowerCase()
-          .includes(query) ||
-        property.type
-          .toLowerCase()
-          .includes(query) ||
-        property.tag
-          .toLowerCase()
-          .includes(query) ||
-        property.title
-          .toLowerCase()
-          .includes(query);
+        property.location.toLowerCase().includes(query) ||
+        property.type.toLowerCase().includes(query) ||
+        property.tag.toLowerCase().includes(query) ||
+        property.title.toLowerCase().includes(query);
 
       return (
-        matchesMainFilter &&
-        matchesType &&
-        matchesCategory &&
-        matchesSearch
+        matchesMainFilter && matchesType && matchesCategory && matchesSearch
       );
     });
-  }, [
-    activeFilter,
-    propertyType,
-    searchQuery,
-    params.category,
-  ]);
+  }, [activeFilter, propertyType, searchQuery, params.category]);
 
   // ==========================================================
   // MAIN FILTER
   // ==========================================================
 
-  const handleMainFilterPress = (
-    filter: FilterKey,
-  ) => {
+  const handleMainFilterPress = (filter: FilterKey) => {
     setActiveFilter(filter);
     setPropertyType("All Types");
 
-    setShowTypeDropdown(
-      (previous) => !previous,
-    );
+    setShowTypeDropdown((previous) => !previous);
   };
 
   // ==========================================================
   // PROPERTY TYPE
   // ==========================================================
 
-  const handlePropertyTypePress = (
-    type: PropertyTypeFilter,
-  ) => {
+  const handlePropertyTypePress = (type: PropertyTypeFilter) => {
     setPropertyType(type);
     setShowTypeDropdown(false);
   };
@@ -471,17 +414,10 @@ export default function AllPropertiesScreen() {
   // PROPERTY CARD
   // ==========================================================
 
-  const renderPropertyCard = ({
-    item,
-  }: {
-    item: Property;
-    index: number;
-  }) => {
+  const renderPropertyCard = ({ item }: { item: Property; index: number }) => {
     return (
       <Pressable
-        onPress={() =>
-          handlePropertyPress(item.id)
-        }
+        onPress={() => handlePropertyPress(item.id)}
         accessibilityRole="button"
         accessibilityLabel={`View ${item.title}`}
         className="mb-3 flex-1 overflow-hidden rounded-xl border border-[#242424] bg-[#151515] active:opacity-80"
@@ -501,20 +437,14 @@ export default function AllPropertiesScreen() {
         <View className="flex-row items-center justify-between px-3 pb-2 pt-3">
           <View
             className={`rounded-md px-2.5 py-1 ${
-              item.tag === "Sale"
-                ? "bg-red-600"
-                : "bg-[#242424]"
+              item.tag === "Sale" ? "bg-red-600" : "bg-[#242424]"
             }`}
           >
-            <Text className="text-xs font-bold text-white">
-              {item.tag}
-            </Text>
+            <Text className="text-xs font-bold text-white">{item.tag}</Text>
           </View>
 
           {item.period ? (
-            <Text className="text-xs text-gray-400">
-              {item.period}
-            </Text>
+            <Text className="text-xs text-gray-400">{item.period}</Text>
           ) : null}
         </View>
 
@@ -533,7 +463,6 @@ export default function AllPropertiesScreen() {
         {/* ================================================== */}
 
         <View className="p-3">
-
           {/* PROPERTY TYPE */}
 
           <View className="mb-2 flex-row items-center rounded-md bg-[#242424] px-2.5 py-2">
@@ -555,11 +484,7 @@ export default function AllPropertiesScreen() {
 
           <View className="mb-2 flex-row gap-2">
             <View className="flex-1 flex-row items-center rounded-md bg-[#242424] px-2 py-2">
-              <Ionicons
-                name="bed-outline"
-                size={14}
-                color="#ffffff"
-              />
+              <Ionicons name="bed-outline" size={14} color="#ffffff" />
 
               <Text className="ml-1.5 text-xs text-gray-300">
                 {item.bedrooms} Beds
@@ -567,11 +492,7 @@ export default function AllPropertiesScreen() {
             </View>
 
             <View className="flex-1 flex-row items-center rounded-md bg-[#242424] px-2 py-2">
-              <Ionicons
-                name="water-outline"
-                size={14}
-                color="#ffffff"
-              />
+              <Ionicons name="water-outline" size={14} color="#ffffff" />
 
               <Text className="ml-1.5 text-xs text-gray-300">
                 {item.bathrooms} Baths
@@ -581,21 +502,14 @@ export default function AllPropertiesScreen() {
 
           {/* PRICE */}
 
-          <Text
-            className="mb-1 text-sm font-bold text-white"
-            numberOfLines={1}
-          >
+          <Text className="mb-1 text-sm font-bold text-white" numberOfLines={1}>
             {item.price}
           </Text>
 
           {/* LOCATION */}
 
           <View className="flex-row items-center">
-            <Ionicons
-              name="location-outline"
-              size={14}
-              color="#9ca3af"
-            />
+            <Ionicons name="location-outline" size={14} color="#9ca3af" />
 
             <Text
               className="ml-1 flex-1 text-xs text-gray-400"
@@ -614,26 +528,12 @@ export default function AllPropertiesScreen() {
   // ==========================================================
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-black"
-      edges={[
-        "top",
-        "left",
-        "right",
-      ]}
-    >
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#000000"
-      />
+    <SafeAreaView className="flex-1 bg-black" edges={["top", "left", "right"]}>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={
-          Platform.OS === "ios"
-            ? "padding"
-            : "height"
-        }
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <FlatList
           data={filteredProperties}
@@ -657,7 +557,6 @@ export default function AllPropertiesScreen() {
 
           ListHeaderComponent={
             <View className="px-4 pt-4">
-
               {/* HEADER */}
 
               <View className="mb-5 flex-row items-center justify-between">
@@ -674,48 +573,31 @@ export default function AllPropertiesScreen() {
                 {/* MENU BUTTON */}
 
                 <Pressable
-                  onPress={() =>
-                    setMenuVisible(true)
-                  }
+                  onPress={() => setMenuVisible(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Open menu"
                   className="h-10 w-10 items-center justify-center rounded-full bg-[#1c1c1c] active:opacity-60"
                 >
-                  <Ionicons
-                    name="menu"
-                    size={21}
-                    color="#ffffff"
-                  />
+                  <Ionicons name="menu" size={21} color="#ffffff" />
                 </Pressable>
               </View>
 
               {/* MAIN FILTERS */}
 
               <View className="mb-3 flex-row gap-2">
-
                 {/* ALL */}
 
                 <Pressable
-                  onPress={() =>
-                    handleMainFilterPress("all")
-                  }
+                  onPress={() => handleMainFilterPress("all")}
                   className={`flex-1 flex-row items-center justify-center rounded-lg px-3 py-3 ${
-                    activeFilter === "all"
-                      ? "bg-red-600"
-                      : "bg-[#1c1c1c]"
+                    activeFilter === "all" ? "bg-red-600" : "bg-[#1c1c1c]"
                   }`}
                 >
-                  <Text className="text-sm font-semibold text-white">
-                    All
-                  </Text>
+                  <Text className="text-sm font-semibold text-white">All</Text>
 
                   {activeFilter === "all" && (
                     <Ionicons
-                      name={
-                        showTypeDropdown
-                          ? "chevron-up"
-                          : "chevron-down"
-                      }
+                      name={showTypeDropdown ? "chevron-up" : "chevron-down"}
                       size={15}
                       color="#ffffff"
                       className="ml-1"
@@ -726,13 +608,9 @@ export default function AllPropertiesScreen() {
                 {/* FOR SALE */}
 
                 <Pressable
-                  onPress={() =>
-                    handleMainFilterPress("sale")
-                  }
+                  onPress={() => handleMainFilterPress("sale")}
                   className={`flex-1 flex-row items-center justify-center rounded-lg px-3 py-3 ${
-                    activeFilter === "sale"
-                      ? "bg-red-600"
-                      : "bg-[#1c1c1c]"
+                    activeFilter === "sale" ? "bg-red-600" : "bg-[#1c1c1c]"
                   }`}
                 >
                   <Text className="text-sm font-semibold text-white">
@@ -741,11 +619,7 @@ export default function AllPropertiesScreen() {
 
                   {activeFilter === "sale" && (
                     <Ionicons
-                      name={
-                        showTypeDropdown
-                          ? "chevron-up"
-                          : "chevron-down"
-                      }
+                      name={showTypeDropdown ? "chevron-up" : "chevron-down"}
                       size={15}
                       color="#ffffff"
                       className="ml-1"
@@ -756,13 +630,9 @@ export default function AllPropertiesScreen() {
                 {/* FOR RENT */}
 
                 <Pressable
-                  onPress={() =>
-                    handleMainFilterPress("rent")
-                  }
+                  onPress={() => handleMainFilterPress("rent")}
                   className={`flex-1 flex-row items-center justify-center rounded-lg px-3 py-3 ${
-                    activeFilter === "rent"
-                      ? "bg-red-600"
-                      : "bg-[#1c1c1c]"
+                    activeFilter === "rent" ? "bg-red-600" : "bg-[#1c1c1c]"
                   }`}
                 >
                   <Text className="text-sm font-semibold text-white">
@@ -771,11 +641,7 @@ export default function AllPropertiesScreen() {
 
                   {activeFilter === "rent" && (
                     <Ionicons
-                      name={
-                        showTypeDropdown
-                          ? "chevron-up"
-                          : "chevron-down"
-                      }
+                      name={showTypeDropdown ? "chevron-up" : "chevron-down"}
                       size={15}
                       color="#ffffff"
                       className="ml-1"
@@ -790,65 +656,49 @@ export default function AllPropertiesScreen() {
 
               {showTypeDropdown && (
                 <View className="mb-3 overflow-hidden rounded-lg border border-[#2b2b2b] bg-[#181818]">
-                  {PROPERTY_TYPES.map(
-                    (type) => {
-                      const selected =
-                        propertyType === type;
+                  {PROPERTY_TYPES.map((type) => {
+                    const selected = propertyType === type;
 
-                      return (
-                        <Pressable
-                          key={type}
-                          onPress={() =>
-                            handlePropertyTypePress(
-                              type,
-                            )
-                          }
-                          className={`flex-row items-center justify-between px-4 py-3 ${
-                            selected
-                              ? "bg-[#242424]"
-                              : ""
-                          }`}
-                        >
-                          <View className="flex-row items-center">
-                            <Ionicons
-                              name={
-                                type ===
-                                "All Types"
-                                  ? "grid-outline"
-                                  : getPropertyTypeIcon(
-                                      type as PropertyType,
-                                    )
-                              }
-                              size={17}
-                              color={
-                                selected
-                                  ? "#ef4444"
-                                  : "#9ca3af"
-                              }
-                            />
+                    return (
+                      <Pressable
+                        key={type}
+                        onPress={() => handlePropertyTypePress(type)}
+                        className={`flex-row items-center justify-between px-4 py-3 ${
+                          selected ? "bg-[#242424]" : ""
+                        }`}
+                      >
+                        <View className="flex-row items-center">
+                          <Ionicons
+                            name={
+                              type === "All Types"
+                                ? "grid-outline"
+                                : getPropertyTypeIcon(type as PropertyType)
+                            }
+                            size={17}
+                            color={selected ? "#ef4444" : "#9ca3af"}
+                          />
 
-                            <Text
-                              className={`ml-3 text-sm ${
-                                selected
-                                  ? "font-semibold text-white"
-                                  : "text-gray-300"
-                              }`}
-                            >
-                              {type}
-                            </Text>
-                          </View>
+                          <Text
+                            className={`ml-3 text-sm ${
+                              selected
+                                ? "font-semibold text-white"
+                                : "text-gray-300"
+                            }`}
+                          >
+                            {type}
+                          </Text>
+                        </View>
 
-                          {selected && (
-                            <Ionicons
-                              name="checkmark"
-                              size={18}
-                              color="#ef4444"
-                            />
-                          )}
-                        </Pressable>
-                      );
-                    },
-                  )}
+                        {selected && (
+                          <Ionicons
+                            name="checkmark"
+                            size={18}
+                            color="#ef4444"
+                          />
+                        )}
+                      </Pressable>
+                    );
+                  })}
                 </View>
               )}
 
@@ -857,38 +707,25 @@ export default function AllPropertiesScreen() {
               {/* ================================================== */}
 
               <View className="mb-4 flex-row items-center rounded-xl bg-[#1c1c1c] px-4">
-                <Ionicons
-                  name="search-outline"
-                  size={20}
-                  color="#9ca3af"
-                />
+                <Ionicons name="search-outline" size={20} color="#9ca3af" />
 
                 <TextInput
                   value={searchQuery}
-                  onChangeText={
-                    setSearchQuery
-                  }
+                  onChangeText={setSearchQuery}
                   placeholder="Search by location, type, or tag..."
                   placeholderTextColor="#6b7280"
                   className="h-12 flex-1 px-3 text-base text-white"
                   returnKeyType="search"
                 />
 
-                {searchQuery.length >
-                  0 && (
+                {searchQuery.length > 0 && (
                   <Pressable
-                    onPress={() =>
-                      setSearchQuery("")
-                    }
+                    onPress={() => setSearchQuery("")}
                     accessibilityRole="button"
                     accessibilityLabel="Clear search"
                     className="active:opacity-60"
                   >
-                    <Ionicons
-                      name="close-circle"
-                      size={19}
-                      color="#6b7280"
-                    />
+                    <Ionicons name="close-circle" size={19} color="#6b7280" />
                   </Pressable>
                 )}
               </View>
@@ -897,14 +734,11 @@ export default function AllPropertiesScreen() {
               {/* ACTIVE PROPERTY TYPE */}
               {/* ================================================== */}
 
-              {propertyType !==
-                "All Types" && (
+              {propertyType !== "All Types" && (
                 <View className="mb-4 flex-row items-center">
                   <View className="flex-row items-center rounded-full bg-red-600/15 px-3 py-2">
                     <Ionicons
-                      name={getPropertyTypeIcon(
-                        propertyType,
-                      )}
+                      name={getPropertyTypeIcon(propertyType)}
                       size={15}
                       color="#ef4444"
                     />
@@ -914,18 +748,10 @@ export default function AllPropertiesScreen() {
                     </Text>
 
                     <Pressable
-                      onPress={() =>
-                        setPropertyType(
-                          "All Types",
-                        )
-                      }
+                      onPress={() => setPropertyType("All Types")}
                       className="ml-2 active:opacity-60"
                     >
-                      <Ionicons
-                        name="close"
-                        size={15}
-                        color="#ef4444"
-                      />
+                      <Ionicons name="close" size={15} color="#ef4444" />
                     </Pressable>
                   </View>
                 </View>
@@ -941,10 +767,7 @@ export default function AllPropertiesScreen() {
                 </Text>
 
                 <Text className="text-sm text-gray-500">
-                  {
-                    filteredProperties.length
-                  }{" "}
-                  found
+                  {filteredProperties.length} found
                 </Text>
               </View>
             </View>
@@ -957,11 +780,7 @@ export default function AllPropertiesScreen() {
           ListEmptyComponent={
             <View className="items-center justify-center px-8 py-16">
               <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-[#1c1c1c]">
-                <Ionicons
-                  name="search-outline"
-                  size={28}
-                  color="#6b7280"
-                />
+                <Ionicons name="search-outline" size={28} color="#6b7280" />
               </View>
 
               <Text className="text-center text-lg font-semibold text-white">
@@ -969,8 +788,7 @@ export default function AllPropertiesScreen() {
               </Text>
 
               <Text className="mt-2 text-center text-sm text-gray-500">
-                Try changing your filters or search
-                for another location.
+                Try changing your filters or search for another location.
               </Text>
             </View>
           }
@@ -983,22 +801,14 @@ export default function AllPropertiesScreen() {
 
       <AuthRequiredModal
         visible={authModalVisible}
-        onClose={() =>
-          setAuthModalVisible(false)
-        }
+        onClose={() => setAuthModalVisible(false)}
       />
 
       {/* ====================================================== */}
       {/* REUSABLE SIDE MENU */}
       {/* ====================================================== */}
 
-      <SideMenu
-        visible={menuVisible}
-        onClose={() =>
-          setMenuVisible(false)
-        }
-      />
+      <SideMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </SafeAreaView>
   );
 }
-

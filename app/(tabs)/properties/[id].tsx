@@ -1,310 +1,324 @@
-
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  Image,
-  ScrollView,
-  Pressable,
-  StatusBar,
-  ActivityIndicator,
+    ActivityIndicator,
+    Image,
+    Pressable,
+    ScrollView,
+    StatusBar,
+    Text,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import Ionicons from "@expo/vector-icons/Ionicons";
 
-const PROPERTIES = [
+import { useAuth } from "@/app/components/auth/AuthContext";
+
+type PropertyType = "Residential" | "Commercial";
+
+type Property = {
+  id: string;
+  title: string;
+  type: PropertyType;
+  bedrooms: number;
+  bathrooms: number;
+  price: number;
+  location: string;
+  listingType: "Rent" | "Sale";
+  category: string;
+  image: string;
+  description: string;
+};
+
+const PROPERTIES: Property[] = [
   {
     id: "1",
-    type: "Commercial",
-    beds: 6,
-    baths: 2,
-    price: "MWK 400,000",
-    period: "Over a year ago",
-    location: "Mzuzu CBD, MZUZU",
-    image:
-      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=1200&h=800&fit=crop",
-    tag: "Rent",
-    category: "Featured Properties",
     title: "Modern Commercial Property",
+    type: "Commercial",
+    bedrooms: 6,
+    bathrooms: 2,
+    price: 400000,
+    location: "Mzuzu CBD",
+    listingType: "Rent",
+    category: "Featured",
+    image:
+      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A spacious commercial property located in Mzuzu CBD. The property is suitable for offices, business operations, retail activities, or investment.",
+      "A modern commercial property located in the heart of Mzuzu CBD. The property offers spacious rooms suitable for offices, retail businesses, and other commercial activities.",
   },
   {
     id: "2",
-    type: "Residential",
-    beds: 4,
-    baths: 1,
-    price: "MWK 200,000",
-    period: "Over a year ago",
-    location: "Blantyre CBD, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&h=800&fit=crop",
-    tag: "Rent",
-    category: "New to Market",
     title: "Comfortable Residential Home",
+    type: "Residential",
+    bedrooms: 4,
+    bathrooms: 1,
+    price: 200000,
+    location: "Blantyre CBD",
+    listingType: "Rent",
+    category: "New to Market",
+    image:
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A comfortable residential property in Blantyre CBD with convenient access to shops, services, transport, and other amenities.",
+      "A comfortable residential home in Blantyre CBD with spacious living areas, bedrooms, and convenient access to shops, schools, and other amenities.",
   },
   {
     id: "3",
-    type: "Commercial",
-    beds: 8,
-    baths: 3,
-    price: "MWK 750,000",
-    period: "6 months ago",
-    location: "Lilongwe CBD, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1200&h=800&fit=crop",
-    tag: "Sale",
-    category: "Open Houses",
     title: "Prime Commercial Building",
+    type: "Commercial",
+    bedrooms: 8,
+    bathrooms: 3,
+    price: 750000,
+    location: "Lilongwe CBD",
+    listingType: "Sale",
+    category: "Open Houses",
+    image:
+      "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A prime commercial property located in Lilongwe CBD, suitable for business, office space, investment, or other commercial purposes.",
+      "A prime commercial building in Lilongwe CBD. This property provides excellent space for businesses, offices, and investment purposes.",
   },
   {
     id: "4",
-    type: "Residential",
-    beds: 3,
-    baths: 2,
-    price: "MWK 150,000",
-    period: "2 months ago",
-    location: "Zomba Town, ZOMBA",
-    image:
-      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=1200&h=800&fit=crop",
-    tag: "Rent",
-    category: "Most Viewed",
     title: "Family Home in Zomba",
+    type: "Residential",
+    bedrooms: 3,
+    bathrooms: 2,
+    price: 150000,
+    location: "Zomba Town",
+    listingType: "Rent",
+    category: "Most Viewed",
+    image:
+      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A residential family home located in Zomba Town. The property provides comfortable living space in a convenient location.",
+      "A beautiful family home located in Zomba Town. The property offers a peaceful environment and practical living spaces for a family.",
   },
   {
     id: "5",
-    type: "Commercial",
-    beds: 10,
-    baths: 4,
-    price: "MWK 1,200,000",
-    period: "1 month ago",
-    location: "Mzuzu CBD, MZUZU",
-    image:
-      "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=800&fit=crop",
-    tag: "Sale",
-    category: "Featured Properties",
     title: "Large Commercial Property",
+    type: "Commercial",
+    bedrooms: 10,
+    bathrooms: 4,
+    price: 1200000,
+    location: "Mzuzu CBD",
+    listingType: "Sale",
+    category: "Featured",
+    image:
+      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A large commercial property in Mzuzu CBD offering substantial space for offices, businesses, and investment opportunities.",
+      "A large commercial property in Mzuzu CBD with multiple rooms and excellent potential for business operations or investment.",
   },
   {
     id: "6",
-    type: "Residential",
-    beds: 5,
-    baths: 3,
-    price: "MWK 350,000",
-    period: "3 weeks ago",
-    location: "Blantyre CBD, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&h=800&fit=crop",
-    tag: "Rent",
-    category: "Featured Properties",
     title: "Spacious Residential Property",
+    type: "Residential",
+    bedrooms: 5,
+    bathrooms: 3,
+    price: 350000,
+    location: "Blantyre CBD",
+    listingType: "Rent",
+    category: "Featured",
+    image:
+      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A spacious residential property in Blantyre CBD with five bedrooms and three bathrooms.",
+      "A spacious residential property in Blantyre CBD featuring comfortable bedrooms, bathrooms, and generous living spaces.",
   },
   {
     id: "7",
-    type: "Residential",
-    beds: 4,
-    baths: 2,
-    price: "MWK 280,000",
-    period: "2 weeks ago",
-    location: "Area 43, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&h=800&fit=crop",
-    tag: "Rent",
-    category: "New to Market",
     title: "Modern Home in Area 43",
+    type: "Residential",
+    bedrooms: 4,
+    bathrooms: 2,
+    price: 280000,
+    location: "Area 43 Lilongwe",
+    listingType: "Rent",
+    category: "New to Market",
+    image:
+      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A modern residential home located in Area 43, Lilongwe. The property offers four bedrooms and two bathrooms.",
+      "A modern residential home in Area 43, Lilongwe. It offers comfortable accommodation in a desirable residential location.",
   },
   {
     id: "8",
-    type: "Commercial",
-    beds: 5,
-    baths: 2,
-    price: "MWK 900,000",
-    period: "1 week ago",
-    location: "Area 3, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&h=800&fit=crop",
-    tag: "Sale",
-    category: "Featured Properties",
     title: "Commercial Property in Area 3",
+    type: "Commercial",
+    bedrooms: 5,
+    bathrooms: 2,
+    price: 900000,
+    location: "Area 3 Lilongwe",
+    listingType: "Sale",
+    category: "Featured",
+    image:
+      "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A commercial property in Area 3, Lilongwe, suitable for business operations and investment.",
+      "A commercial property located in Area 3, Lilongwe. The property is suitable for offices, business premises, and investment.",
   },
   {
     id: "9",
-    type: "Residential",
-    beds: 3,
-    baths: 2,
-    price: "MWK 180,000",
-    period: "5 days ago",
-    location: "Area 18, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=1200&h=800&fit=crop",
-    tag: "Rent",
-    category: "Most Viewed",
     title: "Beautiful Home in Area 18",
+    type: "Residential",
+    bedrooms: 3,
+    bathrooms: 2,
+    price: 180000,
+    location: "Area 18 Lilongwe",
+    listingType: "Rent",
+    category: "Most Viewed",
+    image:
+      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A residential property located in Area 18, Lilongwe, offering three bedrooms and two bathrooms.",
+      "A beautiful residential home in Area 18, Lilongwe. The property provides a comfortable environment for individuals and families.",
   },
   {
     id: "10",
-    type: "Residential",
-    beds: 6,
-    baths: 3,
-    price: "MWK 500,000",
-    period: "3 days ago",
-    location: "Nyambadwe, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=1200&h=800&fit=crop",
-    tag: "Rent",
-    category: "Properties in My Location",
     title: "Spacious Nyambadwe Home",
+    type: "Residential",
+    bedrooms: 6,
+    bathrooms: 3,
+    price: 500000,
+    location: "Nyambadwe Blantyre",
+    listingType: "Rent",
+    category: "Properties in My Location",
+    image:
+      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A spacious residential property in Nyambadwe, Blantyre, featuring six bedrooms and three bathrooms.",
+      "A spacious home in Nyambadwe, Blantyre. The property features large living areas and multiple bedrooms suitable for a family.",
   },
   {
     id: "11",
-    type: "Commercial",
-    beds: 8,
-    baths: 4,
-    price: "MWK 1,500,000",
-    period: "1 month ago",
-    location: "Blantyre CBD, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=1200&h=800&fit=crop",
-    tag: "Sale",
-    category: "Open Houses",
     title: "Commercial Building in Blantyre",
+    type: "Commercial",
+    bedrooms: 8,
+    bathrooms: 4,
+    price: 1500000,
+    location: "Blantyre CBD",
+    listingType: "Sale",
+    category: "Open Houses",
+    image:
+      "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A commercial property located in Blantyre CBD with eight rooms and four bathrooms.",
+      "A commercial building in Blantyre CBD offering substantial space for offices, retail, and other commercial activities.",
   },
   {
     id: "12",
-    type: "Residential",
-    beds: 2,
-    baths: 1,
-    price: "MWK 120,000",
-    period: "4 days ago",
-    location: "Area 25, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=1200&h=800&fit=crop",
-    tag: "Rent",
-    category: "New to Market",
     title: "Affordable Home in Area 25",
+    type: "Residential",
+    bedrooms: 2,
+    bathrooms: 1,
+    price: 120000,
+    location: "Area 25 Lilongwe",
+    listingType: "Rent",
+    category: "New to Market",
+    image:
+      "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=1200&q=80",
     description:
-      "An affordable residential property located in Area 25, Lilongwe.",
+      "An affordable residential home in Area 25, Lilongwe. It provides practical living space at an accessible rental price.",
   },
   {
     id: "13",
-    type: "Residential",
-    beds: 5,
-    baths: 3,
-    price: "MWK 450,000",
-    period: "2 months ago",
-    location: "Kaunda Road, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1200&h=800&fit=crop",
-    tag: "Sale",
-    category: "Featured Properties",
     title: "Premium Home on Kaunda Road",
+    type: "Residential",
+    bedrooms: 5,
+    bathrooms: 3,
+    price: 450000,
+    location: "Kaunda Road Lilongwe",
+    listingType: "Sale",
+    category: "Featured",
+    image:
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A premium residential property located along Kaunda Road in Lilongwe.",
+      "A premium residential property situated along Kaunda Road in Lilongwe. The property offers quality accommodation and modern living spaces.",
   },
   {
     id: "14",
-    type: "Commercial",
-    beds: 12,
-    baths: 5,
-    price: "MWK 2,000,000",
-    period: "2 weeks ago",
-    location: "Mzuzu CBD, MZUZU",
-    image:
-      "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=1200&h=800&fit=crop",
-    tag: "Sale",
-    category: "Most Viewed",
     title: "Large Mzuzu Commercial Building",
+    type: "Commercial",
+    bedrooms: 12,
+    bathrooms: 5,
+    price: 2000000,
+    location: "Mzuzu CBD",
+    listingType: "Sale",
+    category: "Most Viewed",
+    image:
+      "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A large commercial property in Mzuzu CBD with substantial space for business and investment purposes.",
+      "A large commercial building in Mzuzu CBD with extensive space and strong potential for commercial investment.",
   },
   {
     id: "15",
-    type: "Residential",
-    beds: 4,
-    baths: 2,
-    price: "MWK 300,000",
-    period: "1 week ago",
-    location: "Chilomoni, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&h=800&fit=crop",
-    tag: "Rent",
-    category: "Open Houses",
     title: "Family Home in Chilomoni",
+    type: "Residential",
+    bedrooms: 4,
+    bathrooms: 2,
+    price: 300000,
+    location: "Chilomoni Blantyre",
+    listingType: "Rent",
+    category: "Open Houses",
+    image:
+      "https://images.unsplash.com/photo-1600585153490-76fb20a32601?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A residential family home located in Chilomoni, Blantyre.",
+      "A family-friendly residential property in Chilomoni, Blantyre. It provides comfortable accommodation with convenient access to local amenities.",
   },
   {
     id: "16",
-    type: "Residential",
-    beds: 7,
-    baths: 4,
-    price: "MWK 850,000",
-    period: "3 weeks ago",
-    location: "Area 47, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&h=800&fit=crop",
-    tag: "Sale",
-    category: "Properties in My Location",
     title: "Large Residential Property in Area 47",
+    type: "Residential",
+    bedrooms: 7,
+    bathrooms: 4,
+    price: 850000,
+    location: "Area 47 Lilongwe",
+    listingType: "Sale",
+    category: "Properties in My Location",
+    image:
+      "https://images.unsplash.com/photo-1600047509782-20d39509f26d?auto=format&fit=crop&w=1200&q=80",
     description:
-      "A large residential property located in Area 47, Lilongwe, featuring seven bedrooms and four bathrooms.",
+      "A large residential property in Area 47, Lilongwe. The home offers generous accommodation and is suitable for a large family.",
   },
 ];
 
-type Property = (typeof PROPERTIES)[number];
+const formatPrice = (price: number, listingType: Property["listingType"]) => {
+  const formatted = new Intl.NumberFormat("en-MW").format(price);
+
+  return listingType === "Rent"
+    ? `MWK ${formatted} / month`
+    : `MWK ${formatted}`;
+};
 
 export default function PropertyDetails() {
   const router = useRouter();
 
   const { id } = useLocalSearchParams<{ id: string }>();
 
+  const { isLoggedIn } = useAuth();
+
   const [imageLoading, setImageLoading] = useState(true);
 
   const property = PROPERTIES.find((item) => item.id === id);
 
-  if (!property) {
+  /*
+   * If the user is not logged in, do not show the property details.
+   */
+  if (!isLoggedIn) {
     return (
       <SafeAreaView className="flex-1 bg-[#0d0d0d]">
         <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
 
         <View className="flex-1 items-center justify-center px-6">
-          <Ionicons name="home-outline" size={70} color="#555" />
+          <View className="h-20 w-20 items-center justify-center rounded-full bg-[#241616]">
+            <Ionicons name="lock-closed-outline" size={40} color="#f87171" />
+          </View>
 
-          <Text className="mt-5 text-xl font-bold text-white">
-            Property Not Found
+          <Text className="mt-6 text-center text-2xl font-bold text-white">
+            Login Required
           </Text>
 
-          <Text className="mt-2 text-center text-sm text-gray-400">
-            The property you are looking for could not be found.
+          <Text className="mt-3 text-center text-sm leading-6 text-gray-400">
+            Please login or register to view the full property information.
           </Text>
 
           <Pressable
             onPress={() => router.back()}
-            className="mt-6 rounded-xl bg-red-600 px-6 py-3"
+            className="mt-7 w-full rounded-xl bg-red-600 py-4"
           >
-            <Text className="font-bold text-white">
-              Go Back
+            <Text className="text-center text-base font-bold text-white">
+              Back to Properties
             </Text>
           </Pressable>
         </View>
@@ -313,290 +327,267 @@ export default function PropertyDetails() {
   }
 
   /*
-   * The image is loaded before the property details are displayed.
-   * The Image component is kept mounted while the loader is visible,
-   * allowing React Native to download the image in the background.
+   * If the property ID does not exist.
    */
+  if (!property) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+        <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
+
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="h-20 w-20 items-center justify-center rounded-full bg-[#241616]">
+            <Ionicons name="home-outline" size={40} color="#f87171" />
+          </View>
+
+          <Text className="mt-6 text-center text-2xl font-bold text-white">
+            Property Not Found
+          </Text>
+
+          <Text className="mt-3 text-center text-sm leading-6 text-gray-400">
+            The property you are looking for could not be found.
+          </Text>
+
+          <Pressable
+            onPress={() => router.back()}
+            className="mt-7 w-full rounded-xl bg-red-600 py-4"
+          >
+            <Text className="text-center text-base font-bold text-white">
+              Go Back
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-[#0d0d0d]">
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
-      />
+      <StatusBar barStyle="light-content" backgroundColor="#0d0d0d" />
 
-      {/* Hidden image loader */}
-      {imageLoading && (
-        <View className="absolute inset-0 z-50 flex-1 items-center justify-center bg-[#0d0d0d]">
-          <ActivityIndicator
-            size="large"
-            color="#ef4444"
-          />
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 40,
+        }}
+      >
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-5 py-4">
+          <Pressable
+            onPress={() => router.back()}
+            className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+          >
+            <Ionicons name="arrow-back" size={23} color="#ffffff" />
+          </Pressable>
 
-          <Text className="mt-4 text-base font-medium text-gray-300">
-            Loading property...
+          <Text
+            numberOfLines={1}
+            className="mx-4 flex-1 text-center text-lg font-bold text-white"
+          >
+            Property Details
           </Text>
 
-          <Text className="mt-1 text-xs text-gray-500">
-            Please wait
-          </Text>
-
-          <Image
-            source={{ uri: property.image }}
-            className="absolute h-0 w-0"
-            onLoad={() => {
-              setImageLoading(false);
-            }}
-            onError={(error) => {
-              console.log(
-                "PROPERTY IMAGE ERROR:",
-                error.nativeEvent.error
-              );
-
-              /*
-               * If the image cannot be loaded, don't leave the
-               * user stuck on the loading screen.
-               */
-              setImageLoading(false);
-            }}
-          />
+          <Pressable className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]">
+            <Ionicons name="heart-outline" size={23} color="#ffffff" />
+          </Pressable>
         </View>
-      )}
 
-      {/* ALL PROPERTY CONTENT APPEARS AFTER IMAGE LOAD */}
-      {!imageLoading && (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingBottom: 40,
-          }}
-        >
-          {/* PROPERTY IMAGE */}
-          <View className="relative h-72 w-full bg-[#171717]">
+        {/* Property Image */}
+        <View className="mx-5 overflow-hidden rounded-2xl bg-[#171717]">
+          <View className="relative h-72 w-full">
             <Image
               source={{ uri: property.image }}
-              className="h-72 w-full"
+              className="h-full w-full"
               resizeMode="cover"
+              onLoadStart={() => setImageLoading(true)}
+              onLoadEnd={() => setImageLoading(false)}
             />
 
-            {/* BACK BUTTON */}
-            <Pressable
-              onPress={() => router.back()}
-              className="absolute left-4 top-4 h-11 w-11 items-center justify-center rounded-full bg-black/70"
-            >
-              <Ionicons
-                name="arrow-back"
-                size={23}
-                color="#fff"
-              />
-            </Pressable>
+            {imageLoading && (
+              <View className="absolute inset-0 items-center justify-center bg-[#171717]">
+                <ActivityIndicator size="large" color="#ef4444" />
+              </View>
+            )}
 
-            {/* PROPERTY TAG */}
-            <View className="absolute right-4 top-4 rounded-lg bg-red-600 px-4 py-2">
-              <Text className="text-sm font-bold text-white">
-                {property.tag}
+            {/* Listing Type */}
+            <View className="absolute left-4 top-4 rounded-lg bg-red-600 px-3 py-2">
+              <Text className="text-xs font-bold text-white">
+                For {property.listingType}
               </Text>
             </View>
 
-            {/* IMAGE LABEL */}
-            <View className="absolute bottom-4 right-4 flex-row items-center rounded-lg bg-black/70 px-3 py-2">
-              <Ionicons
-                name="images-outline"
-                size={17}
-                color="#fff"
-              />
+            {/* Category */}
+            <View className="absolute bottom-4 left-4 rounded-lg bg-black/70 px-3 py-2">
+              <Text className="text-xs font-semibold text-white">
+                {property.category}
+              </Text>
+            </View>
+          </View>
+        </View>
 
-              <Text className="ml-1.5 text-xs font-semibold text-white">
-                Property Image
+        {/* Main Information */}
+        <View className="px-5 pt-6">
+          <Text className="text-2xl font-bold leading-8 text-white">
+            {property.title}
+          </Text>
+
+          <View className="mt-3 flex-row items-center">
+            <Ionicons name="location-outline" size={18} color="#f87171" />
+
+            <Text className="ml-2 flex-1 text-sm text-gray-400">
+              {property.location}
+            </Text>
+          </View>
+
+          {/* Price */}
+          <View className="mt-5 rounded-2xl bg-[#171717] p-5">
+            <Text className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              {property.listingType === "Rent"
+                ? "Monthly Rent"
+                : "Property Price"}
+            </Text>
+
+            <Text className="mt-1 text-2xl font-bold text-red-500">
+              {formatPrice(property.price, property.listingType)}
+            </Text>
+          </View>
+
+          {/* Property Stats */}
+          <View className="mt-4 flex-row">
+            <View className="mr-2 flex-1 rounded-2xl bg-[#171717] p-4">
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-[#241616]">
+                <Ionicons name="bed-outline" size={21} color="#f87171" />
+              </View>
+
+              <Text className="mt-3 text-lg font-bold text-white">
+                {property.bedrooms}
+              </Text>
+
+              <Text className="mt-1 text-xs text-gray-500">Bedrooms</Text>
+            </View>
+
+            <View className="ml-2 flex-1 rounded-2xl bg-[#171717] p-4">
+              <View className="h-10 w-10 items-center justify-center rounded-full bg-[#241616]">
+                <Ionicons name="water-outline" size={21} color="#f87171" />
+              </View>
+
+              <Text className="mt-3 text-lg font-bold text-white">
+                {property.bathrooms}
+              </Text>
+
+              <Text className="mt-1 text-xs text-gray-500">Bathrooms</Text>
+            </View>
+          </View>
+
+          {/* Property Type */}
+          <View className="mt-4 flex-row rounded-2xl bg-[#171717] p-4">
+            <View className="h-11 w-11 items-center justify-center rounded-full bg-[#241616]">
+              <Ionicons
+                name={
+                  property.type === "Commercial"
+                    ? "business-outline"
+                    : "home-outline"
+                }
+                size={22}
+                color="#f87171"
+              />
+            </View>
+
+            <View className="ml-4 justify-center">
+              <Text className="text-xs text-gray-500">Property Type</Text>
+
+              <Text className="mt-1 text-base font-semibold text-white">
+                {property.type}
               </Text>
             </View>
           </View>
 
-          {/* MAIN CONTENT */}
-          <View className="px-5 pt-5">
-            {/* TITLE */}
-            <Text className="text-2xl font-bold leading-8 text-white">
-              {property.title}
+          {/* Description */}
+          <View className="mt-7">
+            <Text className="text-xl font-bold text-white">Description</Text>
+
+            <Text className="mt-3 text-sm leading-7 text-gray-400">
+              {property.description}
             </Text>
+          </View>
 
-            {/* LOCATION */}
-            <View className="mt-3 flex-row items-center">
-              <Ionicons
-                name="location-outline"
-                size={20}
-                color="#f87171"
-              />
+          {/* Location */}
+          <View className="mt-7">
+            <Text className="text-xl font-bold text-white">Location</Text>
 
-              <Text className="ml-2 flex-1 text-sm text-gray-400">
-                {property.location}
-              </Text>
-            </View>
+            <View className="mt-3 flex-row items-center rounded-2xl bg-[#171717] p-4">
+              <View className="h-11 w-11 items-center justify-center rounded-full bg-[#241616]">
+                <Ionicons name="location" size={22} color="#f87171" />
+              </View>
 
-            {/* PRICE */}
-            <View className="mt-5 rounded-xl border border-[#292929] bg-[#171717] p-4">
-              <Text className="text-xs text-gray-500">
-                PRICE
-              </Text>
-
-              <Text className="mt-1 text-2xl font-bold text-white">
-                {property.price}
-              </Text>
-
-              <Text className="mt-1 text-xs text-gray-500">
-                Listed {property.period}
-              </Text>
-            </View>
-
-            {/* PROPERTY FEATURES */}
-            <Text className="mb-3 mt-6 text-lg font-bold text-white">
-              Property Details
-            </Text>
-
-            <View className="flex-row flex-wrap gap-3">
-              {/* TYPE */}
-              <View className="w-[48%] rounded-xl border border-[#292929] bg-[#171717] p-4">
-                <Ionicons
-                  name="business-outline"
-                  size={24}
-                  color="#f87171"
-                />
-
-                <Text className="mt-2 text-xs text-gray-500">
-                  PROPERTY TYPE
+              <View className="ml-4 flex-1">
+                <Text className="text-base font-semibold text-white">
+                  {property.location}
                 </Text>
 
-                <Text className="mt-1 text-sm font-semibold text-white">
+                <Text className="mt-1 text-xs text-gray-500">Malawi</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Listing Information */}
+          <View className="mt-7">
+            <Text className="text-xl font-bold text-white">
+              Listing Information
+            </Text>
+
+            <View className="mt-3 overflow-hidden rounded-2xl bg-[#171717]">
+              <View className="flex-row items-center justify-between border-b border-[#252525] px-4 py-4">
+                <Text className="text-sm text-gray-500">Listing Type</Text>
+
+                <Text className="text-sm font-semibold text-white">
+                  For {property.listingType}
+                </Text>
+              </View>
+
+              <View className="flex-row items-center justify-between border-b border-[#252525] px-4 py-4">
+                <Text className="text-sm text-gray-500">Property Type</Text>
+
+                <Text className="text-sm font-semibold text-white">
                   {property.type}
                 </Text>
               </View>
 
-              {/* BEDROOMS */}
-              <View className="w-[48%] rounded-xl border border-[#292929] bg-[#171717] p-4">
-                <Ionicons
-                  name="bed-outline"
-                  size={24}
-                  color="#f87171"
-                />
+              <View className="flex-row items-center justify-between border-b border-[#252525] px-4 py-4">
+                <Text className="text-sm text-gray-500">Category</Text>
 
-                <Text className="mt-2 text-xs text-gray-500">
-                  BEDROOMS
-                </Text>
-
-                <Text className="mt-1 text-sm font-semibold text-white">
-                  {property.beds} Bedrooms
-                </Text>
-              </View>
-
-              {/* BATHROOMS */}
-              <View className="w-[48%] rounded-xl border border-[#292929] bg-[#171717] p-4">
-                <Ionicons
-                  name="water-outline"
-                  size={24}
-                  color="#f87171"
-                />
-
-                <Text className="mt-2 text-xs text-gray-500">
-                  BATHROOMS
-                </Text>
-
-                <Text className="mt-1 text-sm font-semibold text-white">
-                  {property.baths} Bathrooms
-                </Text>
-              </View>
-
-              {/* CATEGORY */}
-              <View className="w-[48%] rounded-xl border border-[#292929] bg-[#171717] p-4">
-                <Ionicons
-                  name="pricetag-outline"
-                  size={24}
-                  color="#f87171"
-                />
-
-                <Text className="mt-2 text-xs text-gray-500">
-                  CATEGORY
-                </Text>
-
-                <Text className="mt-1 text-sm font-semibold text-white">
+                <Text className="text-sm font-semibold text-white">
                   {property.category}
                 </Text>
               </View>
-            </View>
 
-            {/* DESCRIPTION */}
-            <Text className="mb-3 mt-7 text-lg font-bold text-white">
-              Description
-            </Text>
+              <View className="flex-row items-center justify-between px-4 py-4">
+                <Text className="text-sm text-gray-500">Location</Text>
 
-            <View className="rounded-xl border border-[#292929] bg-[#171717] p-4">
-              <Text className="text-sm leading-6 text-gray-300">
-                {property.description}
-              </Text>
-            </View>
-
-            {/* LOCATION */}
-            <Text className="mb-3 mt-7 text-lg font-bold text-white">
-              Location
-            </Text>
-
-            <View className="flex-row items-center rounded-xl border border-[#292929] bg-[#171717] p-4">
-              <View className="h-11 w-11 items-center justify-center rounded-full bg-[#241616]">
-                <Ionicons
-                  name="location"
-                  size={22}
-                  color="#f87171"
-                />
-              </View>
-
-              <View className="ml-3 flex-1">
-                <Text className="text-xs text-gray-500">
-                  PROPERTY LOCATION
-                </Text>
-
-                <Text className="mt-1 text-sm font-semibold text-white">
+                <Text className="max-w-[55%] text-right text-sm font-semibold text-white">
                   {property.location}
                 </Text>
               </View>
             </View>
+          </View>
 
-            {/* CONTACT BUTTON */}
+          {/* Contact / Action */}
+          <View className="mt-8">
             <Pressable
               onPress={() => {
-                console.log(
-                  "Contact agent for property:",
-                  property.id
-                );
+                // Add your contact/booking functionality here later.
               }}
-              className="mt-7 flex-row items-center justify-center rounded-xl bg-red-600 py-4"
+              className="flex-row items-center justify-center rounded-xl bg-red-600 py-4"
             >
-              <Ionicons
-                name="chatbubble-ellipses-outline"
-                size={20}
-                color="#fff"
-              />
+              <Ionicons name="call-outline" size={21} color="#ffffff" />
 
               <Text className="ml-2 text-base font-bold text-white">
                 Contact Agent
               </Text>
             </Pressable>
-
-            {/* BACK BUTTON */}
-            <Pressable
-              onPress={() => router.back()}
-              className="mt-3 flex-row items-center justify-center rounded-xl border border-[#383838] bg-[#171717] py-4"
-            >
-              <Ionicons
-                name="arrow-back-outline"
-                size={19}
-                color="#f87171"
-              />
-
-              <Text className="ml-2 text-sm font-bold text-red-400">
-                Back to Properties
-              </Text>
-            </Pressable>
           </View>
-        </ScrollView>
-      )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
-

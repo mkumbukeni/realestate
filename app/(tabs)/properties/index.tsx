@@ -1,247 +1,29 @@
-
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Text,
-  TextInput,
-  SectionList,
-  View,
   Image,
   Pressable,
+  SectionList,
   StatusBar,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 
-import SideMenu from "@/app/components/common/SideMenu";
-import AuthRequiredModal from "@/app/components/common/AuthRequiredModal";
+import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
+import SideMenu from "@/app/components/sidebar/SideMenu";
 
-// app/(tabs)/properties/index.tsx
+import {
+  PROPERTIES,
+  PROPERTY_SECTIONS,
+  type Property,
+} from "@/app/data/data";
 
 // ============================================================
-// PROPERTY DATA
+// PROPERTY ROW HELPER
 // ============================================================
-
-const PROPERTIES = [
-  {
-    id: "1",
-    type: "Commercial",
-    beds: 6,
-    baths: 2,
-    price: "MWK 400,000",
-    period: "Over a year ago",
-    location: "Mzuzu CBD, MZUZU",
-    image:
-      "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=400&h=300&fit=crop",
-    tag: "Rent",
-    category: "Featured Properties",
-  },
-  {
-    id: "2",
-    type: "Residential",
-    beds: 4,
-    baths: 1,
-    price: "MWK 200,000",
-    period: "Over a year ago",
-    location: "Blantyre CBD, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop",
-    tag: "Rent",
-    category: "New to Market",
-  },
-  {
-    id: "3",
-    type: "Commercial",
-    beds: 8,
-    baths: 3,
-    price: "MWK 750,000",
-    period: "6 months ago",
-    location: "Lilongwe CBD, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop",
-    tag: "Sale",
-    category: "Open Houses",
-  },
-  {
-    id: "4",
-    type: "Residential",
-    beds: 3,
-    baths: 2,
-    price: "MWK 150,000",
-    period: "2 months ago",
-    location: "Zomba Town, ZOMBA",
-    image:
-      "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&h=300&fit=crop",
-    tag: "Rent",
-    category: "Most Viewed",
-  },
-  {
-    id: "5",
-    type: "Commercial",
-    beds: 10,
-    baths: 4,
-    price: "MWK 1,200,000",
-    period: "1 month ago",
-    location: "Mzuzu CBD, MZUZU",
-    image:
-      "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop",
-    tag: "Sale",
-    category: "Featured Properties",
-  },
-  {
-    id: "6",
-    type: "Residential",
-    beds: 5,
-    baths: 3,
-    price: "MWK 350,000",
-    period: "3 weeks ago",
-    location: "Blantyre CBD, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=300&fit=crop",
-    tag: "Rent",
-    category: "Featured Properties",
-  },
-  {
-    id: "7",
-    type: "Residential",
-    beds: 4,
-    baths: 2,
-    price: "MWK 280,000",
-    period: "2 weeks ago",
-    location: "Area 43, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
-    tag: "Rent",
-    category: "New to Market",
-  },
-  {
-    id: "8",
-    type: "Commercial",
-    beds: 5,
-    baths: 2,
-    price: "MWK 900,000",
-    period: "1 week ago",
-    location: "Area 3, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=400&h=300&fit=crop",
-    tag: "Sale",
-    category: "Featured Properties",
-  },
-  {
-    id: "9",
-    type: "Residential",
-    beds: 3,
-    baths: 2,
-    price: "MWK 180,000",
-    period: "5 days ago",
-    location: "Area 18, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop",
-    tag: "Rent",
-    category: "Most Viewed",
-  },
-  {
-    id: "10",
-    type: "Residential",
-    beds: 6,
-    baths: 3,
-    price: "MWK 500,000",
-    period: "3 days ago",
-    location: "Nyambadwe, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=400&h=300&fit=crop",
-    tag: "Rent",
-    category: "Properties in My Location",
-  },
-  {
-    id: "11",
-    type: "Commercial",
-    beds: 8,
-    baths: 4,
-    price: "MWK 1,500,000",
-    period: "1 month ago",
-    location: "Blantyre CBD, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=400&h=300&fit=crop",
-    tag: "Sale",
-    category: "Open Houses",
-  },
-  {
-    id: "12",
-    type: "Residential",
-    beds: 2,
-    baths: 1,
-    price: "MWK 120,000",
-    period: "4 days ago",
-    location: "Area 25, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=400&h=300&fit=crop",
-    tag: "Rent",
-    category: "New to Market",
-  },
-  {
-    id: "13",
-    type: "Residential",
-    beds: 5,
-    baths: 3,
-    price: "MWK 450,000",
-    period: "2 months ago",
-    location: "Kaunda Road, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=400&h=300&fit=crop",
-    tag: "Sale",
-    category: "Featured Properties",
-  },
-  {
-    id: "14",
-    type: "Commercial",
-    beds: 12,
-    baths: 5,
-    price: "MWK 2,000,000",
-    period: "2 weeks ago",
-    location: "Mzuzu CBD, MZUZU",
-    image:
-      "https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=400&h=300&fit=crop",
-    tag: "Sale",
-    category: "Most Viewed",
-  },
-  {
-    id: "15",
-    type: "Residential",
-    beds: 4,
-    baths: 2,
-    price: "MWK 300,000",
-    period: "1 week ago",
-    location: "Chilomoni, BLANTYRE URBAN",
-    image:
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
-    tag: "Rent",
-    category: "Open Houses",
-  },
-  {
-    id: "16",
-    type: "Residential",
-    beds: 7,
-    baths: 4,
-    price: "MWK 850,000",
-    period: "3 weeks ago",
-    location: "Area 47, LILONGWE",
-    image:
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=400&h=300&fit=crop",
-    tag: "Sale",
-    category: "Properties in My Location",
-  },
-];
-
-const PROPERTY_SECTIONS = [
-  "Featured Properties",
-  "New to Market",
-  "Open Houses",
-  "Most Viewed",
-  "Properties in My Location",
-];
-
-type Property = (typeof PROPERTIES)[number];
 
 function createPropertyRows(properties: Property[]) {
   const rows: Property[][] = [];
@@ -260,9 +42,18 @@ function createPropertyRows(properties: Property[]) {
 const App = () => {
   const router = useRouter();
 
+  // ==========================================================
+  // SEARCH
+  // ==========================================================
+
   const [searchQuery, setSearchQuery] = useState("");
+
   const [filteredProperties, setFilteredProperties] =
-    useState(PROPERTIES);
+    useState<Property[]>(PROPERTIES);
+
+  // ==========================================================
+  // SIDE MENU
+  // ==========================================================
 
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -275,14 +66,14 @@ const App = () => {
   /*
    * IMPORTANT:
    *
-   * Connect this value to your existing authentication state.
+   * Replace this with your actual authentication state
+   * from your LoginContext/AuthContext.
    *
-   * For now this is false so the authentication popup will appear
-   * when a user taps a property.
+   * For example:
    *
-   * Once your existing LoginContext/auth provider is connected,
-   * replace this with your real `isLoggedIn` value.
+   * const { isLoggedIn } = useLogin();
    */
+
   const isLoggedIn = false;
 
   // ==========================================================
@@ -294,18 +85,29 @@ const App = () => {
 
     if (text.trim() === "") {
       setFilteredProperties(PROPERTIES);
-    } else {
-      const searchText = text.toLowerCase();
-
-      const filtered = PROPERTIES.filter(
-        (item) =>
-          item.location.toLowerCase().includes(searchText) ||
-          item.type.toLowerCase().includes(searchText) ||
-          item.tag.toLowerCase().includes(searchText),
-      );
-
-      setFilteredProperties(filtered);
+      return;
     }
+
+    const searchText = text.toLowerCase().trim();
+
+    const filtered = PROPERTIES.filter(
+      (item) =>
+        item.location.toLowerCase().includes(searchText) ||
+        item.type.toLowerCase().includes(searchText) ||
+        item.tag.toLowerCase().includes(searchText) ||
+        item.category.toLowerCase().includes(searchText),
+    );
+
+    setFilteredProperties(filtered);
+  };
+
+  // ==========================================================
+  // CLEAR SEARCH
+  // ==========================================================
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setFilteredProperties(PROPERTIES);
   };
 
   // ==========================================================
@@ -327,7 +129,7 @@ const App = () => {
   };
 
   // ==========================================================
-  // SECTIONS
+  // PROPERTY SECTIONS
   // ==========================================================
 
   const propertySections = PROPERTY_SECTIONS.map((title) => ({
@@ -361,33 +163,40 @@ const App = () => {
       })}
     >
       <View className="mb-4 overflow-hidden rounded-xl border border-[#242424] bg-[#151515]">
+        {/* ================================================== */}
         {/* TOP INFORMATION */}
+        {/* ================================================== */}
+
         <View className="flex-row items-center justify-between px-3 py-3">
-          <Text className="text-sm text-white">
-            {item.tag}
-          </Text>
+          <Text className="text-sm text-white">{item.tag}</Text>
 
           <Text className="text-sm font-semibold text-gray-300">
             {item.period}
           </Text>
         </View>
 
+        {/* ================================================== */}
         {/* PROPERTY IMAGE */}
+        {/* ================================================== */}
+
         <Image
           source={{ uri: item.image }}
-          className={
-            isFullWidth
-              ? "h-40 w-full"
-              : "h-28 w-full"
-          }
+          className={isFullWidth ? "h-40 w-full" : "h-28 w-full"}
           resizeMode="cover"
         />
 
+        {/* ================================================== */}
         {/* CARD CONTENT */}
+        {/* ================================================== */}
+
         <View className="px-3 pb-3 pt-2">
+          {/* ================================================= */}
           {/* PROPERTY DETAILS */}
+          {/* ================================================= */}
+
           <View className="mb-2">
             {/* PROPERTY TYPE */}
+
             <View className="w-full flex-row items-center rounded-md bg-[#242424] px-2.5 py-1.5">
               <Ionicons
                 name="business-outline"
@@ -400,8 +209,11 @@ const App = () => {
               </Text>
             </View>
 
+            {/* BEDS + BATHS */}
+
             <View className="mt-1.5 flex-row gap-1.5">
               {/* BEDROOMS */}
+
               <View className="flex-1 flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
                 <Ionicons
                   name="bed-outline"
@@ -415,6 +227,7 @@ const App = () => {
               </View>
 
               {/* BATHROOMS */}
+
               <View className="flex-1 flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
                 <Ionicons
                   name="water-outline"
@@ -429,10 +242,14 @@ const App = () => {
             </View>
           </View>
 
+          {/* ================================================= */}
           {/* PRICE + LOCATION */}
+          {/* ================================================= */}
+
           {isFullWidth ? (
             <View className="mt-1 flex-row items-center justify-between">
               {/* PRICE */}
+
               <View className="mr-3 flex-1">
                 <Text className="mb-0.5 text-xs text-gray-500">
                   Price
@@ -448,6 +265,7 @@ const App = () => {
               </View>
 
               {/* LOCATION */}
+
               <View className="flex-1 flex-row items-center justify-end">
                 <Ionicons
                   name="location-outline"
@@ -467,11 +285,13 @@ const App = () => {
           ) : (
             <>
               {/* PRICE */}
+
               <Text className="mb-2 text-sm font-bold text-white">
                 {item.price}
               </Text>
 
               {/* LOCATION */}
+
               <View className="flex-row items-center">
                 <Ionicons
                   name="location-outline"
@@ -551,7 +371,7 @@ const App = () => {
 
         {searchQuery.length > 0 && (
           <Pressable
-            onPress={() => handleSearch("")}
+            onPress={clearSearch}
             accessibilityRole="button"
             accessibilityLabel="Clear search"
             style={({ pressed }) => ({
@@ -573,7 +393,11 @@ const App = () => {
 
       <View className="px-5 pb-1.5 pt-3.5">
         <Text className="text-sm font-medium text-gray-400">
-          {filteredProperties.length} properties found
+          {filteredProperties.length}{" "}
+          {filteredProperties.length === 1
+            ? "property"
+            : "properties"}{" "}
+          found
         </Text>
       </View>
 
@@ -584,8 +408,7 @@ const App = () => {
       <SectionList
         sections={propertySections}
         renderItem={({ item: propertyRow }) => {
-          const isFullWidth =
-            propertyRow.length === 1;
+          const isFullWidth = propertyRow.length === 1;
 
           return (
             <View className="flex-row gap-3">
@@ -614,43 +437,60 @@ const App = () => {
           paddingHorizontal: 16,
           paddingBottom: 20,
         }}
-        renderSectionHeader={({ section }) => (
-          <View className="mb-2.5 mt-5 flex-row items-center justify-between border-l-[3px] border-red-500 pl-2.5">
-            <Text className="text-lg font-bold text-white">
-              {section.title}
-            </Text>
+        renderSectionHeader={({ section }) => {
+          const listingCount = section.data.flat().length;
 
-            <Text className="text-xs font-semibold text-red-400">
-              {section.data.flat().length}{" "}
-              {section.data.flat().length === 1
-                ? "listing"
-                : "listings"}
-            </Text>
-          </View>
-        )}
-        renderSectionFooter={({ section }) =>
-          section.data.length === 0 ? (
-            <View className="mb-2 flex-row items-center rounded-xl border border-[#303030] bg-[#181818] px-4 py-4">
-              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#241616]">
-                <Ionicons
-                  name="location-outline"
-                  size={20}
-                  color="#f87171"
-                />
-              </View>
+          return (
+            <View className="mb-2.5 mt-5 flex-row items-center justify-between border-l-[3px] border-red-500 pl-2.5">
+              <Text className="text-lg font-bold text-white">
+                {section.title}
+              </Text>
 
-              <View className="flex-1">
-                <Text className="text-sm font-semibold text-white">
-                  No properties in your location
-                </Text>
-
-                <Text className="mt-0.5 text-xs leading-4 text-gray-400">
-                  Check back later or update your location
-                  to see nearby listings.
-                </Text>
-              </View>
+              <Text className="text-xs font-semibold text-red-400">
+                {listingCount}{" "}
+                {listingCount === 1
+                  ? "listing"
+                  : "listings"}
+              </Text>
             </View>
-          ) : (
+          );
+        }}
+        renderSectionFooter={({ section }) => {
+          const listingCount = section.data.flat().length;
+
+          // ====================================================
+          // NO PROPERTIES
+          // ====================================================
+
+          if (listingCount === 0) {
+            return (
+              <View className="mb-2 flex-row items-center rounded-xl border border-[#303030] bg-[#181818] px-4 py-4">
+                <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#241616]">
+                  <Ionicons
+                    name="location-outline"
+                    size={20}
+                    color="#f87171"
+                  />
+                </View>
+
+                <View className="flex-1">
+                  <Text className="text-sm font-semibold text-white">
+                    No properties in this section
+                  </Text>
+
+                  <Text className="mt-0.5 text-xs leading-4 text-gray-400">
+                    Check back later for new listings.
+                  </Text>
+                </View>
+              </View>
+            );
+          }
+
+          // ====================================================
+          // VIEW ALL
+          // ====================================================
+
+          return (
             <Pressable
               accessibilityLabel={`View all ${section.title}`}
               accessibilityRole="button"
@@ -680,8 +520,8 @@ const App = () => {
                 />
               </View>
             </Pressable>
-          )
-        }
+          );
+        }}
         ListEmptyComponent={
           <View className="items-center justify-center py-16">
             <Ionicons
@@ -702,7 +542,7 @@ const App = () => {
       />
 
       {/* ====================================================== */}
-      {/* REUSABLE AUTH MODAL */}
+      {/* AUTH MODAL */}
       {/* ====================================================== */}
 
       <AuthRequiredModal
@@ -711,7 +551,7 @@ const App = () => {
       />
 
       {/* ====================================================== */}
-      {/* REUSABLE SIDE MENU */}
+      {/* SIDE MENU */}
       {/* ====================================================== */}
 
       <SideMenu
@@ -723,4 +563,3 @@ const App = () => {
 };
 
 export default App;
-
