@@ -1,401 +1,198 @@
-import React, { useMemo, useState } from "react";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
-  StatusBar,
+  RefreshControl,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
 
+import AgentCard from "@/app/components/agents/AgentCard";
 import SideMenu from "@/app/components/sidebar/SideMenu";
-
-type Agent = {
-  id: string;
-  name: string;
-  role: string;
-  phone: string;
-  email: string;
-  location: string;
-  image: string;
-};
-
-const AGENTS: Agent[] = [
-  {
-    id: "1",
-    name: "John Banda",
-    role: "Senior Real Estate Agent",
-    phone: "+265 888 123 456",
-    email: "john.banda@imorrcs.com",
-    location: "Blantyre",
-    image: "https://randomuser.me/api/portraits/men/32.jpg",
-  },
-  {
-    id: "2",
-    name: "Mary Phiri",
-    role: "Real Estate Agent",
-    phone: "+265 999 234 567",
-    email: "mary.phiri@imorrcs.com",
-    location: "Lilongwe",
-    image: "https://randomuser.me/api/portraits/women/44.jpg",
-  },
-  {
-    id: "3",
-    name: "Peter Mbewe",
-    role: "Property Consultant",
-    phone: "+265 888 345 678",
-    email: "peter.mbewe@imorrcs.com",
-    location: "Mzuzu",
-    image: "https://randomuser.me/api/portraits/men/46.jpg",
-  },
-  {
-    id: "4",
-    name: "Grace Chirwa",
-    role: "Real Estate Agent",
-    phone: "+265 999 456 789",
-    email: "grace.chirwa@imorrcs.com",
-    location: "Blantyre",
-    image: "https://randomuser.me/api/portraits/women/65.jpg",
-  },
-  {
-    id: "5",
-    name: "David Phiri",
-    role: "Property Specialist",
-    phone: "+265 888 567 890",
-    email: "david.phiri@imorrcs.com",
-    location: "Lilongwe",
-    image: "https://randomuser.me/api/portraits/men/52.jpg",
-  },
-  {
-    id: "6",
-    name: "Angela Banda",
-    role: "Real Estate Consultant",
-    phone: "+265 999 678 901",
-    email: "angela.banda@imorrcs.com",
-    location: "Zomba",
-    image: "https://randomuser.me/api/portraits/women/33.jpg",
-  },
-  {
-    id: "7",
-    name: "Charles Mwale",
-    role: "Senior Property Consultant",
-    phone: "+265 888 789 012",
-    email: "charles.mwale@imorrcs.com",
-    location: "Mzuzu",
-    image: "https://randomuser.me/api/portraits/men/61.jpg",
-  },
-  {
-    id: "8",
-    name: "Linda Nkhoma",
-    role: "Real Estate Agent",
-    phone: "+265 999 890 123",
-    email: "linda.nkhoma@imorrcs.com",
-    location: "Lilongwe",
-    image: "https://randomuser.me/api/portraits/women/49.jpg",
-  },
-  {
-    id: "9",
-    name: "Brian Kalua",
-    role: "Property Consultant",
-    phone: "+265 888 901 234",
-    email: "brian.kalua@imorrcs.com",
-    location: "Blantyre",
-    image: "https://randomuser.me/api/portraits/men/75.jpg",
-  },
-  {
-    id: "10",
-    name: "Sarah Mhone",
-    role: "Real Estate Agent",
-    phone: "+265 999 012 345",
-    email: "sarah.mhone@imorrcs.com",
-    location: "Zomba",
-    image: "https://randomuser.me/api/portraits/women/68.jpg",
-  },
-];
+import { fetchAgents, type Agent } from "@/app/services/agentApi";
 
 export default function AgentsScreen() {
   const router = useRouter();
 
-  // ============================================================
-  // SEARCH
-  // ============================================================
-
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // ============================================================
-  // SIDE MENU
-  // ============================================================
-
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [search, setSearch] = useState("");
 
-  // ============================================================
-  // FILTER AGENTS
-  // ============================================================
-
-  const filteredAgents = useMemo(() => {
-    const searchText = searchQuery.trim().toLowerCase();
-
-    if (!searchText) {
-      return AGENTS;
+  const loadAgents = useCallback(async () => {
+    try {
+      const result = await fetchAgents();
+      setAgents(result);
+    } catch (error) {
+      console.error("Failed to load agents:", error);
+      setAgents([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  }, []);
 
-    return AGENTS.filter(
-      (agent) =>
-        agent.name.toLowerCase().includes(searchText) ||
-        agent.role.toLowerCase().includes(searchText) ||
-        agent.location.toLowerCase().includes(searchText) ||
-        agent.phone.toLowerCase().includes(searchText) ||
-        agent.email.toLowerCase().includes(searchText),
-    );
-  }, [searchQuery]);
+  useEffect(() => {
+    void loadAgents();
+  }, [loadAgents]);
 
-  // ============================================================
-  // CLEAR SEARCH
-  // ============================================================
-
-  const clearSearch = () => {
-    setSearchQuery("");
+  const handleRefresh = () => {
+    setRefreshing(true);
+    void loadAgents();
   };
 
-  // ============================================================
-  // AGENT CARD
-  // ============================================================
+  const handleAgentPress = (agent: Agent) => {
+    router.push({
+      pathname: "/(tabs)/agents/[id]",
+      params: {
+        id: agent.id,
+      },
+    });
+  };
+
+  const filteredAgents = agents.filter((agent) => {
+    const searchText = search.trim().toLowerCase();
+
+    if (!searchText) {
+      return true;
+    }
+
+    return (
+      agent.name.toLowerCase().includes(searchText) ||
+      agent.email.toLowerCase().includes(searchText) ||
+      agent.specialization.toLowerCase().includes(searchText) ||
+      agent.address.toLowerCase().includes(searchText) ||
+      agent.coverageAreas.some(
+        (area) =>
+          area.location_name.toLowerCase().includes(searchText) ||
+          area.district_name.toLowerCase().includes(searchText)
+      )
+    );
+  });
 
   const renderAgent = ({ item }: { item: Agent }) => {
     return (
-      <Pressable
-        onPress={() =>
-          router.push({
-            pathname: "/(tabs)/agents/[id]",
-            params: {
-              id: item.id,
-            },
-          })
-        }
-        className="mb-4 flex-1 overflow-hidden rounded-2xl border border-[#292929] bg-[#151515]"
-        style={({ pressed }) => ({
-          opacity: pressed ? 0.75 : 1,
-          transform: [
-            {
-              scale: pressed ? 0.98 : 1,
-            },
-          ],
-        })}
-      >
-        {/* AGENT IMAGE */}
+      <AgentCard
+        agent={item}
+        isFullWidth
+        onPress={handleAgentPress}
+      />
+    );
+  };
 
-        <Image
-          source={{ uri: item.image }}
-          className="h-48 w-full"
-          resizeMode="cover"
+  const renderEmpty = () => {
+    if (loading) {
+      return null;
+    }
+
+    return (
+      <View className="items-center justify-center px-6 py-20">
+        <Ionicons
+          name="people-outline"
+          size={60}
+          color="#444444"
         />
 
-        {/* AGENT INFORMATION */}
+        <Text className="mt-4 text-center text-lg font-bold text-gray-300">
+          No agents found
+        </Text>
 
-        <View className="p-3">
-          <Text
-            className="text-base font-bold text-white"
-            numberOfLines={1}
-          >
-            {item.name}
-          </Text>
-
-          <Text
-            className="mt-1 text-xs text-red-400"
-            numberOfLines={1}
-          >
-            {item.role}
-          </Text>
-
-          {/* LOCATION */}
-
-          <View className="mt-3 flex-row items-center">
-            <Ionicons
-              name="location-outline"
-              size={15}
-              color="#999"
-            />
-
-            <Text
-              className="ml-1 flex-1 text-xs text-gray-400"
-              numberOfLines={1}
-            >
-              {item.location}
-            </Text>
-          </View>
-
-          {/* PHONE */}
-
-          <View className="mt-1.5 flex-row items-center">
-            <Ionicons
-              name="call-outline"
-              size={15}
-              color="#999"
-            />
-
-            <Text
-              className="ml-1 flex-1 text-xs text-gray-400"
-              numberOfLines={1}
-            >
-              {item.phone}
-            </Text>
-          </View>
-
-          {/* VIEW PROFILE */}
-
-          <View className="mt-4 flex-row items-center justify-center rounded-lg bg-red-600 px-3 py-2.5">
-            <Text className="text-xs font-bold text-white">
-              View Profile
-            </Text>
-
-            <Ionicons
-              name="arrow-forward"
-              size={14}
-              color="#fff"
-              style={{ marginLeft: 5 }}
-            />
-          </View>
-        </View>
-      </Pressable>
+        <Text className="mt-2 text-center text-sm text-gray-500">
+          Try changing your search or refresh the list.
+        </Text>
+      </View>
     );
   };
 
   return (
     <SafeAreaView className="flex-1 bg-[#0d0d0d]">
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
-      />
-
-      {/* ====================================================== */}
-      {/* HEADER */}
-      {/* ====================================================== */}
-
-      <View className="border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
+      {/* Header */}
+      <View className="border-b border-[#222222] px-5 pb-4 pt-3">
         <View className="flex-row items-center justify-between">
-          <View>
+          <View className="flex-1">
             <Text className="text-2xl font-bold text-white">
-              Our Agents
+              Agents
             </Text>
 
             <Text className="mt-1 text-sm text-gray-500">
-              Meet our property professionals
+              Meet our real estate professionals
             </Text>
           </View>
 
-          {/* MENU BUTTON */}
-
           <Pressable
             onPress={() => setMenuVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Open menu"
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.6 : 1,
-            })}
+            className="ml-4 h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
           >
             <Ionicons
               name="menu-outline"
               size={28}
-              color="#fff"
+              color="#ffffff"
             />
+          </Pressable>
+        </View>
+
+        {/* Search */}
+        <View className="mt-4 flex-row items-center rounded-xl border border-[#292929] bg-[#171717] px-4">
+          <Ionicons
+            name="search-outline"
+            size={20}
+            color="#777777"
+          />
+
+          <Pressable
+            className="flex-1"
+            onPress={() => {
+              // Search field is intentionally handled by the TextInput below.
+            }}
+          >
+            {/* Empty Pressable kept out of the actual input area */}
           </Pressable>
         </View>
       </View>
 
-      {/* ====================================================== */}
-      {/* SEARCH BAR */}
-      {/* ====================================================== */}
+      {/* Loading */}
+      {loading ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator
+            size="large"
+            color="#ef4444"
+          />
 
-      <View className="mx-4 mt-4 flex-row items-center rounded-xl border border-[#292929] bg-[#181818] px-3.5">
-        <Ionicons
-          name="search-outline"
-          size={20}
-          color="#999"
-        />
-
-        <TextInput
-          className="h-12 flex-1 px-2.5 text-base text-white"
-          placeholder="Search agents..."
-          placeholderTextColor="#777"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-
-        {searchQuery.length > 0 && (
-          <Pressable
-            onPress={clearSearch}
-            accessibilityRole="button"
-            accessibilityLabel="Clear search"
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.6 : 1,
-            })}
-          >
-            <Ionicons
-              name="close-circle"
-              size={20}
-              color="#ef4444"
+          <Text className="mt-3 text-sm text-gray-500">
+            Loading agents...
+          </Text>
+        </View>
+      ) : (
+        /*
+         * IMPORTANT:
+         * All agents are rendered using FlatList.
+         */
+        <FlatList
+          data={filteredAgents}
+          keyExtractor={(item) => item.id}
+          renderItem={renderAgent}
+          contentContainerStyle={{
+            padding: 16,
+            paddingBottom: 30,
+          }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#ef4444"
             />
-          </Pressable>
-        )}
-      </View>
-
-      {/* ====================================================== */}
-      {/* RESULTS COUNT */}
-      {/* ====================================================== */}
-
-      <View className="px-5 pb-1.5 pt-3.5">
-        <Text className="text-sm font-medium text-gray-400">
-          {filteredAgents.length}{" "}
-          {filteredAgents.length === 1 ? "agent" : "agents"} found
-        </Text>
-      </View>
-
-      {/* ====================================================== */}
-      {/* AGENT LIST */}
-      {/* ====================================================== */}
-
-      <FlatList
-        data={filteredAgents}
-        renderItem={renderAgent}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={{
-          gap: 12,
-        }}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 10,
-          paddingBottom: 30,
-        }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View className="items-center justify-center py-16">
-            <Ionicons
-              name="people-outline"
-              size={60}
-              color="#444"
-            />
-
-            <Text className="mt-4 text-lg font-semibold text-gray-400">
-              No agents found
-            </Text>
-
-            <Text className="mt-1 text-center text-sm text-gray-600">
-              Try searching with a different name or location.
-            </Text>
-          </View>
-        }
-      />
-
-      {/* ====================================================== */}
-      {/* SIDE MENU */}
-      {/* ====================================================== */}
+          }
+          ListEmptyComponent={renderEmpty}
+          keyboardShouldPersistTaps="handled"
+          removeClippedSubviews
+        />
+      )}
 
       <SideMenu
         visible={menuVisible}

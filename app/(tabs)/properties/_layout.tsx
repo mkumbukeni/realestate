@@ -30,6 +30,13 @@ export default function PropertiesLayout() {
           headerShown: false,
         }}
       />
+
+      <Stack.Screen
+        name="list-property"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

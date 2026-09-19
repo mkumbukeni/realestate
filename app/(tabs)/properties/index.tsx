@@ -1,9 +1,18 @@
+
+// app/(tabs)/properties/index.tsx
+
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
-  Image,
+  ActivityIndicator,
   Pressable,
+  RefreshControl,
   SectionList,
   StatusBar,
   Text,
@@ -13,22 +22,28 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
+import PropertyCard from "@/app/components/properties/PropertyCard";
 import SideMenu from "@/app/components/sidebar/SideMenu";
 
 import {
-  PROPERTIES,
-  PROPERTY_SECTIONS,
+  fetchProperties,
   type Property,
-} from "@/app/data/data";
+} from "@/app/services/propertyApi";
 
 // ============================================================
 // PROPERTY ROW HELPER
 // ============================================================
 
-function createPropertyRows(properties: Property[]) {
+function createPropertyRows(
+  properties: Property[],
+): Property[][] {
   const rows: Property[][] = [];
 
-  for (let index = 0; index < properties.length; index += 2) {
+  for (
+    let index = 0;
+    index < properties.length;
+    index += 2
+  ) {
     rows.push(properties.slice(index, index + 2));
   }
 
@@ -36,20 +51,40 @@ function createPropertyRows(properties: Property[]) {
 }
 
 // ============================================================
+// SECTION TYPE
+// ============================================================
+
+interface PropertySection {
+  title: string;
+  data: Property[][];
+}
+
+// ============================================================
 // APP
 // ============================================================
 
-const App = () => {
+const PropertiesScreen = () => {
   const router = useRouter();
+
+  // ==========================================================
+  // PROPERTIES
+  // ==========================================================
+
+  const [properties, setProperties] = useState<Property[]>(
+    [],
+  );
+
+  const [loading, setLoading] = useState(true);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
 
   // ==========================================================
   // SEARCH
   // ==========================================================
 
   const [searchQuery, setSearchQuery] = useState("");
-
-  const [filteredProperties, setFilteredProperties] =
-    useState<Property[]>(PROPERTIES);
 
   // ==========================================================
   // SIDE MENU
@@ -61,15 +96,15 @@ const App = () => {
   // AUTH MODAL
   // ==========================================================
 
-  const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [authModalVisible, setAuthModalVisible] =
+    useState(false);
 
   /*
    * IMPORTANT:
    *
-   * Replace this with your actual authentication state
-   * from your LoginContext/AuthContext.
+   * Replace this with your actual LoginContext/AuthContext.
    *
-   * For example:
+   * Example:
    *
    * const { isLoggedIn } = useLogin();
    */
@@ -77,29 +112,84 @@ const App = () => {
   const isLoggedIn = false;
 
   // ==========================================================
+  // FETCH PROPERTIES
+  // ==========================================================
+
+  const loadProperties = useCallback(async () => {
+    try {
+      setError(null);
+
+      const result = await fetchProperties();
+
+      setProperties(result);
+    } catch (requestError) {
+      console.error(
+        "Failed to load properties:",
+        requestError,
+      );
+
+      if (requestError instanceof Error) {
+        setError(requestError.message);
+      } else {
+        setError(
+          "Unable to load properties. Please try again.",
+        );
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  // ==========================================================
+  // INITIAL LOAD
+  // ==========================================================
+
+  useEffect(() => {
+    void loadProperties();
+  }, [loadProperties]);
+
+  // ==========================================================
+  // PULL TO REFRESH
+  // ==========================================================
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    void loadProperties();
+  };
+
+  // ==========================================================
   // SEARCH
   // ==========================================================
 
-  const handleSearch = (text: string) => {
-    setSearchQuery(text);
+  const filteredProperties = useMemo(() => {
+    const searchText = searchQuery
+      .toLowerCase()
+      .trim();
 
-    if (text.trim() === "") {
-      setFilteredProperties(PROPERTIES);
-      return;
+    if (searchText === "") {
+      return properties;
     }
 
-    const searchText = text.toLowerCase().trim();
+    return properties.filter((property) => {
+      const searchableText = [
+        property.location,
+        property.area,
+        property.district,
+        property.region,
+        property.type,
+        property.tag,
+        property.category,
+        property.propertyDesign,
+        property.constructionStage,
+        property.description,
+      ]
+        .join(" ")
+        .toLowerCase();
 
-    const filtered = PROPERTIES.filter(
-      (item) =>
-        item.location.toLowerCase().includes(searchText) ||
-        item.type.toLowerCase().includes(searchText) ||
-        item.tag.toLowerCase().includes(searchText) ||
-        item.category.toLowerCase().includes(searchText),
-    );
-
-    setFilteredProperties(filtered);
-  };
+      return searchableText.includes(searchText);
+    });
+  }, [properties, searchQuery]);
 
   // ==========================================================
   // CLEAR SEARCH
@@ -107,14 +197,15 @@ const App = () => {
 
   const clearSearch = () => {
     setSearchQuery("");
-    setFilteredProperties(PROPERTIES);
   };
 
   // ==========================================================
   // PROPERTY PRESS
   // ==========================================================
 
-  const handlePropertyPress = (property: Property) => {
+  const handlePropertyPress = (
+    property: Property,
+  ) => {
     if (!isLoggedIn) {
       setAuthModalVisible(true);
       return;
@@ -132,190 +223,166 @@ const App = () => {
   // PROPERTY SECTIONS
   // ==========================================================
 
-  const propertySections = PROPERTY_SECTIONS.map((title) => ({
-    title,
-    data: createPropertyRows(
-      filteredProperties.filter(
-        (property) => property.category === title,
-      ),
-    ),
-  }));
+  const propertySections = useMemo<
+    PropertySection[]
+  >(() => {
+    const sections: PropertySection[] = [];
+
+    const forSale = filteredProperties.filter(
+      (property) =>
+        property.category === "For Sale",
+    );
+
+    const forRent = filteredProperties.filter(
+      (property) =>
+        property.category === "For Rent",
+    );
+
+    if (forSale.length > 0) {
+      sections.push({
+        title: "For Sale",
+        data: createPropertyRows(forSale),
+      });
+    }
+
+    if (forRent.length > 0) {
+      sections.push({
+        title: "For Rent",
+        data: createPropertyRows(forRent),
+      });
+    }
+
+    return sections;
+  }, [filteredProperties]);
 
   // ==========================================================
-  // PROPERTY CARD
+  // LOADING SCREEN
   // ==========================================================
 
-  const renderPropertyCard = (
-    item: Property,
-    isFullWidth: boolean = false,
-  ) => (
-    <Pressable
-      onPress={() => handlePropertyPress(item)}
-      accessibilityRole="button"
-      accessibilityLabel={`View ${item.type} property in ${item.location}`}
-      style={({ pressed }) => ({
-        opacity: pressed ? 0.75 : 1,
-        transform: [
-          {
-            scale: pressed ? 0.98 : 1,
-          },
-        ],
-      })}
-    >
-      <View className="mb-4 overflow-hidden rounded-xl border border-[#242424] bg-[#151515]">
-        {/* ================================================== */}
-        {/* TOP INFORMATION */}
-        {/* ================================================== */}
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor="#0d0d0d"
+        />
 
-        <View className="flex-row items-center justify-between px-3 py-3">
-          <Text className="text-sm text-white">{item.tag}</Text>
+        {/* HEADER */}
 
-          <Text className="text-sm font-semibold text-gray-300">
-            {item.period}
+        <View className="flex-row items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
+          <Text className="text-2xl font-bold text-white">
+            Real Estate
+          </Text>
+
+          <Pressable
+            onPress={() => setMenuVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Open menu"
+          >
+            <Ionicons
+              name="menu-outline"
+              size={28}
+              color="#fff"
+            />
+          </Pressable>
+        </View>
+
+        {/* LOADING */}
+
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator
+            size="large"
+            color="#ef4444"
+          />
+
+          <Text className="mt-4 text-sm text-gray-400">
+            Loading properties...
           </Text>
         </View>
 
-        {/* ================================================== */}
-        {/* PROPERTY IMAGE */}
-        {/* ================================================== */}
+        <SideMenu
+          visible={menuVisible}
+          onClose={() => setMenuVisible(false)}
+        />
+      </SafeAreaView>
+    );
+  }
 
-        <Image
-          source={{ uri: item.image }}
-          className={isFullWidth ? "h-40 w-full" : "h-28 w-full"}
-          resizeMode="cover"
+  // ==========================================================
+  // ERROR SCREEN
+  // ==========================================================
+
+  if (error && properties.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor="#0d0d0d"
         />
 
-        {/* ================================================== */}
-        {/* CARD CONTENT */}
-        {/* ================================================== */}
+        {/* HEADER */}
 
-        <View className="px-3 pb-3 pt-2">
-          {/* ================================================= */}
-          {/* PROPERTY DETAILS */}
-          {/* ================================================= */}
+        <View className="flex-row items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
+          <Text className="text-2xl font-bold text-white">
+            Real Estate
+          </Text>
 
-          <View className="mb-2">
-            {/* PROPERTY TYPE */}
+          <Pressable
+            onPress={() => setMenuVisible(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Open menu"
+          >
+            <Ionicons
+              name="menu-outline"
+              size={28}
+              color="#fff"
+            />
+          </Pressable>
+        </View>
 
-            <View className="w-full flex-row items-center rounded-md bg-[#242424] px-2.5 py-1.5">
-              <Ionicons
-                name="business-outline"
-                size={15}
-                color="#d1d1d1"
-              />
+        {/* ERROR */}
 
-              <Text className="ml-1 text-xs text-gray-300">
-                {item.type}
-              </Text>
-            </View>
-
-            {/* BEDS + BATHS */}
-
-            <View className="mt-1.5 flex-row gap-1.5">
-              {/* BEDROOMS */}
-
-              <View className="flex-1 flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
-                <Ionicons
-                  name="bed-outline"
-                  size={15}
-                  color="#d1d1d1"
-                />
-
-                <Text className="ml-1 text-xs text-gray-300">
-                  {item.beds} Beds
-                </Text>
-              </View>
-
-              {/* BATHROOMS */}
-
-              <View className="flex-1 flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
-                <Ionicons
-                  name="water-outline"
-                  size={15}
-                  color="#d1d1d1"
-                />
-
-                <Text className="ml-1 text-xs text-gray-300">
-                  {item.baths} Baths
-                </Text>
-              </View>
-            </View>
+        <View className="flex-1 items-center justify-center px-8">
+          <View className="h-16 w-16 items-center justify-center rounded-full bg-[#241616]">
+            <Ionicons
+              name="cloud-offline-outline"
+              size={32}
+              color="#ef4444"
+            />
           </View>
 
-          {/* ================================================= */}
-          {/* PRICE + LOCATION */}
-          {/* ================================================= */}
+          <Text className="mt-5 text-center text-lg font-bold text-white">
+            Unable to load properties
+          </Text>
 
-          {isFullWidth ? (
-            <View className="mt-1 flex-row items-center justify-between">
-              {/* PRICE */}
+          <Text className="mt-2 text-center text-sm leading-5 text-gray-500">
+            {error}
+          </Text>
 
-              <View className="mr-3 flex-1">
-                <Text className="mb-0.5 text-xs text-gray-500">
-                  Price
-                </Text>
-
-                <Text
-                  className="text-sm font-bold text-white"
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  {item.price}
-                </Text>
-              </View>
-
-              {/* LOCATION */}
-
-              <View className="flex-1 flex-row items-center justify-end">
-                <Ionicons
-                  name="location-outline"
-                  size={17}
-                  color="#999"
-                />
-
-                <Text
-                  className="ml-1 text-xs text-gray-400"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {item.location}
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <>
-              {/* PRICE */}
-
-              <Text className="mb-2 text-sm font-bold text-white">
-                {item.price}
-              </Text>
-
-              {/* LOCATION */}
-
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="location-outline"
-                  size={17}
-                  color="#999"
-                />
-
-                <Text
-                  className="ml-1 flex-1 text-xs text-gray-400"
-                  numberOfLines={1}
-                >
-                  {item.location}
-                </Text>
-              </View>
-            </>
-          )}
+          <Pressable
+            onPress={() => {
+              setLoading(true);
+              void loadProperties();
+            }}
+            className="mt-6 rounded-xl bg-red-600 px-6 py-3"
+          >
+            <Text className="font-bold text-white">
+              Try Again
+            </Text>
+          </Pressable>
         </View>
-      </View>
-    </Pressable>
-  );
 
-  // ============================================================
-  // RETURN
-  // ============================================================
+        <SideMenu
+          visible={menuVisible}
+          onClose={() => setMenuVisible(false)}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // ==========================================================
+  // MAIN SCREEN
+  // ==========================================================
 
   return (
     <SafeAreaView className="flex-1 bg-[#0d0d0d]">
@@ -358,15 +425,15 @@ const App = () => {
           name="search-outline"
           size={20}
           color="#999"
-          className="mr-2.5"
         />
 
         <TextInput
-          className="h-12 flex-1 text-base text-white"
+          className="h-12 flex-1 px-2 text-base text-white"
           placeholder="Search by location, type, or tag..."
           placeholderTextColor="#777"
           value={searchQuery}
-          onChangeText={handleSearch}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
         />
 
         {searchQuery.length > 0 && (
@@ -408,7 +475,8 @@ const App = () => {
       <SectionList
         sections={propertySections}
         renderItem={({ item: propertyRow }) => {
-          const isFullWidth = propertyRow.length === 1;
+          const isFullWidth =
+            propertyRow.length === 1;
 
           return (
             <View className="flex-row gap-3">
@@ -417,10 +485,11 @@ const App = () => {
                   key={property.id}
                   className="flex-1"
                 >
-                  {renderPropertyCard(
-                    property,
-                    isFullWidth,
-                  )}
+                  <PropertyCard
+                    property={property}
+                    isFullWidth={isFullWidth}
+                    onPress={handlePropertyPress}
+                  />
                 </View>
               ))}
             </View>
@@ -433,12 +502,21 @@ const App = () => {
         }
         showsVerticalScrollIndicator={false}
         stickySectionHeadersEnabled={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#ef4444"
+            colors={["#ef4444"]}
+          />
+        }
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingBottom: 20,
         }}
         renderSectionHeader={({ section }) => {
-          const listingCount = section.data.flat().length;
+          const listingCount =
+            section.data.flat().length;
 
           return (
             <View className="mb-2.5 mt-5 flex-row items-center justify-between border-l-[3px] border-red-500 pl-2.5">
@@ -456,39 +534,12 @@ const App = () => {
           );
         }}
         renderSectionFooter={({ section }) => {
-          const listingCount = section.data.flat().length;
-
-          // ====================================================
-          // NO PROPERTIES
-          // ====================================================
+          const listingCount =
+            section.data.flat().length;
 
           if (listingCount === 0) {
-            return (
-              <View className="mb-2 flex-row items-center rounded-xl border border-[#303030] bg-[#181818] px-4 py-4">
-                <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#241616]">
-                  <Ionicons
-                    name="location-outline"
-                    size={20}
-                    color="#f87171"
-                  />
-                </View>
-
-                <View className="flex-1">
-                  <Text className="text-sm font-semibold text-white">
-                    No properties in this section
-                  </Text>
-
-                  <Text className="mt-0.5 text-xs leading-4 text-gray-400">
-                    Check back later for new listings.
-                  </Text>
-                </View>
-              </View>
-            );
+            return null;
           }
-
-          // ====================================================
-          // VIEW ALL
-          // ====================================================
 
           return (
             <Pressable
@@ -534,8 +585,8 @@ const App = () => {
               No properties found
             </Text>
 
-            <Text className="mt-1 text-sm text-gray-600">
-              Try adjusting your search
+            <Text className="mt-1 text-center text-sm text-gray-600">
+              Try adjusting your search or check back later.
             </Text>
           </View>
         }
@@ -562,4 +613,5 @@ const App = () => {
   );
 };
 
-export default App;
+export default PropertiesScreen;
+
