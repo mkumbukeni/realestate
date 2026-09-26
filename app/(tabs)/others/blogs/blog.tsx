@@ -88,7 +88,7 @@ export default function BlogsScreen() {
 
   const openBlog = (blog: Blog) => {
     router.push({
-      pathname: "/blog-details",
+      pathname: "/others/blogs/[id]",
       params: {
         id: blog.id,
         slug: blog.slug,

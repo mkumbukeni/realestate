@@ -1,3 +1,4 @@
+
 /*
 |--------------------------------------------------------------------------
 | Blog API Service
@@ -64,7 +65,10 @@ export async function getBlogs(): Promise<Blog[]> {
 
   const result: BlogsResponse = await response.json();
 
-  console.log("Total blogs received:", result.data?.length ?? 0);
+  console.log(
+    "Total blogs received:",
+    result.data?.length ?? 0
+  );
 
   if (!Array.isArray(result.data)) {
     return [];
@@ -74,17 +78,6 @@ export async function getBlogs(): Promise<Blog[]> {
   |--------------------------------------------------------------------------
   | Only iMORRCS blogs
   |--------------------------------------------------------------------------
-  |
-  | The API value is:
-  |
-  | "imorccs"
-  |
-  | We normalize the value to protect against:
-  | - IMORCCS
-  | - Imorccs
-  | - "imorccs "
-  | - " imorccs"
-  |
   */
 
   const imorccsBlogs = result.data.filter((blog) => {
@@ -112,3 +105,41 @@ export async function getBlogs(): Promise<Blog[]> {
 
   return imorccsBlogs;
 }
+
+/*
+|--------------------------------------------------------------------------
+| Get Blog By ID
+|--------------------------------------------------------------------------
+|
+| The /blogs endpoint already returns the complete blog object,
+| including the full content.
+|
+| We therefore find the requested blog from the existing blog list
+| instead of assuming that the backend provides:
+|
+| GET /blogs/{id}
+|
+*/
+
+export async function getBlogById(
+  id: string
+): Promise<Blog> {
+  if (!id) {
+    throw new Error("Blog ID is required.");
+  }
+
+  const blogs = await getBlogs();
+
+  const blog = blogs.find(
+    (item) => item.id === id
+  );
+
+  if (!blog) {
+    throw new Error(
+      `Blog with ID "${id}" was not found.`
+    );
+  }
+
+  return blog;
+}
+

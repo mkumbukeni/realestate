@@ -18,7 +18,7 @@ const MENU_ITEMS: MenuItem[] = [
     title: "Blogs",
     description: "Read the latest real estate news, guides and insights.",
     icon: "newspaper-outline",
-    route: "others/blogs",
+    route: "others/blogs/blog",
   },
   {
     title: "About",
