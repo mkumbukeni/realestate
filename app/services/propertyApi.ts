@@ -1,8 +1,7 @@
-
 // app/services/propertyApi.ts
 
 // ============================================================
-// API URL
+// API BASE URL
 // ============================================================
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -13,13 +12,7 @@ if (!API_URL) {
   );
 }
 
-export const PROPERTIES_API_URL =
-  `${API_URL}/properties`;
-
-console.log(
-  "PROPERTIES_API_URL:",
-  PROPERTIES_API_URL,
-);
+export const BASE_API_URL = API_URL.replace(/\/+$/, "");
 
 // ============================================================
 // API TYPES
@@ -279,10 +272,8 @@ function getLocation(
 // IMAGE FORMATTER
 // ============================================================
 
-function getPropertyImage(
-  property: ApiProperty,
-): string {
-  // First priority: API cover photo
+function getPropertyImage(property: ApiProperty): string {
+  // Most Viewed endpoint provides cover_photo
   if (
     typeof property.cover_photo === "string" &&
     property.cover_photo.trim() !== ""
@@ -290,29 +281,52 @@ function getPropertyImage(
     return property.cover_photo;
   }
 
-  // Second priority: property_images
-  const firstPropertyImage =
-    property.property_images[0];
-
+  // Normal properties endpoint may provide property_images
   if (
-    firstPropertyImage &&
-    typeof firstPropertyImage.original ===
-      "string" &&
-    firstPropertyImage.original.trim() !== ""
+    Array.isArray(property.property_images) &&
+    property.property_images.length > 0
   ) {
-    return firstPropertyImage.original;
+    const firstImage = property.property_images[0];
+
+    if (
+      firstImage &&
+      typeof firstImage.original === "string" &&
+      firstImage.original.trim() !== ""
+    ) {
+      return firstImage.original;
+    }
+
+    if (
+      firstImage &&
+      typeof firstImage.thumbnail === "string" &&
+      firstImage.thumbnail.trim() !== ""
+    ) {
+      return firstImage.thumbnail;
+    }
   }
 
-  // Third priority: media
-  const firstMedia = property.media[0];
-
+  // Some responses may provide media
   if (
-    firstMedia &&
-    typeof firstMedia.original_url ===
-      "string" &&
-    firstMedia.original_url.trim() !== ""
+    Array.isArray(property.media) &&
+    property.media.length > 0
   ) {
-    return firstMedia.original_url;
+    const firstMedia = property.media[0];
+
+    if (
+      firstMedia &&
+      typeof firstMedia.original_url === "string" &&
+      firstMedia.original_url.trim() !== ""
+    ) {
+      return firstMedia.original_url;
+    }
+
+    if (
+      firstMedia &&
+      typeof firstMedia.preview_url === "string" &&
+      firstMedia.preview_url.trim() !== ""
+    ) {
+      return firstMedia.preview_url;
+    }
   }
 
   return "";
@@ -332,17 +346,29 @@ export function mapApiProperty(
       (attribute) => attribute.name,
     ) ?? [];
 
+  // ----------------------------------------------------------
+  // Latitude
+  // ----------------------------------------------------------
+
   const latitude =
     location?.latitude !== null &&
     location?.latitude !== undefined
       ? Number(location.latitude)
       : null;
 
+  // ----------------------------------------------------------
+  // Longitude
+  // ----------------------------------------------------------
+
   const longitude =
     location?.longitude !== null &&
     location?.longitude !== undefined
       ? Number(location.longitude)
       : null;
+
+  // ----------------------------------------------------------
+  // Listing Type
+  // ----------------------------------------------------------
 
   const listingType =
     property.listing_type?.trim() ||
@@ -351,12 +377,20 @@ export function mapApiProperty(
   const listingTypeLower =
     listingType.toLowerCase();
 
+  // ----------------------------------------------------------
+  // Category
+  // ----------------------------------------------------------
+
   const category =
     listingTypeLower === "sale"
       ? "For Sale"
       : listingTypeLower === "rent"
         ? "For Rent"
         : listingType;
+
+  // ----------------------------------------------------------
+  // Return common Property type
+  // ----------------------------------------------------------
 
   return {
     id: String(property.id),
@@ -497,6 +531,11 @@ function validatePropertiesResponse(
 async function fetchPropertyEndpoint(
   endpoint: string,
 ): Promise<Property[]> {
+  console.log(
+    "Fetching properties from:",
+    endpoint,
+  );
+
   const response = await fetch(endpoint);
 
   if (!response.ok) {
@@ -522,7 +561,7 @@ export async function fetchProperties(): Promise<
   Property[]
 > {
   return fetchPropertyEndpoint(
-    PROPERTIES_API_URL,
+    `${BASE_API_URL}/properties`,
   );
 }
 
@@ -530,14 +569,11 @@ export async function fetchProperties(): Promise<
 // FETCH FEATURED PROPERTIES
 // ============================================================
 
-export const FEATURED_PROPERTIES_API_URL =
-  `${PROPERTIES_API_URL}/get-featured`;
-
 export async function fetchFeaturedProperties(): Promise<
   Property[]
 > {
   return fetchPropertyEndpoint(
-    FEATURED_PROPERTIES_API_URL,
+    `${BASE_API_URL}/property/get-featured`,
   );
 }
 
@@ -545,14 +581,11 @@ export async function fetchFeaturedProperties(): Promise<
 // FETCH MOST VIEWED PROPERTIES
 // ============================================================
 
-export const MOST_VIEWED_PROPERTIES_API_URL =
-  `${PROPERTIES_API_URL}/get-most-viewed`;
-
 export async function fetchMostViewedProperties(): Promise<
   Property[]
 > {
   return fetchPropertyEndpoint(
-    MOST_VIEWED_PROPERTIES_API_URL,
+    `${BASE_API_URL}/property/get-most-viewed`,
   );
 }
 
@@ -560,14 +593,10 @@ export async function fetchMostViewedProperties(): Promise<
 // FETCH NEAREST PROPERTIES
 // ============================================================
 
-export const NEAREST_PROPERTIES_API_URL =
-  `${PROPERTIES_API_URL}/nearest`;
-
 export async function fetchNearestProperties(): Promise<
   Property[]
 > {
   return fetchPropertyEndpoint(
-    NEAREST_PROPERTIES_API_URL,
+    `${BASE_API_URL}/property/nearest`,
   );
 }
-

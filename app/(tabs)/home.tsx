@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,6 +18,8 @@ import AgentCard from "@/app/components/agents/AgentCard";
 
 import {
   fetchProperties,
+  fetchFeaturedProperties,
+  fetchMostViewedProperties,
   type Property,
 } from "@/app/services/propertyApi";
 
@@ -30,13 +31,49 @@ import {
 export default function HomeScreen() {
   const router = useRouter();
 
+  // ============================================================
+  // GENERAL STATE
+  // ============================================================
+
   const [showWelcome, setShowWelcome] = useState(true);
   const [menuVisible, setMenuVisible] = useState(false);
 
+  // ============================================================
+  // PROPERTY STATE
+  // ============================================================
+
+  // New to Market
   const [properties, setProperties] = useState<Property[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
+
+  // Featured Properties
+  const [featuredProperties, setFeaturedProperties] = useState<
+    Property[]
+  >([]);
+
+  // Open Houses
+  const [openHouseProperties, setOpenHouseProperties] = useState<
+    Property[]
+  >([]);
+
+  // Most Viewed
+  const [mostViewedProperties, setMostViewedProperties] = useState<
+    Property[]
+  >([]);
+
+  // ============================================================
+  // LOADING STATE
+  // ============================================================
 
   const [loadingProperties, setLoadingProperties] = useState(true);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
+  const [loadingOpenHouses, setLoadingOpenHouses] = useState(true);
+  const [loadingMostViewed, setLoadingMostViewed] = useState(true);
+
+  // ============================================================
+  // AGENT STATE
+  // ============================================================
+
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(true);
 
   // ============================================================
@@ -52,22 +89,115 @@ export default function HomeScreen() {
   }, []);
 
   // ============================================================
-  // LOAD PROPERTIES
+  // LOAD NEW TO MARKET
+  //
+  // Endpoint:
+  // GET /properties
   // ============================================================
 
   useEffect(() => {
     const loadProperties = async () => {
       try {
         const result = await fetchProperties();
+
         setProperties(result);
       } catch (error) {
-        console.error("Failed to load home properties:", error);
+        console.error(
+          "Failed to load new-to-market properties:",
+          error,
+        );
       } finally {
         setLoadingProperties(false);
       }
     };
 
     void loadProperties();
+  }, []);
+
+  // ============================================================
+  // LOAD FEATURED PROPERTIES
+  //
+  // Endpoint:
+  // GET /property/get-featured
+  // ============================================================
+
+  useEffect(() => {
+    const loadFeaturedProperties = async () => {
+      try {
+        const result = await fetchFeaturedProperties();
+
+        setFeaturedProperties(result);
+      } catch (error) {
+        console.error(
+          "Failed to load featured properties:",
+          error,
+        );
+      } finally {
+        setLoadingFeatured(false);
+      }
+    };
+
+    void loadFeaturedProperties();
+  }, []);
+
+  // ============================================================
+  // LOAD OPEN HOUSES
+  //
+  // There is currently no separate open-house endpoint.
+  //
+  // Therefore:
+  // GET /properties
+  //
+  // Then filter only properties marked as open houses.
+  // ============================================================
+
+  useEffect(() => {
+    const loadOpenHouses = async () => {
+      try {
+        const result = await fetchProperties();
+
+        const openHouses = result.filter(
+          (property) => property.isOpenHouse === true,
+        );
+
+        setOpenHouseProperties(openHouses);
+      } catch (error) {
+        console.error(
+          "Failed to load open houses:",
+          error,
+        );
+      } finally {
+        setLoadingOpenHouses(false);
+      }
+    };
+
+    void loadOpenHouses();
+  }, []);
+
+  // ============================================================
+  // LOAD MOST VIEWED PROPERTIES
+  //
+  // Endpoint:
+  // GET /property/get-most-viewed
+  // ============================================================
+
+  useEffect(() => {
+    const loadMostViewedProperties = async () => {
+      try {
+        const result = await fetchMostViewedProperties();
+
+        setMostViewedProperties(result);
+      } catch (error) {
+        console.error(
+          "Failed to load most viewed properties:",
+          error,
+        );
+      } finally {
+        setLoadingMostViewed(false);
+      }
+    };
+
+    void loadMostViewedProperties();
   }, []);
 
   // ============================================================
@@ -78,9 +208,13 @@ export default function HomeScreen() {
     const loadAgents = async () => {
       try {
         const result = await fetchAgents();
+
         setAgents(result);
       } catch (error) {
-        console.error("Failed to load home agents:", error);
+        console.error(
+          "Failed to load home agents:",
+          error,
+        );
       } finally {
         setLoadingAgents(false);
       }
@@ -122,10 +256,13 @@ export default function HomeScreen() {
   const renderPropertySection = (
     title: string,
     sectionProperties: Property[],
+    loading: boolean,
   ) => {
     return (
       <View className="mb-10">
-        {/* SECTION TITLE */}
+        {/* ======================================================
+            SECTION TITLE
+        ====================================================== */}
 
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
@@ -156,37 +293,80 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* TWO PROPERTY CARDS */}
+        {/* ======================================================
+            LOADING
+        ====================================================== */}
 
-        {sectionProperties.map((property) => (
-          <PropertyCard
-            key={`${title}-${property.id}`}
-            property={property}
-            isFullWidth
-            onPress={handlePropertyPress}
-          />
-        ))}
+        {loading ? (
+          <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] py-10">
+            <ActivityIndicator
+              size="large"
+              color="#ef4444"
+            />
 
-        {/* VIEW ALL BUTTON */}
+            <Text className="mt-3 text-sm text-gray-500">
+              Loading {title.toLowerCase()}...
+            </Text>
+          </View>
+        ) : sectionProperties.length === 0 ? (
+          /* ====================================================
+             EMPTY STATE
+          ==================================================== */
 
-        <Pressable
-          onPress={() => {
-            router.push("/(tabs)/properties");
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={`View all ${title}`}
-          className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
-        >
-          <Text className="mr-2 text-base font-bold text-white">
-            View All Properties
-          </Text>
+          <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
+            <Ionicons
+              name="home-outline"
+              size={44}
+              color="#444"
+            />
 
-          <Ionicons
-            name="arrow-forward"
-            size={20}
-            color="#fff"
-          />
-        </Pressable>
+            <Text className="mt-4 text-base font-semibold text-gray-400">
+              No {title.toLowerCase()} available
+            </Text>
+
+            <Text className="mt-1 text-center text-sm text-gray-600">
+              Please check again later.
+            </Text>
+          </View>
+        ) : (
+          /* ====================================================
+             PROPERTY CARDS
+          ==================================================== */
+
+          <>
+            {sectionProperties.slice(0, 2).map((property) => (
+              <PropertyCard
+                key={`${title}-${property.id}`}
+                property={property}
+                isFullWidth
+                onPress={handlePropertyPress}
+              />
+            ))}
+
+            {/* ==================================================
+                VIEW ALL BUTTON
+            ================================================== */}
+
+            <Pressable
+              onPress={() => {
+                router.push("/(tabs)/properties");
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`View all ${title}`}
+              className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
+            >
+              <Text className="mr-2 text-base font-bold text-white">
+                View All Properties
+              </Text>
+
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color="#fff"
+              />
+            </Pressable>
+          </>
+        )}
       </View>
     );
   };
@@ -222,8 +402,8 @@ export default function HomeScreen() {
             </Text>
 
             <Text className="mt-4 max-w-sm text-center text-base leading-6 text-gray-400">
-              Discover homes, commercial properties, rentals, and
-              investment opportunities across Malawi.
+              Discover homes, commercial properties, rentals,
+              and investment opportunities across Malawi.
             </Text>
           </View>
         </View>
@@ -297,74 +477,47 @@ export default function HomeScreen() {
         </View>
 
         {/* ======================================================
-            PROPERTIES
+            FEATURED PROPERTIES
+            /property/get-featured
         ====================================================== */}
 
-        {loadingProperties ? (
-          <View className="items-center py-12">
-            <ActivityIndicator
-              size="large"
-              color="#ef4444"
-            />
+        {renderPropertySection(
+          "Featured Properties",
+          featuredProperties,
+          loadingFeatured,
+        )}
 
-            <Text className="mt-3 text-sm text-gray-500">
-              Loading properties...
-            </Text>
-          </View>
-        ) : properties.length === 0 ? (
-          <View className="mb-10 items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
-            <Ionicons
-              name="home-outline"
-              size={48}
-              color="#444"
-            />
+        {/* ======================================================
+            NEW TO MARKET
+            /properties
+        ====================================================== */}
 
-            <Text className="mt-4 text-base font-semibold text-gray-400">
-              No properties available
-            </Text>
+        {renderPropertySection(
+          "New to Market",
+          properties,
+          loadingProperties,
+        )}
 
-            <Text className="mt-1 text-center text-sm text-gray-600">
-              Please check again later.
-            </Text>
-          </View>
-        ) : (
-          <>
-            {/* ==================================================
-                FEATURED PROPERTIES
-            ================================================== */}
+        {/* ======================================================
+            OPEN HOUSES
+            /properties + isOpenHouse filter
+        ====================================================== */}
 
-            {renderPropertySection(
-              "Featured Properties",
-              properties.slice(0, 2),
-            )}
+        {renderPropertySection(
+          "Open Houses",
+          openHouseProperties,
+          loadingOpenHouses,
+        )}
 
-            {/* ==================================================
-                NEW TO MARKET
-            ================================================== */}
+        {/* ======================================================
+            MOST VIEWED
+            /property/get-most-viewed
+        ====================================================== */}
 
-            {renderPropertySection(
-              "New to Market",
-              properties.slice(2, 4),
-            )}
-
-            {/* ==================================================
-                OPEN HOUSES
-            ================================================== */}
-
-            {renderPropertySection(
-              "Open Houses",
-              properties.slice(4, 6),
-            )}
-
-            {/* ==================================================
-                MOST VIEWED
-            ================================================== */}
-
-            {renderPropertySection(
-              "Most Viewed",
-              properties.slice(6, 8),
-            )}
-          </>
+        {renderPropertySection(
+          "Most Viewed",
+          mostViewedProperties,
+          loadingMostViewed,
         )}
 
         {/* ======================================================
@@ -469,7 +622,9 @@ export default function HomeScreen() {
 
           <Pressable
             onPress={() =>
-              router.push("/list-property")
+              router.push(
+                "/appcomponents/listProperty/list-property",
+              )
             }
             accessibilityRole="button"
             accessibilityLabel="List your property"
@@ -506,7 +661,9 @@ export default function HomeScreen() {
 
           <Pressable
             onPress={() =>
-              router.push("/special-property-request")
+              router.push(
+                "/properties/special-property-request",
+              )
             }
             accessibilityRole="button"
             accessibilityLabel="Special property request"
@@ -542,9 +699,7 @@ export default function HomeScreen() {
           ==================================================== */}
 
           <Pressable
-            onPress={() =>
-              router.push("/blogs")
-            }
+            onPress={() => router.push("/blogs")}
             accessibilityRole="button"
             accessibilityLabel="Open blogs"
             className="w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"
@@ -559,11 +714,11 @@ export default function HomeScreen() {
 
             <View className="flex-1">
               <Text className="text-base font-bold text-white">
-                Blogs
+                Subscribe to our newsletter
               </Text>
 
               <Text className="mt-1 text-sm text-gray-500">
-                Read the latest real estate news and insights
+                Get the latest property news and updates
               </Text>
             </View>
 
@@ -587,4 +742,3 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-
