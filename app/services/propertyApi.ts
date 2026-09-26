@@ -16,7 +16,10 @@ if (!API_URL) {
 export const PROPERTIES_API_URL =
   `${API_URL}/properties`;
 
-  console.log("PROPERTIES_API_URL:", PROPERTIES_API_URL);
+console.log(
+  "PROPERTIES_API_URL:",
+  PROPERTIES_API_URL,
+);
 
 // ============================================================
 // API TYPES
@@ -459,15 +462,42 @@ export function mapApiProperty(
 }
 
 // ============================================================
-// FETCH PROPERTIES
+// RESPONSE VALIDATION
 // ============================================================
 
-export async function fetchProperties(): Promise<
-  Property[]
-> {
-  const response = await fetch(
-    PROPERTIES_API_URL,
-  );
+function validatePropertiesResponse(
+  json: unknown,
+): ApiProperty[] {
+  if (
+    typeof json !== "object" ||
+    json === null ||
+    !("data" in json)
+  ) {
+    throw new Error(
+      "Invalid API response: properties data is missing.",
+    );
+  }
+
+  const response =
+    json as PropertiesApiResponse;
+
+  if (!Array.isArray(response.data)) {
+    throw new Error(
+      "Invalid API response: properties data is not an array.",
+    );
+  }
+
+  return response.data;
+}
+
+// ============================================================
+// GENERIC PROPERTY FETCHER
+// ============================================================
+
+async function fetchPropertyEndpoint(
+  endpoint: string,
+): Promise<Property[]> {
+  const response = await fetch(endpoint);
 
   if (!response.ok) {
     throw new Error(
@@ -475,15 +505,69 @@ export async function fetchProperties(): Promise<
     );
   }
 
-  const json =
-    (await response.json()) as PropertiesApiResponse;
+  const json: unknown =
+    await response.json();
 
-  if (!Array.isArray(json.data)) {
-    throw new Error(
-      "Invalid API response: properties data is missing.",
-    );
-  }
+  const properties =
+    validatePropertiesResponse(json);
 
-  return json.data.map(mapApiProperty);
+  return properties.map(mapApiProperty);
+}
+
+// ============================================================
+// FETCH ALL PROPERTIES
+// ============================================================
+
+export async function fetchProperties(): Promise<
+  Property[]
+> {
+  return fetchPropertyEndpoint(
+    PROPERTIES_API_URL,
+  );
+}
+
+// ============================================================
+// FETCH FEATURED PROPERTIES
+// ============================================================
+
+export const FEATURED_PROPERTIES_API_URL =
+  `${PROPERTIES_API_URL}/get-featured`;
+
+export async function fetchFeaturedProperties(): Promise<
+  Property[]
+> {
+  return fetchPropertyEndpoint(
+    FEATURED_PROPERTIES_API_URL,
+  );
+}
+
+// ============================================================
+// FETCH MOST VIEWED PROPERTIES
+// ============================================================
+
+export const MOST_VIEWED_PROPERTIES_API_URL =
+  `${PROPERTIES_API_URL}/get-most-viewed`;
+
+export async function fetchMostViewedProperties(): Promise<
+  Property[]
+> {
+  return fetchPropertyEndpoint(
+    MOST_VIEWED_PROPERTIES_API_URL,
+  );
+}
+
+// ============================================================
+// FETCH NEAREST PROPERTIES
+// ============================================================
+
+export const NEAREST_PROPERTIES_API_URL =
+  `${PROPERTIES_API_URL}/nearest`;
+
+export async function fetchNearestProperties(): Promise<
+  Property[]
+> {
+  return fetchPropertyEndpoint(
+    NEAREST_PROPERTIES_API_URL,
+  );
 }
 

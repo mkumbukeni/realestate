@@ -109,6 +109,7 @@ export default function TabLayout() {
         }}
       />
 
+
       {/* ==========================================
           PROFILE TAB
       ========================================== */}
@@ -131,6 +132,31 @@ export default function TabLayout() {
           ),
         }}
       />
+
+
+      {/* ==========================================
+          OTHERS TAB
+      ========================================== */}
+
+      <Tabs.Screen
+        name="others"
+        options={{
+          title: 'Others',
+
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={
+                focused
+                  ? 'ellipsis-horizontal'
+                  : 'ellipsis-horizontal-outline'
+              }
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
     </Tabs>
   );
 }

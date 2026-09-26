@@ -116,6 +116,82 @@ export default function HomeScreen() {
   };
 
   // ============================================================
+  // PROPERTY SECTION
+  // ============================================================
+
+  const renderPropertySection = (
+    title: string,
+    sectionProperties: Property[],
+  ) => {
+    return (
+      <View className="mb-10">
+        {/* SECTION TITLE */}
+
+        <View className="mb-4 flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
+
+            <Text className="text-lg font-bold text-white">
+              {title}
+            </Text>
+          </View>
+
+          <Pressable
+            onPress={() => {
+              router.push("/(tabs)/properties");
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`View all ${title}`}
+            className="flex-row items-center"
+          >
+            <Text className="mr-1 text-sm font-semibold text-red-500">
+              View All
+            </Text>
+
+            <Ionicons
+              name="arrow-forward"
+              size={16}
+              color="#ef4444"
+            />
+          </Pressable>
+        </View>
+
+        {/* TWO PROPERTY CARDS */}
+
+        {sectionProperties.map((property) => (
+          <PropertyCard
+            key={`${title}-${property.id}`}
+            property={property}
+            isFullWidth
+            onPress={handlePropertyPress}
+          />
+        ))}
+
+        {/* VIEW ALL BUTTON */}
+
+        <Pressable
+          onPress={() => {
+            router.push("/(tabs)/properties");
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`View all ${title}`}
+          className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
+        >
+          <Text className="mr-2 text-base font-bold text-white">
+            View All Properties
+          </Text>
+
+          <Ionicons
+            name="arrow-forward"
+            size={20}
+            color="#fff"
+          />
+        </Pressable>
+      </View>
+    );
+  };
+
+  // ============================================================
   // WELCOME SCREEN
   // ============================================================
 
@@ -224,86 +300,80 @@ export default function HomeScreen() {
             PROPERTIES
         ====================================================== */}
 
-        <View>
-          <View className="mb-4 flex-row items-center">
-            <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
+        {loadingProperties ? (
+          <View className="items-center py-12">
+            <ActivityIndicator
+              size="large"
+              color="#ef4444"
+            />
 
-            <Text className="text-lg font-bold text-white">
-              Properties
+            <Text className="mt-3 text-sm text-gray-500">
+              Loading properties...
             </Text>
           </View>
+        ) : properties.length === 0 ? (
+          <View className="mb-10 items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
+            <Ionicons
+              name="home-outline"
+              size={48}
+              color="#444"
+            />
 
-          {/* PROPERTY LOADING */}
+            <Text className="mt-4 text-base font-semibold text-gray-400">
+              No properties available
+            </Text>
 
-          {loadingProperties ? (
-            <View className="items-center py-12">
-              <ActivityIndicator
-                size="large"
-                color="#ef4444"
-              />
+            <Text className="mt-1 text-center text-sm text-gray-600">
+              Please check again later.
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* ==================================================
+                FEATURED PROPERTIES
+            ================================================== */}
 
-              <Text className="mt-3 text-sm text-gray-500">
-                Loading properties...
-              </Text>
-            </View>
-          ) : properties.length === 0 ? (
-            <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
-              <Ionicons
-                name="home-outline"
-                size={48}
-                color="#444"
-              />
+            {renderPropertySection(
+              "Featured Properties",
+              properties.slice(0, 2),
+            )}
 
-              <Text className="mt-4 text-base font-semibold text-gray-400">
-                No properties available
-              </Text>
+            {/* ==================================================
+                NEW TO MARKET
+            ================================================== */}
 
-              <Text className="mt-1 text-center text-sm text-gray-600">
-                Please check again later.
-              </Text>
-            </View>
-          ) : (
-            <View>
-              {/* ONLY TWO PROPERTIES */}
+            {renderPropertySection(
+              "New to Market",
+              properties.slice(2, 4),
+            )}
 
-              {properties.slice(0, 2).map((property) => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  isFullWidth
-                  onPress={handlePropertyPress}
-                />
-              ))}
+            {/* ==================================================
+                OPEN HOUSES
+            ================================================== */}
 
-              {/* VIEW ALL PROPERTIES */}
+            {renderPropertySection(
+              "Open Houses",
+              properties.slice(4, 6),
+            )}
 
-              <Pressable
-                onPress={() => {
-                  router.push("/(tabs)/properties");
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="View all properties"
-                className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
-              >
-                <Text className="mr-2 text-base font-bold text-white">
-                  View All Properties
-                </Text>
+            {/* ==================================================
+                MOST VIEWED
+            ================================================== */}
 
-                <Ionicons
-                  name="arrow-forward"
-                  size={20}
-                  color="#fff"
-                />
-              </Pressable>
-            </View>
-          )}
-        </View>
+            {renderPropertySection(
+              "Most Viewed",
+              properties.slice(6, 8),
+            )}
+          </>
+        )}
 
         {/* ======================================================
             AGENTS
         ====================================================== */}
 
-        <View className="mt-10">
+        <View className="mt-2">
+          {/* SECTION TITLE */}
+
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
@@ -398,7 +468,9 @@ export default function HomeScreen() {
           ==================================================== */}
 
           <Pressable
-            onPress={() => router.push("/(tabs)/properties/list-property")}
+            onPress={() =>
+              router.push("/list-property")
+            }
             accessibilityRole="button"
             accessibilityLabel="List your property"
             className="mb-3 w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"
@@ -470,7 +542,9 @@ export default function HomeScreen() {
           ==================================================== */}
 
           <Pressable
-            onPress={() => router.push("/blogs")}
+            onPress={() =>
+              router.push("/blogs")
+            }
             accessibilityRole="button"
             accessibilityLabel="Open blogs"
             className="w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"

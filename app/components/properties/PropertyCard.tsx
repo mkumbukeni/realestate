@@ -44,12 +44,19 @@ const PropertyCard = ({
         {/* ================================================== */}
 
         <View className="flex-row items-center justify-between px-3 py-3">
-          <Text className="text-sm font-medium text-red-400">
-            {property.tag}
-          </Text>
+          <View className="flex-row items-center">
+            <View className="mr-2 h-2 w-2 rounded-full bg-red-500" />
+
+            <Text
+              className="text-sm font-semibold text-red-400"
+              numberOfLines={1}
+            >
+              {property.tag}
+            </Text>
+          </View>
 
           <Text
-            className="text-sm font-semibold text-gray-300"
+            className="ml-2 text-sm font-semibold text-gray-300"
             numberOfLines={1}
           >
             {property.systemStatus}
@@ -151,7 +158,6 @@ const PropertyCard = ({
                   {property.baths} Baths
                 </Text>
               </View>
-
             </View>
           </View>
 
@@ -196,14 +202,17 @@ const PropertyCard = ({
 
               {/* AREA */}
 
-              <View className="flex-row items-center">
+              <View className="mr-2 flex-1 flex-row items-center">
                 <Ionicons
                   name="map-outline"
                   size={14}
                   color="#777"
                 />
 
-                <Text className="ml-1 text-xs text-gray-500">
+                <Text
+                  className="ml-1 flex-1 text-xs text-gray-500"
+                  numberOfLines={1}
+                >
                   {property.area || "Area unavailable"}
                 </Text>
               </View>
@@ -218,10 +227,27 @@ const PropertyCard = ({
                 />
 
                 <Text className="ml-1 text-xs text-gray-500">
-                  {property.views} views
+                  {property.views.toLocaleString()} views
                 </Text>
               </View>
+            </View>
+          )}
 
+          {/* ================================================= */}
+          {/* OPEN HOUSE */}
+          {/* ================================================= */}
+
+          {property.isOpenHouse && (
+            <View className="mt-3 flex-row items-center self-start rounded-md bg-red-600 px-2.5 py-1.5">
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color="#fff"
+              />
+
+              <Text className="ml-1 text-xs font-semibold text-white">
+                Open House
+              </Text>
             </View>
           )}
         </View>

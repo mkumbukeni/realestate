@@ -1,8 +1,8 @@
 // services/agentApi.ts
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const EXPO_PUBLIC_API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-if (!API_URL) {
+if (!EXPO_PUBLIC_API_URL) {
   throw new Error(
     "EXPO_PUBLIC_API_URL is not configured. Please add it to your .env file.",
   );
@@ -258,7 +258,7 @@ function mapApiAgent(apiAgent: ApiAgent): Agent {
 // ============================================================
 
 export async function fetchAgents(): Promise<Agent[]> {
-  const response = await fetch(`${API_URL}/agents`);
+  const response = await fetch(`${EXPO_PUBLIC_API_URL}/agents`);
 
   if (!response.ok) {
     throw new Error(
