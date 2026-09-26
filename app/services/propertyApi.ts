@@ -600,3 +600,49 @@ export async function fetchNearestProperties(): Promise<
     `${BASE_API_URL}/property/nearest`,
   );
 }
+
+
+// ============================================================
+// FETCH NEARBY PROPERTIES
+// ============================================================
+
+export async function fetchNearbyProperties(
+  latitude: number,
+  longitude: number,
+): Promise<Property[]> {
+  const response = await fetch(
+    `${BASE_API_URL}/property/nearby`,
+    {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        latitude,
+        longitude,
+        radius: 1,
+        min_price: 0,
+        max_price: 0,
+        search: "",
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Nearby properties request failed: ${response.status}`,
+    );
+  }
+
+  const result = await response.json();
+
+  if (
+    !result.success ||
+    !Array.isArray(result.data)
+  ) {
+    return [];
+  }
+
+  return result.data.map(mapApiProperty);
+}
