@@ -1,4 +1,3 @@
-
 // app/components/properties/PropertyCard.tsx
 
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -37,18 +36,22 @@ const PropertyCard = ({
         ],
       })}
     >
-      <View className="mb-4 overflow-hidden rounded-xl border border-[#242424] bg-[#151515]">
-
+      <View
+        className="mb-4 overflow-hidden rounded-xl border border-[#242424] bg-[#151515]"
+        style={{
+          width: isFullWidth ? 330 : 280,
+        }}
+      >
         {/* ================================================== */}
         {/* TOP INFORMATION */}
         {/* ================================================== */}
 
         <View className="flex-row items-center justify-between px-3 py-3">
-          <View className="flex-row items-center">
+          <View className="mr-2 flex-1 flex-row items-center">
             <View className="mr-2 h-2 w-2 rounded-full bg-red-500" />
 
             <Text
-              className="text-sm font-semibold text-red-400"
+              className="flex-1 text-sm font-semibold text-red-400"
               numberOfLines={1}
             >
               {property.tag}
@@ -56,7 +59,7 @@ const PropertyCard = ({
           </View>
 
           <Text
-            className="ml-2 text-sm font-semibold text-gray-300"
+            className="text-sm font-semibold text-gray-300"
             numberOfLines={1}
           >
             {property.systemStatus}
@@ -72,21 +75,11 @@ const PropertyCard = ({
             source={{
               uri: property.image,
             }}
-            className={
-              isFullWidth
-                ? "h-40 w-full"
-                : "h-28 w-full"
-            }
+            className="h-40 w-full"
             resizeMode="cover"
           />
         ) : (
-          <View
-            className={
-              isFullWidth
-                ? "h-40 w-full items-center justify-center bg-[#222]"
-                : "h-28 w-full items-center justify-center bg-[#222]"
-            }
-          >
+          <View className="h-40 w-full items-center justify-center bg-[#222]">
             <Ionicons
               name="image-outline"
               size={35}
@@ -104,13 +97,24 @@ const PropertyCard = ({
         {/* ================================================== */}
 
         <View className="px-3 pb-3 pt-2">
+          {/* PRICE */}
+
+          <Text
+            className="mb-2 text-sm font-bold text-white"
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {property.price}
+          </Text>
 
           {/* ================================================= */}
-          {/* PROPERTY TYPE */}
+          {/* PROPERTY TYPE + BEDS + BATHS */}
           {/* ================================================= */}
 
-          <View className="mb-2">
-            <View className="w-full flex-row items-center rounded-md bg-[#242424] px-2.5 py-1.5">
+          <View className="mb-2 flex-row items-center">
+            {/* PROPERTY TYPE */}
+
+            <View className="mr-2 flex-1 flex-row items-center rounded-md bg-[#242424] px-2.5 py-1.5">
               <Ionicons
                 name="business-outline"
                 size={15}
@@ -125,53 +129,34 @@ const PropertyCard = ({
               </Text>
             </View>
 
-            {/* ============================================== */}
-            {/* BEDROOMS + BATHROOMS */}
-            {/* ============================================== */}
+            {/* BEDROOMS */}
 
-            <View className="mt-1.5 flex-row gap-1.5">
+            <View className="mr-2 flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
+              <Ionicons
+                name="bed-outline"
+                size={15}
+                color="#d1d1d1"
+              />
 
-              {/* BEDROOMS */}
+              <Text className="ml-1 text-xs text-gray-300">
+                {property.beds} Beds
+              </Text>
+            </View>
 
-              <View className="flex-1 flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
-                <Ionicons
-                  name="bed-outline"
-                  size={15}
-                  color="#d1d1d1"
-                />
+            {/* BATHROOMS */}
 
-                <Text className="ml-1 text-xs text-gray-300">
-                  {property.beds} Beds
-                </Text>
-              </View>
+            <View className="flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
+              <Ionicons
+                name="water-outline"
+                size={15}
+                color="#d1d1d1"
+              />
 
-              {/* BATHROOMS */}
-
-              <View className="flex-1 flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
-                <Ionicons
-                  name="water-outline"
-                  size={15}
-                  color="#d1d1d1"
-                />
-
-                <Text className="ml-1 text-xs text-gray-300">
-                  {property.baths} Baths
-                </Text>
-              </View>
+              <Text className="ml-1 text-xs text-gray-300">
+                {property.baths} Baths
+              </Text>
             </View>
           </View>
-
-          {/* ================================================= */}
-          {/* PRICE */}
-          {/* ================================================= */}
-
-          <Text
-            className="mb-2 text-sm font-bold text-white"
-            numberOfLines={1}
-            adjustsFontSizeToFit
-          >
-            {property.price}
-          </Text>
 
           {/* ================================================= */}
           {/* LOCATION */}
@@ -199,25 +184,17 @@ const PropertyCard = ({
 
           {isFullWidth && (
             <View className="mt-2 flex-row items-center justify-between">
-
               {/* AREA */}
 
               <View className="mr-2 flex-1 flex-row items-center">
-                <Ionicons
-                  name="map-outline"
-                  size={14}
-                  color="#777"
-                />
-
-                <Text
-                  className="ml-1 flex-1 text-xs text-gray-500"
-                  numberOfLines={1}
-                >
-                  {property.area || "Area unavailable"}
-                </Text>
+               
               </View>
 
-              {/* VIEWS */}
+
+
+              
+
+              {/*  
 
               <View className="flex-row items-center">
                 <Ionicons
@@ -230,13 +207,12 @@ const PropertyCard = ({
                   {property.views.toLocaleString()} views
                 </Text>
               </View>
+                  */}
             </View>
           )}
 
-          {/* ================================================= */}
-          {/* OPEN HOUSE */}
-          {/* ================================================= */}
-
+          
+{/*  
           {property.isOpenHouse && (
             <View className="mt-3 flex-row items-center self-start rounded-md bg-red-600 px-2.5 py-1.5">
               <Ionicons
@@ -250,6 +226,7 @@ const PropertyCard = ({
               </Text>
             </View>
           )}
+                */}
         </View>
       </View>
     </Pressable>
@@ -257,4 +234,3 @@ const PropertyCard = ({
 };
 
 export default PropertyCard;
-
