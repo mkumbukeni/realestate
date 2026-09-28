@@ -1,5 +1,3 @@
-
-
 import React, {
   useEffect,
   useMemo,
@@ -26,30 +24,95 @@ import {
   useRouter,
 } from "expo-router";
 
+import {
+  VideoView,
+  useVideoPlayer,
+} from "expo-video";
+
+import MapView, {
+  Marker,
+  PROVIDER_GOOGLE,
+} from "react-native-maps";
+
 import SideMenu from "@/app/components/sidebar/SideMenu";
 
 import {
   fetchProperties,
   fetchPropertyImages,
+  fetchPropertyVideos,
   type Property,
   type PropertyMedia,
 } from "@/app/services/propertyApi";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } =
+  Dimensions.get("window");
 
 const IMAGE_HEIGHT = Math.min(
   320,
   SCREEN_WIDTH * 0.7,
 );
 
+const VIDEO_HEIGHT = Math.min(
+  240,
+  SCREEN_WIDTH * 0.56,
+);
+
+// ============================================================
+// VIDEO PLAYER COMPONENT
+// ============================================================
+
+interface PropertyVideoProps {
+  video: PropertyMedia;
+}
+
+function PropertyVideo({
+  video,
+}: PropertyVideoProps) {
+  const player = useVideoPlayer(
+    video.url,
+    (player) => {
+      player.loop = false;
+    },
+  );
+
+  return (
+    <View className="mb-4 overflow-hidden rounded-xl border border-[#292929] bg-black">
+      <VideoView
+        player={player}
+        style={{
+          width: "100%",
+          height: VIDEO_HEIGHT,
+        }}
+        nativeControls
+        contentFit="contain"
+      />
+
+      {video.description ? (
+        <View className="bg-[#171717] px-4 py-3">
+          <Text className="text-sm text-zinc-300">
+            {video.description}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+// ============================================================
+// MAIN SCREEN
+// ============================================================
+
 export default function PropertyDetailsScreen() {
   const router = useRouter();
 
-  const params = useLocalSearchParams<{
-    id?: string | string[];
-  }>();
+  const params =
+    useLocalSearchParams<{
+      id?: string | string[];
+    }>();
 
-  const propertyId = Array.isArray(params.id)
+  const propertyId = Array.isArray(
+    params.id,
+  )
     ? params.id[0]
     : params.id;
 
@@ -63,10 +126,16 @@ export default function PropertyDetailsScreen() {
   const [images, setImages] =
     useState<PropertyMedia[]>([]);
 
+  const [videos, setVideos] =
+    useState<PropertyMedia[]>([]);
+
   const [loading, setLoading] =
     useState(true);
 
   const [imagesLoading, setImagesLoading] =
+    useState(true);
+
+  const [videosLoading, setVideosLoading] =
     useState(true);
 
   const [imageIndex, setImageIndex] =
@@ -99,7 +168,9 @@ export default function PropertyDetailsScreen() {
               String(propertyId),
           );
 
-        setProperty(foundProperty ?? null);
+        setProperty(
+          foundProperty ?? null,
+        );
       } catch (error) {
         console.error(
           "Failed to load property:",
@@ -148,6 +219,46 @@ export default function PropertyDetailsScreen() {
     };
 
     void loadImages();
+  }, [propertyId]);
+
+  // ============================================================
+  // LOAD PROPERTY VIDEOS
+  // ============================================================
+
+  useEffect(() => {
+    const loadVideos = async () => {
+      if (!propertyId) {
+        setVideosLoading(false);
+        return;
+      }
+
+      try {
+        setVideosLoading(true);
+
+        const result =
+          await fetchPropertyVideos(
+            propertyId,
+          );
+
+        console.log(
+          "Loaded property videos:",
+          result,
+        );
+
+        setVideos(result);
+      } catch (error) {
+        console.error(
+          "Failed to load property videos:",
+          error,
+        );
+
+        setVideos([]);
+      } finally {
+        setVideosLoading(false);
+      }
+    };
+
+    void loadVideos();
   }, [propertyId]);
 
   // ============================================================
@@ -257,19 +368,61 @@ export default function PropertyDetailsScreen() {
     return "";
   };
 
-  const formatBoolean = (
-    value: unknown,
-  ): string => {
-    if (value === true) {
-      return "Available";
+  // ============================================================
+  // MAP COORDINATES
+  // ============================================================
+
+  const coordinates = useMemo(() => {
+    if (!property) {
+      return null;
     }
 
-    if (value === false) {
-      return "Unavailable";
+    const object =
+      property as unknown as Record<
+        string,
+        unknown
+      >;
+
+    const location =
+      object.location &&
+      typeof object.location === "object"
+        ? (object.location as Record<
+            string,
+            unknown
+          >)
+        : null;
+
+    const latitudeValue =
+      location?.latitude ??
+      location?.lat ??
+      object.latitude ??
+      object.lat;
+
+    const longitudeValue =
+      location?.longitude ??
+      location?.lng ??
+      location?.lon ??
+      object.longitude ??
+      object.lng;
+
+    const latitude =
+      Number(latitudeValue);
+
+    const longitude =
+      Number(longitudeValue);
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude)
+    ) {
+      return null;
     }
 
-    return String(value ?? "");
-  };
+    return {
+      latitude,
+      longitude,
+    };
+  }, [property]);
 
   // ============================================================
   // BACK
@@ -421,9 +574,21 @@ export default function PropertyDetailsScreen() {
 
   const amenities =
     Array.isArray(
-      (property as any).amenities,
+      (
+        property as unknown as Record<
+          string,
+          unknown
+        >
+      ).amenities,
     )
-      ? (property as any).amenities
+      ? (
+          (
+            property as unknown as Record<
+              string,
+              unknown
+            >
+          ).amenities as unknown[]
+        )
       : [];
 
   // ============================================================
@@ -592,16 +757,12 @@ export default function PropertyDetailsScreen() {
                 )}
               </ScrollView>
 
-              {/* IMAGE COUNTER */}
-
               <View className="absolute right-4 top-4 rounded-full bg-black/70 px-3 py-1.5">
                 <Text className="text-xs font-semibold text-white">
                   {imageIndex + 1} /{" "}
                   {displayImages.length}
                 </Text>
               </View>
-
-              {/* DOTS */}
 
               {displayImages.length >
                 1 && (
@@ -652,12 +813,11 @@ export default function PropertyDetailsScreen() {
         {/* ==================================================== */}
 
         <View className="px-4 pt-5">
-          {/* LISTING STATUS */}
-
           <View className="flex-row items-center justify-between">
             <View className="rounded-md bg-red-600 px-3 py-1.5">
               <Text className="text-xs font-bold text-white">
-                {listingType || "For Sale"}
+                {listingType ||
+                  "For Sale"}
               </Text>
             </View>
 
@@ -668,15 +828,11 @@ export default function PropertyDetailsScreen() {
             ) : null}
           </View>
 
-          {/* TITLE */}
-
           <Text className="mt-4 text-2xl font-bold text-white">
             {property.title ||
               locationText ||
               "Property"}
           </Text>
-
-          {/* LOCATION */}
 
           <View className="mt-3 flex-row items-start">
             <Ionicons
@@ -699,8 +855,6 @@ export default function PropertyDetailsScreen() {
             </View>
           </View>
 
-          {/* PRICE */}
-
           <Text className="mt-5 text-2xl font-bold text-white">
             {property.price ||
               "Price on request"}
@@ -716,8 +870,6 @@ export default function PropertyDetailsScreen() {
             </Text>
 
             <View className="flex-row flex-wrap">
-              {/* VIEWS */}
-
               {views ? (
                 <Highlight
                   icon="eye-outline"
@@ -725,8 +877,6 @@ export default function PropertyDetailsScreen() {
                   label="Views"
                 />
               ) : null}
-
-              {/* BEDROOMS */}
 
               {bedrooms ? (
                 <Highlight
@@ -736,8 +886,6 @@ export default function PropertyDetailsScreen() {
                 />
               ) : null}
 
-              {/* BATHROOMS */}
-
               {bathrooms ? (
                 <Highlight
                   icon="water-outline"
@@ -746,8 +894,6 @@ export default function PropertyDetailsScreen() {
                 />
               ) : null}
 
-              {/* SIZE */}
-
               {buildingSize ? (
                 <Highlight
                   icon="resize-outline"
@@ -755,8 +901,6 @@ export default function PropertyDetailsScreen() {
                   label="Area"
                 />
               ) : null}
-
-              {/* MASTER BEDROOM */}
 
               {masterBedroom ? (
                 <Highlight
@@ -768,8 +912,6 @@ export default function PropertyDetailsScreen() {
                   wide
                 />
               ) : null}
-
-              {/* TITLE DEED */}
 
               {titleDeed ? (
                 <Highlight
@@ -848,13 +990,12 @@ export default function PropertyDetailsScreen() {
               Amenities
             </Text>
 
-            {amenities.length >
-            0 ? (
+            {amenities.length > 0 ? (
               <View className="flex-row flex-wrap">
                 {amenities.map(
                   (
-                    amenity: unknown,
-                    index: number,
+                    amenity,
+                    index,
                   ) => {
                     const value =
                       typeof amenity ===
@@ -900,26 +1041,64 @@ export default function PropertyDetailsScreen() {
           </View>
 
           {/* ================================================= */}
-          {/* VIDEOS */}
+          {/* PROPERTY VIDEOS */}
           {/* ================================================= */}
 
           <View className="mt-8">
-            <Text className="mb-4 text-xl font-bold text-white">
-              Videos
-            </Text>
-
-            <View className="items-center rounded-xl border border-[#292929] bg-[#171717] px-5 py-8">
-              <Ionicons
-                name="videocam-outline"
-                size={42}
-                color="#555"
-              />
-
-              <Text className="mt-3 text-sm text-zinc-500">
-                Property has no videos
-                to display.
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-xl font-bold text-white">
+                Property Videos
               </Text>
+
+              {videos.length > 0 ? (
+                <Text className="text-sm text-zinc-500">
+                  {videos.length}{" "}
+                  {videos.length === 1
+                    ? "video"
+                    : "videos"}
+                </Text>
+              ) : null}
             </View>
+
+            {videosLoading ? (
+              <View className="items-center rounded-xl border border-[#292929] bg-[#171717] py-10">
+                <ActivityIndicator
+                  size="small"
+                  color="#dc2626"
+                />
+
+                <Text className="mt-3 text-sm text-zinc-500">
+                  Loading property videos...
+                </Text>
+              </View>
+            ) : videos.length >
+              0 ? (
+              <View>
+                {videos.map(
+                  (video) => (
+                    <PropertyVideo
+                      key={String(
+                        video.id,
+                      )}
+                      video={video}
+                    />
+                  ),
+                )}
+              </View>
+            ) : (
+              <View className="items-center rounded-xl border border-[#292929] bg-[#171717] px-5 py-8">
+                <Ionicons
+                  name="videocam-outline"
+                  size={42}
+                  color="#555"
+                />
+
+                <Text className="mt-3 text-sm text-zinc-500">
+                  No property videos
+                  available.
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* ================================================= */}
@@ -972,26 +1151,121 @@ export default function PropertyDetailsScreen() {
           {/* ================================================= */}
 
           <View className="mt-8">
-            <Text className="mb-4 text-xl font-bold text-white">
-              Map
-            </Text>
-
-            <View className="h-56 items-center justify-center rounded-xl border border-[#292929] bg-[#171717]">
-              <Ionicons
-                name="map-outline"
-                size={50}
-                color="#555"
-              />
-
-              <Text className="mt-3 text-sm text-zinc-500">
-                Property map
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-xl font-bold text-white">
+                Property Location
               </Text>
 
-              <Text className="mt-1 px-6 text-center text-xs text-zinc-600">
-                {locationText ||
-                  "Location coordinates are not available."}
-              </Text>
+              {coordinates ? (
+                <Ionicons
+                  name="location"
+                  size={22}
+                  color="#ef4444"
+                />
+              ) : null}
             </View>
+
+            {coordinates ? (
+              <View className="overflow-hidden rounded-xl border border-[#292929]">
+                <MapView
+                  provider={PROVIDER_GOOGLE}
+                  style={{
+                    width: "100%",
+                    height: 280,
+                  }}
+                  initialRegion={{
+                    latitude:
+                      coordinates.latitude,
+                    longitude:
+                      coordinates.longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                  showsCompass
+                  zoomEnabled
+                  scrollEnabled
+                  rotateEnabled
+                  pitchEnabled
+                  toolbarEnabled
+                >
+                  <Marker
+                    coordinate={
+                      coordinates
+                    }
+                    title={
+                      property.title ??
+                      "Property"
+                    }
+                    description={
+                      locationText ||
+                      "Property location"
+                    }
+                  />
+                </MapView>
+
+                <View className="border-t border-[#292929] bg-[#171717] px-4 py-3">
+                  <View className="flex-row items-center">
+                    <Ionicons
+                      name="location-outline"
+                      size={18}
+                      color="#ef4444"
+                    />
+
+                    <Text
+                      className="ml-2 flex-1 text-sm text-zinc-300"
+                      numberOfLines={2}
+                    >
+                      {locationText ||
+                        "Property location"}
+                    </Text>
+                  </View>
+
+                  <Text className="mt-2 text-xs text-zinc-600">
+                    {coordinates.latitude.toFixed(
+                      6,
+                    )}
+                    {"  "}
+                    {coordinates.longitude.toFixed(
+                      6,
+                    )}
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <View className="items-center rounded-xl border border-[#292929] bg-[#171717] px-5 py-10">
+                <Ionicons
+                  name="map-outline"
+                  size={50}
+                  color="#555"
+                />
+
+                <Text className="mt-3 text-center text-sm font-medium text-zinc-400">
+                  Property coordinates
+                  unavailable
+                </Text>
+
+                <Text className="mt-2 text-center text-xs leading-5 text-zinc-600">
+                  This property does not
+                  currently have valid
+                  latitude and longitude
+                  coordinates.
+                </Text>
+
+                {locationText ? (
+                  <View className="mt-4 flex-row items-center">
+                    <Ionicons
+                      name="location-outline"
+                      size={16}
+                      color="#777"
+                    />
+
+                    <Text className="ml-2 text-xs text-zinc-500">
+                      {locationText}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            )}
           </View>
 
           {/* ================================================= */}
@@ -1028,8 +1302,6 @@ export default function PropertyDetailsScreen() {
                   </Text>
                 </View>
               </View>
-
-              {/* AGENT CONTACT */}
 
               <View className="mt-4 border-t border-[#292929] pt-4">
                 <View className="flex-row items-center">
@@ -1107,7 +1379,9 @@ function Highlight({
   return (
     <View
       className={`mb-2 mr-2 rounded-xl border border-[#292929] bg-[#171717] px-3 py-3 ${
-        wide ? "flex-1" : "min-w-[30%]"
+        wide
+          ? "flex-1"
+          : "min-w-[30%]"
       }`}
     >
       <Ionicons

@@ -688,3 +688,45 @@ export const fetchPropertyImages = async (
 
   return Array.isArray(json?.data) ? json.data : [];
 };
+
+
+
+
+export const fetchPropertyVideos = async (
+  propertyId: string | number,
+): Promise<PropertyMedia[]> => {
+  const endpoint = `${BASE_API_URL}/properties/${propertyId}/media/videos`;
+
+  console.log("Fetching property videos from:", endpoint);
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  // The API uses 404 when the property has no videos.
+  if (response.status === 404) {
+    console.log("No videos found for property:", propertyId);
+    return [];
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch property videos: ${response.status}`,
+    );
+  }
+
+  const data = await response.json();
+
+  console.log("Property videos response:", data);
+
+  const media = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.data)
+      ? data.data
+      : [];
+
+  return media;
+};

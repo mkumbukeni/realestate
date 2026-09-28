@@ -19,7 +19,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import SideMenu from "../../components/sidebar/SideMenu";
-import AuthRequiredModal from "../../components/auth/AuthRequiredModal";
+// import AuthRequiredModal from "../../components/auth/AuthRequiredModal";
 import PropertyCard from "../../components/properties/PropertyCard";
 
 import {
@@ -103,11 +103,16 @@ export default function PropertiesScreen() {
   const [menuVisible, setMenuVisible] =
     useState(false);
 
-  const [authModalVisible, setAuthModalVisible] =
-    useState(false);
-
-  // Replace this with your real authentication state.
-  const isLoggedIn = false;
+  /*
+   * Authentication check temporarily disabled.
+   *
+   * Keep this code commented so it can be restored later.
+   *
+   * const [authModalVisible, setAuthModalVisible] =
+   *   useState(false);
+   *
+   * const isLoggedIn = false;
+   */
 
   /*
    * --------------------------------------------------
@@ -271,15 +276,27 @@ export default function PropertiesScreen() {
    * --------------------------------------------------
    * PROPERTY PRESS
    * --------------------------------------------------
+   *
+   * Authentication requirement temporarily disabled.
+   *
+   * Previously, this checked whether the user was
+   * logged in before opening the property details.
+   *
+   * The check is kept below as comments so it can
+   * easily be restored later.
    */
 
   const handlePropertyPress =
     useCallback(
       (property: Property) => {
-        if (!isLoggedIn) {
-          setAuthModalVisible(true);
-          return;
-        }
+        /*
+         * AUTHENTICATION CHECK DISABLED
+         *
+         * if (!isLoggedIn) {
+         *   setAuthModalVisible(true);
+         *   return;
+         * }
+         */
 
         router.push({
           pathname:
@@ -289,7 +306,7 @@ export default function PropertiesScreen() {
           },
         });
       },
-      [isLoggedIn, router],
+      [router],
     );
 
   /*
@@ -823,13 +840,19 @@ export default function PropertiesScreen() {
         }
       />
 
-      {/* AUTH MODAL */}
-      <AuthRequiredModal
-        visible={authModalVisible}
-        onClose={() =>
-          setAuthModalVisible(false)
-        }
-      />
+      {/*
+       * AUTH MODAL DISABLED
+       *
+       * Kept here as comments so it can easily
+       * be enabled again in the future.
+       *
+       * <AuthRequiredModal
+       *   visible={authModalVisible}
+       *   onClose={() =>
+       *     setAuthModalVisible(false)
+       *   }
+       * />
+       */}
     </SafeAreaView>
   );
 }
