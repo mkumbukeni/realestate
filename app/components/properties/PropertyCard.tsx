@@ -28,6 +28,7 @@ const PropertyCard = ({
       accessibilityRole="button"
       accessibilityLabel={`View ${property.type} property in ${property.location}`}
       style={({ pressed }) => ({
+        width: isFullWidth ? "100%" : 280,
         opacity: pressed ? 0.75 : 1,
         transform: [
           {
@@ -37,10 +38,7 @@ const PropertyCard = ({
       })}
     >
       <View
-        className="mb-4 overflow-hidden rounded-xl border border-[#242424] bg-[#151515]"
-        style={{
-          width: isFullWidth ? 330 : 280,
-        }}
+        className="mb-4 w-full overflow-hidden rounded-xl border border-[#242424] bg-[#151515]"
       >
         {/* ================================================== */}
         {/* TOP INFORMATION */}
@@ -184,49 +182,9 @@ const PropertyCard = ({
 
           {isFullWidth && (
             <View className="mt-2 flex-row items-center justify-between">
-              {/* AREA */}
-
-              <View className="mr-2 flex-1 flex-row items-center">
-               
-              </View>
-
-
-
-              
-
-              {/*  
-
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="eye-outline"
-                  size={14}
-                  color="#777"
-                />
-
-                <Text className="ml-1 text-xs text-gray-500">
-                  {property.views.toLocaleString()} views
-                </Text>
-              </View>
-                  */}
+              <View className="mr-2 flex-1 flex-row items-center" />
             </View>
           )}
-
-          
-{/*  
-          {property.isOpenHouse && (
-            <View className="mt-3 flex-row items-center self-start rounded-md bg-red-600 px-2.5 py-1.5">
-              <Ionicons
-                name="calendar-outline"
-                size={14}
-                color="#fff"
-              />
-
-              <Text className="ml-1 text-xs font-semibold text-white">
-                Open House
-              </Text>
-            </View>
-          )}
-                */}
         </View>
       </View>
     </Pressable>

@@ -646,3 +646,45 @@ export async function fetchNearbyProperties(
 
   return result.data.map(mapApiProperty);
 }
+
+
+// ============================================================
+// PROPERTY MEDIA
+// ============================================================
+
+export interface PropertyMedia {
+  id: number 
+  url: string;
+  description?: string | null;
+  collection?: string | null;
+}
+
+
+// ============================================================
+// FETCH PROPERTY IMAGES
+// ============================================================
+
+export const fetchPropertyImages = async (
+  propertyId: string | number,
+): Promise<PropertyMedia[]> => {
+  const endpoint = `${BASE_API_URL}/properties/${propertyId}/media/images`;
+
+  console.log("Fetching property images from:", endpoint);
+
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch property images: ${response.status}`,
+    );
+  }
+
+  const json = await response.json();
+
+  return Array.isArray(json?.data) ? json.data : [];
+};

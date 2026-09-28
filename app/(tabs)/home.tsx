@@ -1,8 +1,7 @@
-
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -13,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
+import * as Location from "expo-location";
 
 import SideMenu from "@/app/components/sidebar/SideMenu";
 import PropertyCard from "@/app/components/properties/PropertyCard";
@@ -22,6 +22,7 @@ import {
   fetchProperties,
   fetchFeaturedProperties,
   fetchMostViewedProperties,
+  fetchNearbyProperties,
   type Property,
 } from "@/app/services/propertyApi";
 
@@ -44,23 +45,19 @@ export default function HomeScreen() {
   // PROPERTY STATE
   // ============================================================
 
-  // New to Market
   const [properties, setProperties] = useState<Property[]>([]);
 
-  // Featured Properties
-  const [featuredProperties, setFeaturedProperties] = useState<
-    Property[]
-  >([]);
+  const [featuredProperties, setFeaturedProperties] =
+    useState<Property[]>([]);
 
-  // Open Houses
-  const [openHouseProperties, setOpenHouseProperties] = useState<
-    Property[]
-  >([]);
+  const [openHouseProperties, setOpenHouseProperties] =
+    useState<Property[]>([]);
 
-  // Most Viewed
-  const [mostViewedProperties, setMostViewedProperties] = useState<
-    Property[]
-  >([]);
+  const [mostViewedProperties, setMostViewedProperties] =
+    useState<Property[]>([]);
+
+  const [nearbyProperties, setNearbyProperties] =
+    useState<Property[]>([]);
 
   // ============================================================
   // LOADING STATE
@@ -70,6 +67,9 @@ export default function HomeScreen() {
   const [loadingFeatured, setLoadingFeatured] = useState(true);
   const [loadingOpenHouses, setLoadingOpenHouses] = useState(true);
   const [loadingMostViewed, setLoadingMostViewed] = useState(true);
+
+  const [loadingNearby, setLoadingNearby] = useState(false);
+  const [nearbyRequested, setNearbyRequested] = useState(false);
 
   // ============================================================
   // AGENT STATE
@@ -92,8 +92,6 @@ export default function HomeScreen() {
 
   // ============================================================
   // LOAD NEW TO MARKET
-  //
-  // GET /properties
   // ============================================================
 
   useEffect(() => {
@@ -117,8 +115,6 @@ export default function HomeScreen() {
 
   // ============================================================
   // LOAD FEATURED PROPERTIES
-  //
-  // GET /property/get-featured
   // ============================================================
 
   useEffect(() => {
@@ -142,10 +138,6 @@ export default function HomeScreen() {
 
   // ============================================================
   // LOAD OPEN HOUSES
-  //
-  // GET /properties
-  //
-  // Filter properties that have open houses.
   // ============================================================
 
   useEffect(() => {
@@ -173,8 +165,6 @@ export default function HomeScreen() {
 
   // ============================================================
   // LOAD MOST VIEWED PROPERTIES
-  //
-  // GET /property/get-most-viewed
   // ============================================================
 
   useEffect(() => {
@@ -220,6 +210,99 @@ export default function HomeScreen() {
   }, []);
 
   // ============================================================
+  // FIND PROPERTIES IN MY LOCATION
+  // ============================================================
+
+  const handleUseMyLocation = async () => {
+    if (loadingNearby) {
+      return;
+    }
+
+    try {
+      setLoadingNearby(true);
+      setNearbyRequested(true);
+
+      // ----------------------------------------------------------
+      // CHECK LOCATION SERVICES
+      // ----------------------------------------------------------
+
+      const servicesEnabled =
+        await Location.hasServicesEnabledAsync();
+
+      if (!servicesEnabled) {
+        setNearbyProperties([]);
+
+        Alert.alert(
+          "Location Disabled",
+          "Please enable location services on your device and try again.",
+        );
+
+        return;
+      }
+
+      // ----------------------------------------------------------
+      // REQUEST LOCATION PERMISSION
+      // ----------------------------------------------------------
+
+      const permission =
+        await Location.requestForegroundPermissionsAsync();
+
+      if (
+        permission.status !==
+        Location.PermissionStatus.GRANTED
+      ) {
+        setNearbyProperties([]);
+
+        Alert.alert(
+          "Location Permission Required",
+          "Please allow location access to find properties near you.",
+        );
+
+        return;
+      }
+
+      // ----------------------------------------------------------
+      // GET CURRENT LOCATION
+      // ----------------------------------------------------------
+
+      const currentLocation =
+        await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+      const { latitude, longitude } = currentLocation.coords;
+
+      console.log("Current latitude:", latitude);
+      console.log("Current longitude:", longitude);
+
+      // ----------------------------------------------------------
+      // FIND NEARBY PROPERTIES
+      // ----------------------------------------------------------
+
+      const result = await fetchNearbyProperties(
+        latitude,
+        longitude,
+      );
+
+      setNearbyProperties(result);
+    } catch (error) {
+      console.error(
+        "Failed to load nearby properties:",
+        error,
+      );
+
+      setNearbyProperties([]);
+
+      Alert.alert(
+        "Unable to Find Properties",
+        "We could not find properties near your current location. Please try again.",
+      );
+    } finally {
+      setLoadingNearby(false);
+    }
+  };
+
+  // ============================================================
   // PROPERTY PRESS
   // ============================================================
 
@@ -246,16 +329,20 @@ export default function HomeScreen() {
   };
 
   // ============================================================
+  // VIEW ALL PROPERTIES
+  // ============================================================
+
+  const handleViewAllProperties = (title: string) => {
+    router.push({
+      pathname: "/(tabs)/properties",
+      params: {
+        category: title,
+      },
+    });
+  };
+
+  // ============================================================
   // PROPERTY SECTION
-  //
-  // IMPORTANT:
-  //
-  // Every property returned by the endpoint is displayed.
-  //
-  // FlatList allows the user to slide left/right.
-  //
-  // The PropertyCard is given a fixed width so it does not
-  // stretch when the device is rotated or used on a large screen.
   // ============================================================
 
   const renderPropertySection = (
@@ -265,9 +352,7 @@ export default function HomeScreen() {
   ) => {
     return (
       <View className="mb-10">
-        {/* ======================================================
-            SECTION TITLE
-        ====================================================== */}
+        {/* SECTION TITLE */}
 
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
@@ -279,9 +364,7 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
-            onPress={() => {
-              router.push("/(tabs)/properties");
-            }}
+            onPress={() => handleViewAllProperties(title)}
             accessibilityRole="button"
             accessibilityLabel={`View all ${title}`}
             className="flex-row items-center"
@@ -298,9 +381,7 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* ======================================================
-            LOADING
-        ====================================================== */}
+        {/* LOADING */}
 
         {loading ? (
           <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] py-10">
@@ -314,9 +395,7 @@ export default function HomeScreen() {
             </Text>
           </View>
         ) : sectionProperties.length === 0 ? (
-          /* ====================================================
-             EMPTY STATE
-          ==================================================== */
+          /* EMPTY */
 
           <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
             <Ionicons
@@ -335,81 +414,221 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
-            {/* ==================================================
-                HORIZONTAL PROPERTY SLIDER
+            {/* HORIZONTAL PROPERTY SLIDER */}
 
-                ALL properties from the endpoint are displayed.
-
-                The width is fixed so the card does not resize
-                based on the device/screen width.
-            ================================================== */}
-
-            <FlatList
-              data={sectionProperties}
-              keyExtractor={(property) =>
-                `${title}-${property.id}`
-              }
+            <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              nestedScrollEnabled
               directionalLockEnabled
               contentContainerStyle={{
                 paddingRight: 8,
               }}
-              ItemSeparatorComponent={() => (
-                <View style={{ width: 20 }} />
-              )}
-              renderItem={({ item }) => (
+            >
+              {sectionProperties.map((property, index) => (
                 <View
+                key={`${title}-${property.id}-${index}`}
                   style={{
                     width: 320,
+                    marginRight:
+                      index === sectionProperties.length - 1
+                        ? 0
+                        : 20,
                   }}
                 >
                   <PropertyCard
-                    property={item}
+                    property={property}
                     isFullWidth
                     onPress={handlePropertyPress}
                   />
                 </View>
-              )}
+              ))}
+            </ScrollView>
+
+            {/* VIEW ALL */}
+
+            <Pressable
+              onPress={() => handleViewAllProperties(title)}
+              accessibilityRole="button"
+              accessibilityLabel={`View all ${title}`}
+              className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
+            >
+              <Text className="mr-2 text-base font-bold text-white">
+                View All Properties
+              </Text>
+
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color="#fff"
+              />
+            </Pressable>
+          </>
+        )}
+      </View>
+    );
+  };
+
+  // ============================================================
+  // PROPERTIES IN MY LOCATION
+  // ============================================================
+
+  const renderNearbyPropertiesSection = () => {
+    return (
+      <View className="mb-10">
+        {/* SECTION TITLE */}
+
+        <View className="mb-4 flex-row items-center">
+          <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
+
+          <View>
+            <Text className="text-lg font-bold text-white">
+              Properties in My Location
+            </Text>
+
+            <Text className="mt-1 text-xs text-gray-500">
+              Find properties near your current location
+            </Text>
+          </View>
+        </View>
+
+        {/* USE MY LOCATION */}
+
+        <Pressable
+          onPress={handleUseMyLocation}
+          disabled={loadingNearby}
+          accessibilityRole="button"
+          accessibilityLabel="Use my location to find nearby properties"
+          className={`mb-4 w-full flex-row items-center justify-center rounded-xl px-5 py-4 ${
+            loadingNearby
+              ? "bg-red-900"
+              : "bg-red-600 active:bg-red-700"
+          }`}
+        >
+          {loadingNearby ? (
+            <>
+              <ActivityIndicator
+                size="small"
+                color="#fff"
+              />
+
+              <Text className="ml-3 text-base font-bold text-white">
+                Finding Properties...
+              </Text>
+            </>
+          ) : (
+            <>
+              <Ionicons
+                name="location"
+                size={21}
+                color="#fff"
+              />
+
+              <Text className="ml-2 text-base font-bold text-white">
+                Use My Location
+              </Text>
+            </>
+          )}
+        </Pressable>
+
+        {/* BEFORE LOCATION SEARCH */}
+
+        {!nearbyRequested && !loadingNearby && (
+          <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-8">
+            <Ionicons
+              name="location-outline"
+              size={44}
+              color="#555"
             />
 
-            {/* ==================================================
-                SLIDER HINT
+            <Text className="mt-4 text-base font-semibold text-gray-400">
+              Find properties near you
+            </Text>
 
-                Only shown when there is more than one property.
-            ================================================== */}
+            <Text className="mt-1 text-center text-sm leading-5 text-gray-600">
+              Press "Use My Location" to discover properties
+              close to your current location.
+            </Text>
+          </View>
+        )}
 
-            {sectionProperties.length > 1 && (
-              <View className="mt-1 flex-row items-center justify-center">
-                <Ionicons
-                  name="chevron-back"
-                  size={14}
-                  color="#666"
-                />
+        {/* LOADING */}
 
-                <Text className="mx-1 text-xs text-gray-600">
-                  Swipe to see more
-                </Text>
+        {loadingNearby && (
+          <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] py-10">
+            <ActivityIndicator
+              size="large"
+              color="#ef4444"
+            />
 
-                <Ionicons
-                  name="chevron-forward"
-                  size={14}
-                  color="#666"
-                />
-              </View>
-            )}
+            <Text className="mt-3 text-sm text-gray-500">
+              Searching near your location...
+            </Text>
+          </View>
+        )}
 
-            {/* ==================================================
-                VIEW ALL BUTTON
-            ================================================== */}
+        {/* NO RESULTS */}
+
+        {nearbyRequested &&
+        !loadingNearby &&
+        nearbyProperties.length === 0 ? (
+          <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
+            <Ionicons
+              name="location-outline"
+              size={44}
+              color="#444"
+            />
+
+            <Text className="mt-4 text-base font-semibold text-gray-400">
+              No nearby properties found
+            </Text>
+
+            <Text className="mt-1 text-center text-sm leading-5 text-gray-600">
+              There are currently no properties available
+              within the nearby search radius.
+            </Text>
+          </View>
+        ) : null}
+
+        {/* NEARBY PROPERTIES */}
+
+        {!loadingNearby && nearbyProperties.length > 0 && (
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              directionalLockEnabled
+              contentContainerStyle={{
+                paddingRight: 8,
+              }}
+            >
+              {nearbyProperties.map((property, index) => (
+                <View
+                  key={`nearby-${property.id}`}
+                  style={{
+                    width: 320,
+                    marginRight:
+                      index === nearbyProperties.length - 1
+                        ? 0
+                        : 20,
+                  }}
+                >
+                  <PropertyCard
+                    property={property}
+                    isFullWidth
+                    onPress={handlePropertyPress}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+
+            {/* VIEW ALL NEARBY PROPERTIES */}
 
             <Pressable
               onPress={() => {
                 router.push("/(tabs)/properties");
               }}
               accessibilityRole="button"
-              accessibilityLabel={`View all ${title}`}
+              accessibilityLabel="View all nearby properties"
               className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
             >
               <Text className="mr-2 text-base font-bold text-white">
@@ -479,9 +698,7 @@ export default function HomeScreen() {
         backgroundColor="#0d0d0d"
       />
 
-      {/* ========================================================
-          HEADER
-      ======================================================== */}
+      {/* HEADER */}
 
       <View className="flex-row items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
         <View>
@@ -508,9 +725,7 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {/* ========================================================
-          CONTENT
-      ======================================================== */}
+      {/* CONTENT */}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -519,9 +734,7 @@ export default function HomeScreen() {
           paddingBottom: 40,
         }}
       >
-        {/* ======================================================
-            WELCOME
-        ====================================================== */}
+        {/* INTRO */}
 
         <View className="mb-6">
           <Text className="text-2xl font-bold text-white">
@@ -533,11 +746,7 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* ======================================================
-            FEATURED PROPERTIES
-
-            GET /property/get-featured
-        ====================================================== */}
+        {/* FEATURED */}
 
         {renderPropertySection(
           "Featured Properties",
@@ -545,11 +754,7 @@ export default function HomeScreen() {
           loadingFeatured,
         )}
 
-        {/* ======================================================
-            NEW TO MARKET
-
-            GET /properties
-        ====================================================== */}
+        {/* NEW TO MARKET */}
 
         {renderPropertySection(
           "New to Market",
@@ -557,11 +762,7 @@ export default function HomeScreen() {
           loadingProperties,
         )}
 
-        {/* ======================================================
-            OPEN HOUSES
-
-            GET /properties + open house filter
-        ====================================================== */}
+        {/* OPEN HOUSES */}
 
         {renderPropertySection(
           "Open Houses",
@@ -569,17 +770,17 @@ export default function HomeScreen() {
           loadingOpenHouses,
         )}
 
-        {/* ======================================================
-            MOST VIEWED
-
-            GET /property/get-most-viewed
-        ====================================================== */}
+        {/* MOST VIEWED */}
 
         {renderPropertySection(
           "Most Viewed",
           mostViewedProperties,
           loadingMostViewed,
         )}
+
+        {/* PROPERTIES IN MY LOCATION */}
+
+        {renderNearbyPropertiesSection()}
 
         {/* ======================================================
             AGENTS
@@ -775,10 +976,8 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       </ScrollView>
-
-      {/* ========================================================
-          SIDE MENU
-      ======================================================== */}
+ 
+      {/* SIDE MENU */}
 
       <SideMenu
         visible={menuVisible}
@@ -787,4 +986,3 @@ export default function HomeScreen() {
     </SafeAreaView>
   );
 }
-

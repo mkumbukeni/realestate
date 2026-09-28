@@ -1,8 +1,3 @@
-
-// app/(tabs)/properties/index.tsx
-
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
 import React, {
   useCallback,
   useEffect,
@@ -11,607 +6,830 @@ import React, {
 } from "react";
 import {
   ActivityIndicator,
-  Pressable,
   RefreshControl,
-  SectionList,
-  StatusBar,
+  ScrollView,
   Text,
   TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
-import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
-import PropertyCard from "@/app/components/properties/PropertyCard";
-import SideMenu from "@/app/components/sidebar/SideMenu";
+import SideMenu from "../../components/sidebar/SideMenu";
+import AuthRequiredModal from "../../components/auth/AuthRequiredModal";
+import PropertyCard from "../../components/properties/PropertyCard";
 
 import {
+  fetchFeaturedProperties,
+  fetchMostViewedProperties,
   fetchProperties,
-  type Property,
-} from "@/app/services/propertyApi";
+} from "../../services/propertyApi";
 
-// ============================================================
-// PROPERTY ROW HELPER
-// ============================================================
+import type { Property } from "../../data/data";
 
-function createPropertyRows(
-  properties: Property[],
-): Property[][] {
-  const rows: Property[][] = [];
+type PropertyCategory =
+  | "Featured Properties"
+  | "New to Market"
+  | "Open Houses"
+  | "Most Viewed"
+  | null;
 
-  for (
-    let index = 0;
-    index < properties.length;
-    index += 2
+type FilterType = "All" | "For Sale" | "For Rent";
+
+type PropertySection = {
+  title: string;
+  data: Property[];
+};
+
+const getCategory = (
+  category: string | string[] | undefined,
+): PropertyCategory => {
+  const value = Array.isArray(category)
+    ? category[0]
+    : category;
+
+  if (
+    value === "Featured Properties" ||
+    value === "New to Market" ||
+    value === "Open Houses" ||
+    value === "Most Viewed"
   ) {
-    rows.push(properties.slice(index, index + 2));
+    return value;
   }
 
-  return rows;
-}
+  return null;
+};
 
-// ============================================================
-// SECTION TYPE
-// ============================================================
+const getPropertyId = (
+  property: Property,
+): string => {
+  return String(property.id);
+};
 
-interface PropertySection {
-  title: string;
-  data: Property[][];
-}
-
-// ============================================================
-// APP
-// ============================================================
-
-const PropertiesScreen = () => {
+export default function PropertiesScreen() {
   const router = useRouter();
 
-  // ==========================================================
-  // PROPERTIES
-  // ==========================================================
+  const {
+    width: screenWidth,
+    height: screenHeight,
+  } = useWindowDimensions();
 
-  const [properties, setProperties] = useState<Property[]>(
-    [],
+  const params = useLocalSearchParams<{
+    category?: string | string[];
+  }>();
+
+  const selectedCategory = getCategory(
+    params.category,
   );
 
-  const [loading, setLoading] = useState(true);
+  const [properties, setProperties] = useState<
+    Property[]
+  >([]);
 
-  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] =
+    useState<FilterType>("All");
 
-  // ==========================================================
-  // SEARCH
-  // ==========================================================
+  const [loading, setLoading] =
+    useState(true);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [refreshing, setRefreshing] =
+    useState(false);
 
-  // ==========================================================
-  // SIDE MENU
-  // ==========================================================
-
-  const [menuVisible, setMenuVisible] = useState(false);
-
-  // ==========================================================
-  // AUTH MODAL
-  // ==========================================================
+  const [menuVisible, setMenuVisible] =
+    useState(false);
 
   const [authModalVisible, setAuthModalVisible] =
     useState(false);
 
-  /*
-   * IMPORTANT:
-   *
-   * Replace this with your actual LoginContext/AuthContext.
-   *
-   * Example:
-   *
-   * const { isLoggedIn } = useLogin();
-   */
-
+  // Replace this with your real authentication state.
   const isLoggedIn = false;
 
-  // ==========================================================
-  // FETCH PROPERTIES
-  // ==========================================================
+  /*
+   * --------------------------------------------------
+   * RESPONSIVE LAYOUT
+   * --------------------------------------------------
+   *
+   * Portrait phone:
+   *
+   *        [ PROPERTY CARD ]
+   *
+   *        [ PROPERTY CARD ]
+   *
+   * Landscape:
+   *
+   * [ CARD ]       [ CARD ]
+   *
+   * [ CARD ]       [ CARD ]
+   *
+   * Tablet / large screen:
+   *
+   * [ CARD ] [ CARD ] [ CARD ]
+   *
+   * The number of columns is calculated automatically.
+   */
 
-  const loadProperties = useCallback(async () => {
-    try {
-      setError(null);
+  const isLandscape =
+    screenWidth > screenHeight;
 
-      const result = await fetchProperties();
-
-      setProperties(result);
-    } catch (requestError) {
-      console.error(
-        "Failed to load properties:",
-        requestError,
-      );
-
-      if (requestError instanceof Error) {
-        setError(requestError.message);
-      } else {
-        setError(
-          "Unable to load properties. Please try again.",
-        );
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+  const numColumns = useMemo(() => {
+    /*
+     * Normal portrait phones use one column.
+     */
+    if (
+      !isLandscape &&
+      screenWidth < 600
+    ) {
+      return 1;
     }
-  }, []);
 
-  // ==========================================================
-  // INITIAL LOAD
-  // ==========================================================
+    const horizontalPadding = 32;
+    const gap = 20;
+
+    const availableWidth =
+      screenWidth - horizontalPadding;
+
+    /*
+     * Minimum desired width of a card.
+     */
+    const minimumCardWidth = 260;
+
+    const columns = Math.floor(
+      (availableWidth + gap) /
+        (minimumCardWidth + gap),
+    );
+
+    /*
+     * Landscape should always have
+     * at least two columns.
+     */
+    if (isLandscape) {
+      return Math.max(2, columns);
+    }
+
+    return Math.max(1, columns);
+  }, [screenWidth, isLandscape]);
+
+  /*
+   * Calculate the exact width of each card.
+   */
+  const cardWidth = useMemo(() => {
+    const horizontalPadding = 32;
+    const gap = 20;
+
+    const availableWidth =
+      screenWidth - horizontalPadding;
+
+    if (numColumns === 1) {
+      return availableWidth;
+    }
+
+    const totalGaps =
+      gap * (numColumns - 1);
+
+    return (
+      (availableWidth - totalGaps) /
+      numColumns
+    );
+  }, [screenWidth, numColumns]);
+
+  /*
+   * --------------------------------------------------
+   * LOAD PROPERTIES
+   * --------------------------------------------------
+   */
+
+  const loadProperties =
+    useCallback(async () => {
+      try {
+        setLoading(true);
+
+        let data: Property[] = [];
+
+        switch (selectedCategory) {
+          case "Featured Properties":
+            data =
+              await fetchFeaturedProperties();
+            break;
+
+          case "Most Viewed":
+            data =
+              await fetchMostViewedProperties();
+            break;
+
+          case "Open Houses": {
+            const allProperties =
+              await fetchProperties();
+
+            data = allProperties.filter(
+              (property) =>
+                property.isOpenHouse === true,
+            );
+
+            break;
+          }
+
+          case "New to Market":
+            data =
+              await fetchProperties();
+            break;
+
+          default:
+            data =
+              await fetchProperties();
+            break;
+        }
+
+        setProperties(data);
+      } catch (error) {
+        console.error(
+          "Failed to load properties:",
+          error,
+        );
+
+        setProperties([]);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    }, [selectedCategory]);
 
   useEffect(() => {
-    void loadProperties();
+    loadProperties();
   }, [loadProperties]);
 
-  // ==========================================================
-  // PULL TO REFRESH
-  // ==========================================================
-
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    void loadProperties();
-  };
+    loadProperties();
+  }, [loadProperties]);
 
-  // ==========================================================
-  // SEARCH
-  // ==========================================================
+  /*
+   * --------------------------------------------------
+   * PROPERTY PRESS
+   * --------------------------------------------------
+   */
 
-  const filteredProperties = useMemo(() => {
-    const searchText = searchQuery
-      .toLowerCase()
-      .trim();
+  const handlePropertyPress =
+    useCallback(
+      (property: Property) => {
+        if (!isLoggedIn) {
+          setAuthModalVisible(true);
+          return;
+        }
 
-    if (searchText === "") {
-      return properties;
-    }
-
-    return properties.filter((property) => {
-      const searchableText = [
-        property.location,
-        property.area,
-        property.district,
-        property.region,
-        property.type,
-        property.tag,
-        property.category,
-        property.propertyDesign,
-        property.constructionStage,
-        property.description,
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return searchableText.includes(searchText);
-    });
-  }, [properties, searchQuery]);
-
-  // ==========================================================
-  // CLEAR SEARCH
-  // ==========================================================
-
-  const clearSearch = () => {
-    setSearchQuery("");
-  };
-
-  // ==========================================================
-  // PROPERTY PRESS
-  // ==========================================================
-
-  const handlePropertyPress = (
-    property: Property,
-  ) => {
-    if (!isLoggedIn) {
-      setAuthModalVisible(true);
-      return;
-    }
-
-    router.push({
-      pathname: "/(tabs)/properties/[id]",
-      params: {
-        id: property.id,
+        router.push({
+          pathname:
+            "/(tabs)/properties/[id]",
+          params: {
+            id: getPropertyId(property),
+          },
+        });
       },
-    });
-  };
-
-  // ==========================================================
-  // PROPERTY SECTIONS
-  // ==========================================================
-
-  const propertySections = useMemo<
-    PropertySection[]
-  >(() => {
-    const sections: PropertySection[] = [];
-
-    const forSale = filteredProperties.filter(
-      (property) =>
-        property.category === "For Sale",
+      [isLoggedIn, router],
     );
 
-    const forRent = filteredProperties.filter(
-      (property) =>
-        property.category === "For Rent",
+  /*
+   * --------------------------------------------------
+   * SEARCH + FILTER
+   * --------------------------------------------------
+   */
+
+  const filteredProperties =
+    useMemo(() => {
+      let result = properties;
+
+      if (filter === "For Sale") {
+        result = result.filter(
+          (property) => {
+            const value = String(
+              property.listingType ??
+                property.listing_type ??
+                property.status ??
+                "",
+            ).toLowerCase();
+
+            return (
+              value.includes("sale") ||
+              value.includes("sell") ||
+              value === "for_sale"
+            );
+          },
+        );
+      }
+
+      if (filter === "For Rent") {
+        result = result.filter(
+          (property) => {
+            const value = String(
+              property.listingType ??
+                property.listing_type ??
+                property.status ??
+                "",
+            ).toLowerCase();
+
+            return (
+              value.includes("rent") ||
+              value.includes("rental") ||
+              value === "for_rent"
+            );
+          },
+        );
+      }
+
+      const query =
+        search.trim().toLowerCase();
+
+      if (!query) {
+        return result;
+      }
+
+      return result.filter(
+        (property) => {
+          const searchableText = [
+            property.title,
+            property.description,
+            property.propertyType,
+            property.property_type,
+            property.type,
+            property.location?.city,
+            property.location?.district,
+            property.location?.area,
+            property.location?.address,
+            property.location?.country,
+            property.status,
+            property.listingType,
+            property.listing_type,
+            ...(Array.isArray(
+              property.tags,
+            )
+              ? property.tags
+              : []),
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+          return searchableText.includes(
+            query,
+          );
+        },
+      );
+    }, [
+      properties,
+      search,
+      filter,
+    ]);
+
+  /*
+   * --------------------------------------------------
+   * PROPERTY SECTIONS
+   * --------------------------------------------------
+   */
+
+  const propertySections =
+    useMemo<PropertySection[]>(() => {
+      if (selectedCategory) {
+        return [
+          {
+            title: selectedCategory,
+            data: filteredProperties,
+          },
+        ];
+      }
+
+      const forSale =
+        filteredProperties.filter(
+          (property) => {
+            const value = String(
+              property.listingType ??
+                property.listing_type ??
+                property.status ??
+                "",
+            ).toLowerCase();
+
+            return (
+              value.includes("sale") ||
+              value.includes("sell") ||
+              value === "for_sale"
+            );
+          },
+        );
+
+      const forRent =
+        filteredProperties.filter(
+          (property) => {
+            const value = String(
+              property.listingType ??
+                property.listing_type ??
+                property.status ??
+                "",
+            ).toLowerCase();
+
+            return (
+              value.includes("rent") ||
+              value.includes("rental") ||
+              value === "for_rent"
+            );
+          },
+        );
+
+      return [
+        {
+          title: "For Sale",
+          data: forSale,
+        },
+        {
+          title: "For Rent",
+          data: forRent,
+        },
+      ];
+    }, [
+      filteredProperties,
+      selectedCategory,
+    ]);
+
+  const screenTitle =
+    selectedCategory ?? "Real Estate";
+
+  /*
+   * --------------------------------------------------
+   * PROPERTY GRID
+   * --------------------------------------------------
+   *
+   * Properties are manually divided into rows.
+   *
+   * IMPORTANT:
+   *
+   * justifyContent is set to "center" when:
+   *
+   * 1. We are on a portrait phone, OR
+   * 2. The final row does not have enough cards.
+   *
+   * This prevents cards from being stuck on
+   * the left side of the screen.
+   */
+
+  const renderPropertyGrid =
+    useCallback(
+      (
+        section: PropertySection,
+      ) => {
+        const rows: Property[][] = [];
+
+        for (
+          let i = 0;
+          i < section.data.length;
+          i += numColumns
+        ) {
+          rows.push(
+            section.data.slice(
+              i,
+              i + numColumns,
+            ),
+          );
+        }
+
+        return (
+          <View className="w-full">
+            {rows.map(
+              (row, rowIndex) => {
+                /*
+                 * Center the row when:
+                 *
+                 * - there is only one column, OR
+                 * - this is an incomplete final row.
+                 */
+                const shouldCenter =
+                  numColumns === 1 ||
+                  row.length < numColumns;
+
+                return (
+                  <View
+                    key={`${section.title}-row-${rowIndex}`}
+                    style={{
+                      width: "100%",
+                      flexDirection: "row",
+                      justifyContent:
+                        shouldCenter
+                          ? "center"
+                          : "flex-start",
+                      marginBottom: 24,
+                    }}
+                  >
+                    {row.map(
+                      (
+                        property,
+                        columnIndex,
+                      ) => {
+                        const isLastColumn =
+                          columnIndex ===
+                          row.length - 1;
+
+                        return (
+                          <View
+                            key={getPropertyId(
+                              property,
+                            )}
+                            style={{
+                              width: cardWidth,
+                              marginRight:
+                                isLastColumn
+                                  ? 0
+                                  : 20,
+                            }}
+                          >
+                            <PropertyCard
+                              property={
+                                property
+                              }
+                              isFullWidth
+                              onPress={
+                                handlePropertyPress
+                              }
+                            />
+                          </View>
+                        );
+                      },
+                    )}
+                  </View>
+                );
+              },
+            )}
+          </View>
+        );
+      },
+      [
+        numColumns,
+        cardWidth,
+        handlePropertyPress,
+      ],
     );
 
-    if (forSale.length > 0) {
-      sections.push({
-        title: "For Sale",
-        data: createPropertyRows(forSale),
-      });
-    }
+  /*
+   * --------------------------------------------------
+   * EMPTY STATE
+   * --------------------------------------------------
+   */
 
-    if (forRent.length > 0) {
-      sections.push({
-        title: "For Rent",
-        data: createPropertyRows(forRent),
-      });
-    }
+  const renderEmptyComponent =
+    useCallback(() => {
+      if (loading) {
+        return null;
+      }
 
-    return sections;
-  }, [filteredProperties]);
-
-  // ==========================================================
-  // LOADING SCREEN
-  // ==========================================================
-
-  if (loading) {
-    return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
-        />
-
-        {/* HEADER */}
-
-        <View className="flex-row items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
-          <Text className="text-2xl font-bold text-white">
-            Real Estate
-          </Text>
-
-          <Pressable
-            onPress={() => setMenuVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Open menu"
-          >
-            <Ionicons
-              name="menu-outline"
-              size={28}
-              color="#fff"
-            />
-          </Pressable>
-        </View>
-
-        {/* LOADING */}
-
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator
-            size="large"
-            color="#ef4444"
+      return (
+        <View className="items-center justify-center px-6 py-20">
+          <Ionicons
+            name="home-outline"
+            size={54}
+            color="#71717a"
           />
 
-          <Text className="mt-4 text-sm text-gray-400">
-            Loading properties...
+          <Text className="mt-4 text-center text-lg font-semibold text-white">
+            No properties found
+          </Text>
+
+          <Text className="mt-2 text-center text-sm text-zinc-400">
+            Try changing your search or
+            filter.
           </Text>
         </View>
+      );
+    }, [loading]);
 
-        <SideMenu
-          visible={menuVisible}
-          onClose={() => setMenuVisible(false)}
-        />
-      </SafeAreaView>
-    );
-  }
-
-  // ==========================================================
-  // ERROR SCREEN
-  // ==========================================================
-
-  if (error && properties.length === 0) {
-    return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
-        />
-
-        {/* HEADER */}
-
-        <View className="flex-row items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
-          <Text className="text-2xl font-bold text-white">
-            Real Estate
-          </Text>
-
-          <Pressable
-            onPress={() => setMenuVisible(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Open menu"
-          >
-            <Ionicons
-              name="menu-outline"
-              size={28}
-              color="#fff"
-            />
-          </Pressable>
-        </View>
-
-        {/* ERROR */}
-
-        <View className="flex-1 items-center justify-center px-8">
-          <View className="h-16 w-16 items-center justify-center rounded-full bg-[#241616]">
-            <Ionicons
-              name="cloud-offline-outline"
-              size={32}
-              color="#ef4444"
-            />
-          </View>
-
-          <Text className="mt-5 text-center text-lg font-bold text-white">
-            Unable to load properties
-          </Text>
-
-          <Text className="mt-2 text-center text-sm leading-5 text-gray-500">
-            {error}
-          </Text>
-
-          <Pressable
-            onPress={() => {
-              setLoading(true);
-              void loadProperties();
-            }}
-            className="mt-6 rounded-xl bg-red-600 px-6 py-3"
-          >
-            <Text className="font-bold text-white">
-              Try Again
-            </Text>
-          </Pressable>
-        </View>
-
-        <SideMenu
-          visible={menuVisible}
-          onClose={() => setMenuVisible(false)}
-        />
-      </SafeAreaView>
-    );
-  }
-
-  // ==========================================================
-  // MAIN SCREEN
-  // ==========================================================
+  /*
+   * --------------------------------------------------
+   * SCREEN
+   * --------------------------------------------------
+   */
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0d0d0d]">
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
-      />
-
-      {/* ====================================================== */}
+    <SafeAreaView
+      className="flex-1 bg-[#0d0d0d]"
+      edges={[
+        "top",
+        "left",
+        "right",
+      ]}
+    >
       {/* HEADER */}
-      {/* ====================================================== */}
+      <View className="border-b border-zinc-800 px-4 pb-4 pt-3">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1 pr-4">
+            <Text className="text-2xl font-bold text-white">
+              {screenTitle}
+            </Text>
 
-      <View className="flex-row items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
-        <Text className="text-2xl font-bold text-white">
-          Real Estate
-        </Text>
+            <Text className="mt-1 text-sm text-zinc-400">
+              Find your next property
+            </Text>
+          </View>
 
-        <Pressable
-          onPress={() => setMenuVisible(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Open menu"
-          style={({ pressed }) => ({
-            opacity: pressed ? 0.6 : 1,
-          })}
-        >
-          <Ionicons
-            name="menu-outline"
-            size={28}
-            color="#fff"
-          />
-        </Pressable>
-      </View>
-
-      {/* ====================================================== */}
-      {/* SEARCH BAR */}
-      {/* ====================================================== */}
-
-      <View className="mx-4 mt-4 flex-row items-center rounded-xl border border-[#292929] bg-[#181818] px-3.5">
-        <Ionicons
-          name="search-outline"
-          size={20}
-          color="#999"
-        />
-
-        <TextInput
-          className="h-12 flex-1 px-2 text-base text-white"
-          placeholder="Search by location, type, or tag..."
-          placeholderTextColor="#777"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          returnKeyType="search"
-        />
-
-        {searchQuery.length > 0 && (
-          <Pressable
-            onPress={clearSearch}
-            accessibilityRole="button"
-            accessibilityLabel="Clear search"
-            style={({ pressed }) => ({
-              opacity: pressed ? 0.6 : 1,
-            })}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() =>
+              setMenuVisible(true)
+            }
+            className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
           >
             <Ionicons
-              name="close-circle"
-              size={20}
-              color="#ef4444"
+              name="menu-outline"
+              size={25}
+              color="#ffffff"
             />
-          </Pressable>
+          </TouchableOpacity>
+        </View>
+
+        {/* SEARCH */}
+        <View className="mt-4 flex-row items-center rounded-xl bg-[#171717] px-4">
+          <Ionicons
+            name="search-outline"
+            size={21}
+            color="#a1a1aa"
+          />
+
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search by location, type, or tag..."
+            placeholderTextColor="#71717a"
+            className="ml-3 h-12 flex-1 text-base text-white"
+            returnKeyType="search"
+          />
+
+          {search.length > 0 && (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() =>
+                setSearch("")
+              }
+            >
+              <Ionicons
+                name="close-circle"
+                size={21}
+                color="#71717a"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* FILTERS */}
+        {!selectedCategory && (
+          <View className="mt-4 flex-row">
+            {(
+              [
+                "All",
+                "For Sale",
+                "For Rent",
+              ] as FilterType[]
+            ).map((item) => {
+              const active =
+                filter === item;
+
+              return (
+                <TouchableOpacity
+                  key={item}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    setFilter(item)
+                  }
+                  className={`mr-2 rounded-full px-5 py-2.5 ${
+                    active
+                      ? "bg-red-600"
+                      : "bg-[#171717]"
+                  }`}
+                >
+                  <Text
+                    className={`text-sm font-semibold ${
+                      active
+                        ? "text-white"
+                        : "text-zinc-400"
+                    }`}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         )}
       </View>
 
-      {/* ====================================================== */}
-      {/* RESULTS COUNT */}
-      {/* ====================================================== */}
-
-      <View className="px-5 pb-1.5 pt-3.5">
-        <Text className="text-sm font-medium text-gray-400">
-          {filteredProperties.length}{" "}
-          {filteredProperties.length === 1
-            ? "property"
-            : "properties"}{" "}
-          found
-        </Text>
-      </View>
-
-      {/* ====================================================== */}
-      {/* PROPERTY LIST */}
-      {/* ====================================================== */}
-
-      <SectionList
-        sections={propertySections}
-        renderItem={({ item: propertyRow }) => {
-          const isFullWidth =
-            propertyRow.length === 1;
-
-          return (
-            <View className="flex-row gap-3">
-              {propertyRow.map((property) => (
-                <View
-                  key={property.id}
-                  className="flex-1"
-                >
-                  <PropertyCard
-                    property={property}
-                    isFullWidth={isFullWidth}
-                    onPress={handlePropertyPress}
-                  />
-                </View>
-              ))}
-            </View>
-          );
-        }}
-        keyExtractor={(propertyRow) =>
-          propertyRow
-            .map((property) => property.id)
-            .join("-")
-        }
-        showsVerticalScrollIndicator={false}
-        stickySectionHeadersEnabled={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor="#ef4444"
-            colors={["#ef4444"]}
+      {/* PROPERTY CONTENT */}
+      {loading && !refreshing ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator
+            size="large"
+            color="#dc2626"
           />
-        }
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingBottom: 20,
-        }}
-        renderSectionHeader={({ section }) => {
-          const listingCount =
-            section.data.flat().length;
 
-          return (
-            <View className="mb-2.5 mt-5 flex-row items-center justify-between border-l-[3px] border-red-500 pl-2.5">
-              <Text className="text-lg font-bold text-white">
-                {section.title}
-              </Text>
-
-              <Text className="text-xs font-semibold text-red-400">
-                {listingCount}{" "}
-                {listingCount === 1
-                  ? "listing"
-                  : "listings"}
-              </Text>
-            </View>
-          );
-        }}
-        renderSectionFooter={({ section }) => {
-          const listingCount =
-            section.data.flat().length;
-
-          if (listingCount === 0) {
-            return null;
-          }
-
-          return (
-            <Pressable
-              accessibilityLabel={`View all ${section.title}`}
-              accessibilityRole="button"
-              onPress={() =>
-                router.push({
-                  pathname:
-                    "/(tabs)/properties/all-properties",
-                  params: {
-                    category: section.title,
-                  },
-                })
-              }
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.7 : 1,
-              })}
-              className="mb-2"
-            >
-              <View className="flex-row items-center justify-center rounded-xl border border-[#383838] bg-[#1a1a1a] px-4 py-3">
-                <Text className="mr-1.5 text-sm font-bold text-red-400">
-                  View All {section.title}
-                </Text>
-
-                <Ionicons
-                  name="arrow-forward"
-                  size={16}
-                  color="#f87171"
-                />
-              </View>
-            </Pressable>
-          );
-        }}
-        ListEmptyComponent={
-          <View className="items-center justify-center py-16">
-            <Ionicons
-              name="home-outline"
-              size={60}
-              color="#444"
+          <Text className="mt-3 text-sm text-zinc-400">
+            Loading properties...
+          </Text>
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#dc2626"
+              colors={["#dc2626"]}
             />
+          }
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            paddingBottom: 40,
+          }}
+        >
+          {propertySections.map(
+            (section) => {
+              if (
+                section.data.length === 0
+              ) {
+                return null;
+              }
 
-            <Text className="mt-4 text-lg font-semibold text-gray-400">
-              No properties found
-            </Text>
+              return (
+                <View
+                  key={section.title}
+                  className="w-full"
+                >
+                  {/* SECTION HEADER */}
+                  <View className="mb-4 mt-3 flex-row items-center justify-between">
+                    <Text className="text-xl font-bold text-white">
+                      {section.title}
+                    </Text>
 
-            <Text className="mt-1 text-center text-sm text-gray-600">
-              Try adjusting your search or check back later.
-            </Text>
-          </View>
-        }
-      />
+                    <Text className="text-sm text-zinc-400">
+                      {section.data.length}{" "}
+                      {section.data.length ===
+                      1
+                        ? "property"
+                        : "properties"}
+                    </Text>
+                  </View>
 
-      {/* ====================================================== */}
-      {/* AUTH MODAL */}
-      {/* ====================================================== */}
+                  {/* PROPERTY GRID */}
+                  {renderPropertyGrid(
+                    section,
+                  )}
 
-      <AuthRequiredModal
-        visible={authModalVisible}
-        onClose={() => setAuthModalVisible(false)}
-      />
+                  {/* VIEW ALL */}
+                  {!selectedCategory && (
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        router.push({
+                          pathname:
+                            "/(tabs)/properties",
+                          params: {
+                            category:
+                              "New to Market",
+                          },
+                        });
+                      }}
+                      className="mb-8 mt-1 h-12 w-full items-center justify-center rounded-xl bg-red-600"
+                    >
+                      <Text className="text-base font-bold text-white">
+                        View All Properties
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            },
+          )}
 
-      {/* ====================================================== */}
+          {propertySections.every(
+            (section) =>
+              section.data.length === 0,
+          ) &&
+            renderEmptyComponent()}
+        </ScrollView>
+      )}
+
       {/* SIDE MENU */}
-      {/* ====================================================== */}
-
       <SideMenu
         visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
+        onClose={() =>
+          setMenuVisible(false)
+        }
+      />
+
+      {/* AUTH MODAL */}
+      <AuthRequiredModal
+        visible={authModalVisible}
+        onClose={() =>
+          setAuthModalVisible(false)
+        }
       />
     </SafeAreaView>
   );
-};
-
-export default PropertiesScreen;
-
+}
