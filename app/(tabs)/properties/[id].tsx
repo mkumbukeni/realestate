@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StatusBar,
@@ -423,6 +424,64 @@ export default function PropertyDetailsScreen() {
       longitude,
     };
   }, [property]);
+
+  // ============================================================
+  // MAKE OFFER
+  // ============================================================
+
+  const handleMakeOffer = async () => {
+    if (!propertyId) {
+      console.error(
+        "Cannot make offer: property ID is missing.",
+      );
+      return;
+    }
+
+    /*
+     * The "19" in this URL is constant.
+     *
+     * Only the final number changes according
+     * to the property ID.
+     *
+     * Example:
+     *
+     * Property 6:
+     * https://dev.valuationsafrica.mw/property/makeoffer/19/6
+     *
+     * Property 7:
+     * https://dev.valuationsafrica.mw/property/makeoffer/19/7
+     */
+    const makeOfferUrl =
+      `https://dev.valuationsafrica.mw/property/makeoffer/19/${propertyId}`;
+
+    try {
+      const supported =
+        await Linking.canOpenURL(
+          makeOfferUrl,
+        );
+
+      if (!supported) {
+        console.error(
+          "Cannot open Make Offer URL:",
+          makeOfferUrl,
+        );
+        return;
+      }
+
+      /*
+       * This opens the external website
+       * outside the Expo application.
+       */
+      await Linking.openURL(
+        makeOfferUrl,
+      );
+    } catch (error) {
+      console.error(
+        "Failed to open Make Offer website:",
+        error,
+      );
+    }
+  };
 
   // ============================================================
   // BACK
@@ -1106,10 +1165,16 @@ export default function PropertyDetailsScreen() {
           {/* ================================================= */}
 
           <Pressable
-            onPress={() => {}}
-            className="mt-8 w-full items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
+            onPress={handleMakeOffer}
+            className="mt-8 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
           >
-            <Text className="text-base font-bold text-white">
+            <Ionicons
+              name="pricetag-outline"
+              size={20}
+              color="#fff"
+            />
+
+            <Text className="ml-2 text-base font-bold text-white">
               Make Offer
             </Text>
           </Pressable>

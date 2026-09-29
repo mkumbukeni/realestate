@@ -63,29 +63,41 @@ export interface OpenHouse {
   description: string;
 }
 
+// ============================================================
+// API PROPERTY
+// ============================================================
+
 export interface ApiProperty {
   id: number;
 
   valuer_id: number | null;
+
   property_number: string | null;
+
   parent_valuation: number | null;
+
   project_id: number | null;
 
   owner_name: string | null;
 
   property_type: string;
+
   property_design: string | null;
+
   construction_stage: string | null;
 
   year_built: string | null;
+
   age: number | null;
 
   eul: number | null;
+
   rel: number | null;
 
   measurements: string | null;
 
   no_rooms: number | null;
+
   no_of_bathrooms: number | null;
 
   occupancy: string | null;
@@ -93,8 +105,11 @@ export interface ApiProperty {
   attributes: PropertyAttributes | null;
 
   title_deeds_available: string | null;
+
   certificate_of_search_available: string | null;
+
   encumbrances_available: string | null;
+
   defects: string | null;
 
   master_bedroom_ensuite: string | null;
@@ -105,22 +120,34 @@ export interface ApiProperty {
 
   price: number | null;
 
+  /*
+   * IMPORTANT:
+   * This is the authoritative listing field.
+   *
+   * Expected values include:
+   * "sale"
+   * "rent"
+   */
   listing_type: string;
 
   created_by: number | null;
 
   is_approved: string | null;
+
   is_sale_completed: string | null;
+
   is_submitted: string | null;
 
   description: string | null;
 
   is_referred: string | null;
+
   has_accepted_offer: string | null;
 
   bulding_size_unit: string | null;
 
   land_size: number | null;
+
   land_size_unit: string | null;
 
   approved_at: string | null;
@@ -128,6 +155,7 @@ export interface ApiProperty {
   visibility: string | null;
 
   created_at: string;
+
   updated_at: string;
 
   media: PropertyMedia[];
@@ -180,6 +208,13 @@ export interface Property {
 
   image: string;
 
+  /*
+   * This contains the normalized API listing_type.
+   *
+   * Example:
+   * "sale"
+   * "rent"
+   */
   tag: string;
 
   period: string;
@@ -228,13 +263,28 @@ export interface Property {
 }
 
 // ============================================================
+// PROPERTY MEDIA ITEM
+// Used by /media/images and /media/videos
+// ============================================================
+
+export interface PropertyMediaItem {
+  id: number;
+  url: string;
+  description?: string | null;
+  collection?: string | null;
+}
+
+// ============================================================
 // PRICE FORMATTER
 // ============================================================
 
 export function formatPrice(
   price: number | null,
 ): string {
-  if (price === null || Number.isNaN(price)) {
+  if (
+    price === null ||
+    Number.isNaN(price)
+  ) {
     return "Price on request";
   }
 
@@ -272,8 +322,13 @@ function getLocation(
 // IMAGE FORMATTER
 // ============================================================
 
-function getPropertyImage(property: ApiProperty): string {
-  // Most Viewed endpoint provides cover_photo
+function getPropertyImage(
+  property: ApiProperty,
+): string {
+  // ----------------------------------------------------------
+  // Most Viewed endpoint may provide cover_photo
+  // ----------------------------------------------------------
+
   if (
     typeof property.cover_photo === "string" &&
     property.cover_photo.trim() !== ""
@@ -281,12 +336,16 @@ function getPropertyImage(property: ApiProperty): string {
     return property.cover_photo;
   }
 
+  // ----------------------------------------------------------
   // Normal properties endpoint may provide property_images
+  // ----------------------------------------------------------
+
   if (
     Array.isArray(property.property_images) &&
     property.property_images.length > 0
   ) {
-    const firstImage = property.property_images[0];
+    const firstImage =
+      property.property_images[0];
 
     if (
       firstImage &&
@@ -305,12 +364,16 @@ function getPropertyImage(property: ApiProperty): string {
     }
   }
 
+  // ----------------------------------------------------------
   // Some responses may provide media
+  // ----------------------------------------------------------
+
   if (
     Array.isArray(property.media) &&
     property.media.length > 0
   ) {
-    const firstMedia = property.media[0];
+    const firstMedia =
+      property.media[0];
 
     if (
       firstMedia &&
@@ -333,13 +396,70 @@ function getPropertyImage(property: ApiProperty): string {
 }
 
 // ============================================================
+// NORMALIZE LISTING TYPE
+// ============================================================
+
+/**
+ * Converts the API listing_type into a predictable value.
+ *
+ * The API field `listing_type` is the authoritative source.
+ *
+ * Examples:
+ *
+ * "sale"      -> "sale"
+ * "Sale"      -> "sale"
+ * "for sale"  -> "for sale"
+ * "rent"      -> "rent"
+ * "Rent"      -> "rent"
+ * "for rent"  -> "for rent"
+ */
+function normalizeListingType(
+  listingType: string | null | undefined,
+): string {
+  return String(
+    listingType ?? "",
+  )
+    .trim()
+    .toLowerCase();
+}
+
+// ============================================================
+// CHECK SALE LISTING
+// ============================================================
+
+function isSaleListing(
+  listingType: string,
+): boolean {
+  return (
+    listingType === "sale" ||
+    listingType === "for sale" ||
+    listingType === "for_sale"
+  );
+}
+
+// ============================================================
+// CHECK RENT LISTING
+// ============================================================
+
+function isRentListing(
+  listingType: string,
+): boolean {
+  return (
+    listingType === "rent" ||
+    listingType === "for rent" ||
+    listingType === "for_rent"
+  );
+}
+
+// ============================================================
 // PROPERTY MAPPER
 // ============================================================
 
 export function mapApiProperty(
   property: ApiProperty,
 ): Property {
-  const location = property.location;
+  const location =
+    property.location;
 
   const attributes =
     property.attributes?.attributes?.map(
@@ -368,6 +488,9 @@ export function mapApiProperty(
 
   // ----------------------------------------------------------
   // Listing Type
+  //
+  // IMPORTANT:
+  // Only property.listing_type is used here.
   // ----------------------------------------------------------
 
   const listingType =
@@ -375,18 +498,31 @@ export function mapApiProperty(
     "Property";
 
   const listingTypeLower =
-    listingType.toLowerCase();
+    normalizeListingType(
+      property.listing_type,
+    );
 
   // ----------------------------------------------------------
   // Category
   // ----------------------------------------------------------
 
   const category =
-    listingTypeLower === "sale"
+    isSaleListing(listingTypeLower)
       ? "For Sale"
-      : listingTypeLower === "rent"
+      : isRentListing(listingTypeLower)
         ? "For Rent"
         : listingType;
+
+  // ----------------------------------------------------------
+  // Period
+  // ----------------------------------------------------------
+
+  const period =
+    isRentListing(listingTypeLower)
+      ? "For Rent"
+      : isSaleListing(listingTypeLower)
+        ? "For Sale"
+        : "";
 
   // ----------------------------------------------------------
   // Return common Property type
@@ -417,13 +553,14 @@ export function mapApiProperty(
     image:
       getPropertyImage(property),
 
+    /*
+     * IMPORTANT:
+     * tag comes directly from listing_type.
+     */
     tag:
       listingType,
 
-    period:
-      listingTypeLower === "rent"
-        ? "For Rent"
-        : "For Sale",
+    period,
 
     category,
 
@@ -469,6 +606,7 @@ export function mapApiProperty(
     attributes,
 
     isOpenHouse:
+      Array.isArray(property.open_houses) &&
       property.open_houses.length > 0,
 
     latitude:
@@ -536,7 +674,8 @@ async function fetchPropertyEndpoint(
     endpoint,
   );
 
-  const response = await fetch(endpoint);
+  const response =
+    await fetch(endpoint);
 
   if (!response.ok) {
     throw new Error(
@@ -550,7 +689,9 @@ async function fetchPropertyEndpoint(
   const properties =
     validatePropertiesResponse(json);
 
-  return properties.map(mapApiProperty);
+  return properties.map(
+    mapApiProperty,
+  );
 }
 
 // ============================================================
@@ -601,7 +742,6 @@ export async function fetchNearestProperties(): Promise<
   );
 }
 
-
 // ============================================================
 // FETCH NEARBY PROPERTIES
 // ============================================================
@@ -610,24 +750,27 @@ export async function fetchNearbyProperties(
   latitude: number,
   longitude: number,
 ): Promise<Property[]> {
-  const response = await fetch(
-    `${BASE_API_URL}/property/nearby`,
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
+  const response =
+    await fetch(
+      `${BASE_API_URL}/property/nearby`,
+      {
+        method: "POST",
+
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          latitude,
+          longitude,
+          radius: 1,
+          min_price: 0,
+          max_price: 0,
+          search: "",
+        }),
       },
-      body: JSON.stringify({
-        latitude,
-        longitude,
-        radius: 1,
-        min_price: 0,
-        max_price: 0,
-        search: "",
-      }),
-    },
-  );
+    );
 
   if (!response.ok) {
     throw new Error(
@@ -635,98 +778,162 @@ export async function fetchNearbyProperties(
     );
   }
 
-  const result = await response.json();
+  const result: unknown =
+    await response.json();
 
   if (
-    !result.success ||
-    !Array.isArray(result.data)
+    typeof result !== "object" ||
+    result === null
   ) {
     return [];
   }
 
-  return result.data.map(mapApiProperty);
-}
+  const responseData =
+    result as {
+      success?: boolean;
+      data?: unknown;
+    };
 
-
-// ============================================================
-// PROPERTY MEDIA
-// ============================================================
-
-export interface PropertyMedia {
-  id: number 
-  url: string;
-  description?: string | null;
-  collection?: string | null;
-}
-
-
-// ============================================================
-// FETCH PROPERTY IMAGES
-// ============================================================
-
-export const fetchPropertyImages = async (
-  propertyId: string | number,
-): Promise<PropertyMedia[]> => {
-  const endpoint = `${BASE_API_URL}/properties/${propertyId}/media/images`;
-
-  console.log("Fetching property images from:", endpoint);
-
-  const response = await fetch(endpoint, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch property images: ${response.status}`,
-    );
-  }
-
-  const json = await response.json();
-
-  return Array.isArray(json?.data) ? json.data : [];
-};
-
-
-
-
-export const fetchPropertyVideos = async (
-  propertyId: string | number,
-): Promise<PropertyMedia[]> => {
-  const endpoint = `${BASE_API_URL}/properties/${propertyId}/media/videos`;
-
-  console.log("Fetching property videos from:", endpoint);
-
-  const response = await fetch(endpoint, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  // The API uses 404 when the property has no videos.
-  if (response.status === 404) {
-    console.log("No videos found for property:", propertyId);
+  if (
+    !responseData.success ||
+    !Array.isArray(
+      responseData.data,
+    )
+  ) {
     return [];
   }
 
-  if (!response.ok) {
-    throw new Error(
-      `Failed to fetch property videos: ${response.status}`,
+  return responseData.data.map(
+    (property) =>
+      mapApiProperty(
+        property as ApiProperty,
+      ),
+  );
+}
+
+// ============================================================
+// PROPERTY IMAGES
+// ============================================================
+
+export const fetchPropertyImages =
+  async (
+    propertyId: string | number,
+  ): Promise<PropertyMediaItem[]> => {
+    const endpoint =
+      `${BASE_API_URL}/properties/${propertyId}/media/images`;
+
+    console.log(
+      "Fetching property images from:",
+      endpoint,
     );
-  }
 
-  const data = await response.json();
+    const response =
+      await fetch(endpoint, {
+        method: "GET",
 
-  console.log("Property videos response:", data);
+        headers: {
+          Accept: "application/json",
+        },
+      });
 
-  const media = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.data)
-      ? data.data
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch property images: ${response.status}`,
+      );
+    }
+
+    const json: unknown =
+      await response.json();
+
+    if (
+      typeof json !== "object" ||
+      json === null
+    ) {
+      return [];
+    }
+
+    const responseData =
+      json as {
+        data?: unknown;
+      };
+
+    return Array.isArray(
+      responseData.data,
+    )
+      ? (responseData.data as PropertyMediaItem[])
       : [];
+  };
 
-  return media;
-};
+// ============================================================
+// PROPERTY VIDEOS
+// ============================================================
+
+export const fetchPropertyVideos =
+  async (
+    propertyId: string | number,
+  ): Promise<PropertyMediaItem[]> => {
+    const endpoint =
+      `${BASE_API_URL}/properties/${propertyId}/media/videos`;
+
+    console.log(
+      "Fetching property videos from:",
+      endpoint,
+    );
+
+    const response =
+      await fetch(endpoint, {
+        method: "GET",
+
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
+    // The API uses 404 when the property has no videos.
+    if (response.status === 404) {
+      console.log(
+        "No videos found for property:",
+        propertyId,
+      );
+
+      return [];
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch property videos: ${response.status}`,
+      );
+    }
+
+    const data: unknown =
+      await response.json();
+
+    console.log(
+      "Property videos response:",
+      data,
+    );
+
+    if (Array.isArray(data)) {
+      return data as PropertyMediaItem[];
+    }
+
+    if (
+      typeof data === "object" &&
+      data !== null
+    ) {
+      const responseData =
+        data as {
+          data?: unknown;
+        };
+
+      if (
+        Array.isArray(
+          responseData.data,
+        )
+      ) {
+        return responseData.data as PropertyMediaItem[];
+      }
+    }
+
+    return [];
+  };
