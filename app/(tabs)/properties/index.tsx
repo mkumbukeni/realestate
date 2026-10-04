@@ -26,7 +26,6 @@ import {
   useRouter,
 } from "expo-router";
 
-import SideMenu from "../../components/sidebar/SideMenu";
 import PropertyCard from "../../components/properties/PropertyCard";
 
 import {
@@ -54,6 +53,13 @@ type ListingFilter =
   | "all"
   | "sale"
   | "rent";
+
+type PropertyTypeFilter =
+  | "all"
+  | "residential"
+  | "commercial"
+  | "industrial"
+  | "agricultural";
 
 // ============================================================
 // CREATE PROPERTY ROWS
@@ -131,12 +137,6 @@ function getPropertyId(
 // REMOVE DUPLICATE PROPERTIES
 // ============================================================
 
-/*
- * Removes duplicate property cards using
- * the property ID.
- *
- * First occurrence is kept.
- */
 function removeDuplicateProperties(
   properties: Property[],
 ): Property[] {
@@ -157,6 +157,31 @@ function removeDuplicateProperties(
       return true;
     },
   );
+}
+
+// ============================================================
+// PROPERTY CATEGORY LABEL
+// ============================================================
+
+function getPropertyTypeLabel(
+  value: PropertyTypeFilter,
+): string {
+  switch (value) {
+    case "residential":
+      return "Residential";
+
+    case "commercial":
+      return "Commercial";
+
+    case "industrial":
+      return "Industrial";
+
+    case "agricultural":
+      return "Agricultural";
+
+    default:
+      return "All";
+  }
 }
 
 // ============================================================
@@ -185,20 +210,6 @@ export default function PropertiesScreen() {
       params.category,
     );
 
-  /*
-   * When there is no category parameter,
-   * the user is viewing the Properties tab
-   * directly.
-   *
-   * In this mode we combine:
-   *
-   * Featured
-   * New to Market
-   * Open Houses
-   * Most Viewed
-   *
-   * and remove duplicates.
-   */
   const isAllPropertiesMode =
     selectedCategory === null;
 
@@ -241,20 +252,22 @@ export default function PropertiesScreen() {
   );
 
   const [
-    menuVisible,
-    setMenuVisible,
-  ] = useState(false);
+    propertyTypeFilter,
+    setPropertyTypeFilter,
+  ] =
+    useState<PropertyTypeFilter>(
+      "all",
+    );
 
+  // Which of the three dropdowns
+  // is currently open.
   const [
-    authModalVisible,
-    setAuthModalVisible,
-  ] = useState(false);
-
-  /*
-   * Authentication can be connected
-   * here later.
-   */
-  const isLoggedIn = true;
+    openDropdown,
+    setOpenDropdown,
+  ] =
+    useState<ListingFilter | null>(
+      null,
+    );
 
   // ==========================================================
   // NUMBER OF COLUMNS
@@ -275,10 +288,6 @@ export default function PropertiesScreen() {
         setError(null);
         setLoading(true);
 
-        // ====================================================
-        // CATEGORY-SPECIFIC MODE
-        // ====================================================
-
         if (
           !isAllPropertiesMode
         ) {
@@ -288,27 +297,15 @@ export default function PropertiesScreen() {
           switch (
             selectedCategory
           ) {
-            // ----------------------------------------------
-            // FEATURED
-            // ----------------------------------------------
-
             case "Featured Properties":
               result =
                 await fetchFeaturedProperties();
               break;
 
-            // ----------------------------------------------
-            // MOST VIEWED
-            // ----------------------------------------------
-
             case "Most Viewed":
               result =
                 await fetchMostViewedProperties();
               break;
-
-            // ----------------------------------------------
-            // OPEN HOUSES
-            // ----------------------------------------------
 
             case "Open Houses": {
               const allProperties =
@@ -323,10 +320,6 @@ export default function PropertiesScreen() {
 
               break;
             }
-
-            // ----------------------------------------------
-            // NEW TO MARKET
-            // ----------------------------------------------
 
             case "New to Market":
               result =
@@ -347,14 +340,6 @@ export default function PropertiesScreen() {
           return;
         }
 
-        // ====================================================
-        // ALL PROPERTIES MODE
-        // ====================================================
-
-        /*
-         * Load all datasets used on Home.
-         */
-
         const [
           newToMarket,
           featured,
@@ -365,10 +350,6 @@ export default function PropertiesScreen() {
           fetchMostViewedProperties(),
         ]);
 
-        // ====================================================
-        // OPEN HOUSES
-        // ====================================================
-
         const openHouses =
           newToMarket.filter(
             (property) =>
@@ -376,20 +357,12 @@ export default function PropertiesScreen() {
               true,
           );
 
-        // ====================================================
-        // COMBINE ALL DATASETS
-        // ====================================================
-
         const combinedProperties = [
           ...featured,
           ...newToMarket,
           ...openHouses,
           ...mostViewed,
         ];
-
-        // ====================================================
-        // REMOVE DUPLICATES
-        // ====================================================
 
         const uniqueProperties =
           removeDuplicateProperties(
@@ -465,30 +438,6 @@ export default function PropertiesScreen() {
 
       return properties.filter(
         (property) => {
-          // ==================================================
-          // LISTING TYPE
-          // ==================================================
-
-          /*
-           * IMPORTANT:
-           *
-           * Property.tag comes directly from
-           * ApiProperty.listing_type inside
-           * mapApiProperty().
-           *
-           * Therefore we ONLY use property.tag
-           * for the Sale/Rent filter.
-           *
-           * We do NOT use:
-           *
-           * property.status
-           * property.listingType
-           * property.listing_type
-           *
-           * because those fields are not part of
-           * the normalized Property interface.
-           */
-
           const listingType =
             String(
               property.tag ?? "",
@@ -496,9 +445,9 @@ export default function PropertiesScreen() {
               .trim()
               .toLowerCase();
 
-          // ==================================================
-          // LISTING FILTER
-          // ==================================================
+          // ----------------------------------------------
+          // SALE / RENT FILTER
+          // ----------------------------------------------
 
           const matchesListingFilter =
             listingFilter === "all" ||
@@ -527,29 +476,58 @@ export default function PropertiesScreen() {
               )
             );
 
-          // ==================================================
-          // STOP IF LISTING TYPE DOES NOT MATCH
-          // ==================================================
-
           if (
             !matchesListingFilter
           ) {
             return false;
           }
 
-          // ==================================================
-          // NO SEARCH
-          // ==================================================
+          // ----------------------------------------------
+          // PROPERTY TYPE FILTER
+          // ----------------------------------------------
+
+          if (
+            propertyTypeFilter !==
+            "all"
+          ) {
+            const propertyType =
+              String(
+                property.type ??
+                  property.category ??
+                  "",
+              )
+                .trim()
+                .toLowerCase();
+
+            const propertyDesign =
+              String(
+                property.propertyDesign ??
+                  "",
+              )
+                .trim()
+                .toLowerCase();
+
+            const combinedType =
+              `${propertyType} ${propertyDesign}`;
+
+            if (
+              !combinedType.includes(
+                propertyTypeFilter,
+              )
+            ) {
+              return false;
+            }
+          }
+
+          // ----------------------------------------------
+          // SEARCH FILTER
+          // ----------------------------------------------
 
           if (
             searchText === ""
           ) {
             return true;
           }
-
-          // ==================================================
-          // SEARCHABLE TEXT
-          // ==================================================
 
           const searchableText = [
             property.type,
@@ -588,6 +566,7 @@ export default function PropertiesScreen() {
       properties,
       searchQuery,
       listingFilter,
+      propertyTypeFilter,
     ]);
 
   // ==========================================================
@@ -606,18 +585,9 @@ export default function PropertiesScreen() {
   const handlePropertyPress =
     useCallback(
       (property: Property) => {
-        if (!isLoggedIn) {
-          setAuthModalVisible(
-            true,
-          );
-
-          return;
-        }
-
         router.push({
           pathname:
             "/(tabs)/properties/[id]",
-
           params: {
             id: getPropertyId(
               property,
@@ -625,10 +595,7 @@ export default function PropertiesScreen() {
           },
         });
       },
-      [
-        router,
-        isLoggedIn,
-      ],
+      [router],
     );
 
   // ==========================================================
@@ -655,17 +622,142 @@ export default function PropertiesScreen() {
     ]);
 
   // ==========================================================
-  // HEADER
+  // SELECT LISTING FILTER
   // ==========================================================
 
-  const renderHeader = () => (
-    <>
-      {/* ====================================================
-          HEADER
-      ==================================================== */}
+  const handleListingFilterPress =
+    (
+      filter: ListingFilter,
+    ) => {
+      setOpenDropdown(
+        openDropdown === filter
+          ? null
+          : filter,
+      );
 
-      <View className="flex-row items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
-        <View className="flex-1">
+      setListingFilter(
+        filter,
+      );
+    };
+
+  // ==========================================================
+  // SELECT PROPERTY TYPE
+  // ==========================================================
+
+  const handlePropertyTypeSelect =
+    (
+      type: PropertyTypeFilter,
+    ) => {
+      setPropertyTypeFilter(
+        type,
+      );
+
+      setOpenDropdown(null);
+    };
+
+  // ==========================================================
+  // DROPDOWN
+  // ==========================================================
+
+  const renderDropdown = (
+    filter: ListingFilter,
+  ) => {
+    if (
+      openDropdown !==
+      filter
+    ) {
+      return null;
+    }
+
+    const options: {
+      value: PropertyTypeFilter;
+      label: string;
+    }[] = [
+      {
+        value: "all",
+        label: "All",
+      },
+      {
+        value: "residential",
+        label: "Residential",
+      },
+      {
+        value: "commercial",
+        label: "Commercial",
+      },
+      {
+        value: "industrial",
+        label: "Industrial",
+      },
+      {
+        value: "agricultural",
+        label: "Agricultural",
+      },
+    ];
+
+    return (
+      <View className="absolute left-0 right-0 top-[52px] z-50 overflow-hidden rounded-xl border border-[#292929] bg-[#171717] shadow-lg">
+        {options.map(
+          (option) => {
+            const selected =
+              propertyTypeFilter ===
+              option.value;
+
+            return (
+              <Pressable
+                key={
+                  option.value
+                }
+                onPress={() =>
+                  handlePropertyTypeSelect(
+                    option.value,
+                  )
+                }
+                className={`flex-row items-center justify-between border-b border-[#292929] px-4 py-3.5 ${
+                  selected
+                    ? "bg-red-600"
+                    : "bg-[#171717]"
+                }`}
+              >
+                <Text
+                  className={`text-sm font-medium ${
+                    selected
+                      ? "text-white"
+                      : "text-gray-300"
+                  }`}
+                >
+                  {
+                    option.label
+                  }
+                </Text>
+
+                {selected && (
+                  <Ionicons
+                    name="checkmark"
+                    size={18}
+                    color="#ffffff"
+                  />
+                )}
+              </Pressable>
+            );
+          },
+        )}
+      </View>
+    );
+  };
+
+  // ==========================================================
+  // HEADER CONTENT
+  // ==========================================================
+
+  const renderHeader =
+    () => (
+      <View className="bg-[#0d0d0d]">
+        {/* ================================================
+            TITLE
+        ================================================= */}
+
+        <View className="border-b border-[#222] px-5 pb-3.5 pt-2.5">
           <Text className="text-2xl font-bold text-white">
             {screenTitle}
           </Text>
@@ -678,155 +770,229 @@ export default function PropertiesScreen() {
           )}
         </View>
 
-        <Pressable
-          onPress={() =>
-            setMenuVisible(
-              true,
-            )
-          }
-          accessibilityRole="button"
-          accessibilityLabel="Open menu"
-          className="ml-3 h-10 w-10 items-center justify-center rounded-full bg-[#181818]"
-        >
-          <Ionicons
-            name="menu-outline"
-            size={26}
-            color="#fff"
-          />
-        </Pressable>
-      </View>
+        {/* ================================================
+            SEARCH
+        ================================================= */}
 
-      {/* ====================================================
-          SEARCH
-      ==================================================== */}
+        <View className="px-5 pt-4">
+          <View className="flex-row items-center rounded-xl border border-[#292929] bg-[#171717] px-4">
+            <Ionicons
+              name="search-outline"
+              size={20}
+              color="#777"
+            />
 
-      <View className="px-5 pt-4">
-        <View className="flex-row items-center rounded-xl border border-[#292929] bg-[#171717] px-4">
-          <Ionicons
-            name="search-outline"
-            size={20}
-            color="#777"
-          />
-
-          <TextInput
-            value={searchQuery}
-            onChangeText={
-              setSearchQuery
-            }
-            placeholder="Search properties..."
-            placeholderTextColor="#666"
-            className="ml-3 flex-1 py-3.5 text-sm text-white"
-            returnKeyType="search"
-          />
-
-          {searchQuery.length >
-            0 && (
-            <Pressable
-              onPress={
-                clearSearch
+            <TextInput
+              value={searchQuery}
+              onChangeText={
+                setSearchQuery
               }
-              accessibilityRole="button"
-              accessibilityLabel="Clear search"
-            >
-              <Ionicons
-                name="close-circle"
-                size={20}
-                color="#ef4444"
-              />
-            </Pressable>
-          )}
+              placeholder="Search properties..."
+              placeholderTextColor="#666"
+              className="ml-3 flex-1 py-3.5 text-sm text-white"
+              returnKeyType="search"
+            />
+
+            {searchQuery.length >
+              0 && (
+              <Pressable
+                onPress={
+                  clearSearch
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color="#ef4444"
+                />
+              </Pressable>
+            )}
+          </View>
         </View>
-      </View>
 
-      {/* ====================================================
-          LISTING FILTERS
-      ==================================================== */}
+        {/* ================================================
+            FILTER BUTTONS
+        ================================================= */}
 
-      <View className="px-5 pt-3">
-        <View className="flex-row gap-2">
-          {/* ==================================================
-              ALL
-          ================================================== */}
+        <View className="px-5 pb-4 pt-3">
+          <View className="flex-row gap-2">
+            {/* ============================================
+                ALL
+            ============================================= */}
 
-          <Pressable
-            onPress={() =>
-              setListingFilter(
+            <View className="relative flex-1">
+              <Pressable
+                onPress={() =>
+                  handleListingFilterPress(
+                    "all",
+                  )
+                }
+                className={`flex-row items-center justify-center rounded-xl px-3 py-3 ${
+                  listingFilter ===
+                  "all"
+                    ? "bg-red-600"
+                    : "bg-[#181818]"
+                }`}
+              >
+                <Text className="text-sm font-semibold text-white">
+                  All
+                </Text>
+
+                <Ionicons
+                  name={
+                    openDropdown ===
+                    "all"
+                      ? "chevron-up"
+                      : "chevron-down"
+                  }
+                  size={16}
+                  color="#ffffff"
+                  style={{
+                    marginLeft: 6,
+                  }}
+                />
+              </Pressable>
+
+              {renderDropdown(
                 "all",
-              )
-            }
-            className={`flex-1 items-center justify-center rounded-xl px-3 py-3 ${
-              listingFilter ===
-              "all"
-                ? "bg-red-600"
-                : "bg-[#181818]"
-            }`}
-          >
-            <Text className="text-sm font-semibold text-white">
-              All
-            </Text>
-          </Pressable>
+              )}
+            </View>
 
-          {/* ==================================================
-              FOR SALE
-          ================================================== */}
+            {/* ============================================
+                FOR SALE
+            ============================================= */}
 
-          <Pressable
-            onPress={() =>
-              setListingFilter(
+            <View className="relative flex-1">
+              <Pressable
+                onPress={() =>
+                  handleListingFilterPress(
+                    "sale",
+                  )
+                }
+                className={`flex-row items-center justify-center rounded-xl px-3 py-3 ${
+                  listingFilter ===
+                  "sale"
+                    ? "bg-red-600"
+                    : "bg-[#181818]"
+                }`}
+              >
+                <Text className="text-sm font-semibold text-white">
+                  For Sale
+                </Text>
+
+                <Ionicons
+                  name={
+                    openDropdown ===
+                    "sale"
+                      ? "chevron-up"
+                      : "chevron-down"
+                  }
+                  size={16}
+                  color="#ffffff"
+                  style={{
+                    marginLeft: 6,
+                  }}
+                />
+              </Pressable>
+
+              {renderDropdown(
                 "sale",
-              )
-            }
-            className={`flex-1 items-center justify-center rounded-xl px-3 py-3 ${
-              listingFilter ===
-              "sale"
-                ? "bg-red-600"
-                : "bg-[#181818]"
-            }`}
-          >
-            <Text className="text-sm font-semibold text-white">
-              For Sale
-            </Text>
-          </Pressable>
+              )}
+            </View>
 
-          {/* ==================================================
-              FOR RENT
-          ================================================== */}
+            {/* ============================================
+                FOR RENT
+            ============================================= */}
 
-          <Pressable
-            onPress={() =>
-              setListingFilter(
+            <View className="relative flex-1">
+              <Pressable
+                onPress={() =>
+                  handleListingFilterPress(
+                    "rent",
+                  )
+                }
+                className={`flex-row items-center justify-center rounded-xl px-3 py-3 ${
+                  listingFilter ===
+                  "rent"
+                    ? "bg-red-600"
+                    : "bg-[#181818]"
+                }`}
+              >
+                <Text className="text-sm font-semibold text-white">
+                  For Rent
+                </Text>
+
+                <Ionicons
+                  name={
+                    openDropdown ===
+                    "rent"
+                      ? "chevron-up"
+                      : "chevron-down"
+                  }
+                  size={16}
+                  color="#ffffff"
+                  style={{
+                    marginLeft: 6,
+                  }}
+                />
+              </Pressable>
+
+              {renderDropdown(
                 "rent",
-              )
-            }
-            className={`flex-1 items-center justify-center rounded-xl px-3 py-3 ${
-              listingFilter ===
-              "rent"
-                ? "bg-red-600"
-                : "bg-[#181818]"
-            }`}
-          >
-            <Text className="text-sm font-semibold text-white">
-              For Rent
-            </Text>
-          </Pressable>
+              )}
+            </View>
+          </View>
+
+          {/* ==============================================
+              ACTIVE CATEGORY
+          =============================================== */}
+
+          {propertyTypeFilter !==
+            "all" && (
+            <View className="mt-3 flex-row items-center justify-between">
+              <Text className="text-sm text-gray-500">
+                Property type:
+              </Text>
+
+              <Pressable
+                onPress={() =>
+                  setPropertyTypeFilter(
+                    "all",
+                  )
+                }
+                className="flex-row items-center"
+              >
+                <Text className="mr-1 text-sm font-semibold text-red-500">
+                  {getPropertyTypeLabel(
+                    propertyTypeFilter,
+                  )}
+                </Text>
+
+                <Ionicons
+                  name="close-circle"
+                  size={17}
+                  color="#ef4444"
+                />
+              </Pressable>
+            </View>
+          )}
+
+          {/* ==============================================
+              COUNT
+          =============================================== */}
+
+          <Text className="mt-3 text-sm font-medium text-gray-500">
+            {filteredProperties.length}{" "}
+            {filteredProperties.length ===
+            1
+              ? "property"
+              : "properties"}
+          </Text>
         </View>
       </View>
-
-      {/* ====================================================
-          PROPERTY COUNT
-      ==================================================== */}
-
-      <View className="px-5 pb-2 pt-4">
-        <Text className="text-sm font-medium text-gray-500">
-          {filteredProperties.length}{" "}
-          {filteredProperties.length ===
-          1
-            ? "property"
-            : "properties"}
-        </Text>
-      </View>
-    </>
-  );
+    );
 
   // ==========================================================
   // LOADING SCREEN
@@ -840,26 +1006,10 @@ export default function PropertiesScreen() {
           backgroundColor="#0d0d0d"
         />
 
-        <View className="flex-row items-center justify-between border-b border-[#222] px-5 pb-3.5 pt-2.5">
+        <View className="px-5 pb-3.5 pt-2.5">
           <Text className="text-2xl font-bold text-white">
             {screenTitle}
           </Text>
-
-          <Pressable
-            onPress={() =>
-              setMenuVisible(
-                true,
-              )
-            }
-            accessibilityRole="button"
-            accessibilityLabel="Open menu"
-          >
-            <Ionicons
-              name="menu-outline"
-              size={28}
-              color="#fff"
-            />
-          </Pressable>
         </View>
 
         <View className="flex-1 items-center justify-center">
@@ -872,17 +1022,6 @@ export default function PropertiesScreen() {
             Loading properties...
           </Text>
         </View>
-
-        <SideMenu
-          visible={
-            menuVisible
-          }
-          onClose={() =>
-            setMenuVisible(
-              false,
-            )
-          }
-        />
       </SafeAreaView>
     );
   }
@@ -902,26 +1041,10 @@ export default function PropertiesScreen() {
           backgroundColor="#0d0d0d"
         />
 
-        <View className="flex-row items-center justify-between border-b border-[#222] px-5 pb-3.5 pt-2.5">
+        <View className="px-5 pb-3.5 pt-2.5">
           <Text className="text-2xl font-bold text-white">
             {screenTitle}
           </Text>
-
-          <Pressable
-            onPress={() =>
-              setMenuVisible(
-                true,
-              )
-            }
-            accessibilityRole="button"
-            accessibilityLabel="Open menu"
-          >
-            <Ionicons
-              name="menu-outline"
-              size={28}
-              color="#fff"
-            />
-          </Pressable>
         </View>
 
         <ScrollView
@@ -974,17 +1097,6 @@ export default function PropertiesScreen() {
             </Pressable>
           </View>
         </ScrollView>
-
-        <SideMenu
-          visible={
-            menuVisible
-          }
-          onClose={() =>
-            setMenuVisible(
-              false,
-            )
-          }
-        />
       </SafeAreaView>
     );
   }
@@ -999,6 +1111,17 @@ export default function PropertiesScreen() {
         barStyle="light-content"
         backgroundColor="#0d0d0d"
       />
+
+      {/* ====================================================
+          FIXED HEADER
+          This section does NOT scroll.
+      ===================================================== */}
+
+      {renderHeader()}
+
+      {/* ====================================================
+          SCROLLING PROPERTY CARDS ONLY
+      ===================================================== */}
 
       <ScrollView
         className="flex-1"
@@ -1020,22 +1143,14 @@ export default function PropertiesScreen() {
           />
         }
         contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 8,
           paddingBottom: 30,
         }}
       >
-        {/* ==================================================
-            HEADER
-        ================================================== */}
-
-        {renderHeader()}
-
-        {/* ==================================================
-            EMPTY RESULTS
-        ================================================== */}
-
         {filteredProperties.length ===
         0 ? (
-          <View className="mx-5 mt-8 items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-12">
+          <View className="mt-8 items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-12">
             <Ionicons
               name="home-outline"
               size={52}
@@ -1068,11 +1183,7 @@ export default function PropertiesScreen() {
             )}
           </View>
         ) : (
-          // ==================================================
-          // PROPERTY GRID
-          // ==================================================
-
-          <View className="px-5 pt-2">
+          <View>
             {propertyRows.map(
               (
                 row,
@@ -1119,10 +1230,6 @@ export default function PropertiesScreen() {
                     ),
                   )}
 
-                  {/* ==================================================
-                      EMPTY COLUMN
-                  ================================================== */}
-
                   {numberOfColumns ===
                     2 &&
                     row.length ===
@@ -1135,38 +1242,6 @@ export default function PropertiesScreen() {
           </View>
         )}
       </ScrollView>
-
-      {/* ========================================================
-          AUTH MODAL
-      ======================================================== */}
-
-      {/*
-      <AuthRequiredModal
-        visible={
-          authModalVisible
-        }
-        onClose={() =>
-          setAuthModalVisible(
-            false,
-          )
-        }
-      />
-      */}
-
-      {/* ========================================================
-          SIDE MENU
-      ======================================================== */}
-
-      <SideMenu
-        visible={
-          menuVisible
-        }
-        onClose={() =>
-          setMenuVisible(
-            false,
-          )
-        }
-      />
     </SafeAreaView>
   );
 }

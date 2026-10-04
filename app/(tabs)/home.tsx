@@ -19,7 +19,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 
-import SideMenu from "@/app/components/sidebar/SideMenu";
 import PropertyCard from "@/app/components/properties/PropertyCard";
 import AgentCard from "@/app/components/agents/AgentCard";
 import AutoPropertySlider from "@/app/components/properties/AutoPropertySlider";
@@ -443,9 +442,6 @@ export default function HomeScreen() {
   const [showWelcome, setShowWelcome] =
     useState(true);
 
-  const [menuVisible, setMenuVisible] =
-    useState(false);
-
   // ============================================================
   // MAIN SCROLL POSITION
   // ============================================================
@@ -862,7 +858,7 @@ export default function HomeScreen() {
           HEADER
           ======================================================== */}
 
-      <View className="flex-row items-center justify-between border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
+      <View className="flex-row items-center border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
         <View>
           <Text className="text-2xl font-bold text-white">
             Real Estate
@@ -872,21 +868,6 @@ export default function HomeScreen() {
             Find your next property
           </Text>
         </View>
-
-        <Pressable
-          onPress={() =>
-            setMenuVisible(true)
-          }
-          accessibilityRole="button"
-          accessibilityLabel="Open menu"
-          className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
-        >
-          <Ionicons
-            name="menu-outline"
-            size={28}
-            color="#fff"
-          />
-        </Pressable>
       </View>
 
       {/* ========================================================
@@ -1234,17 +1215,6 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       </ScrollView>
-
-      {/* ========================================================
-          SIDE MENU
-          ======================================================== */}
-
-      <SideMenu
-        visible={menuVisible}
-        onClose={() =>
-          setMenuVisible(false)
-        }
-      />
     </SafeAreaView>
   );
 }

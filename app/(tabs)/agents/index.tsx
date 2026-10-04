@@ -1,10 +1,10 @@
+
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Pressable,
   RefreshControl,
   Text,
   View,
@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AgentCard from "@/app/components/agents/AgentCard";
-import SideMenu from "@/app/components/sidebar/SideMenu";
 import { fetchAgents, type Agent } from "@/app/services/agentApi";
 
 export default function AgentsScreen() {
@@ -21,7 +20,6 @@ export default function AgentsScreen() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
   const [search, setSearch] = useState("");
 
   const loadAgents = useCallback(async () => {
@@ -70,7 +68,7 @@ export default function AgentsScreen() {
       agent.coverageAreas.some(
         (area) =>
           area.location_name.toLowerCase().includes(searchText) ||
-          area.district_name.toLowerCase().includes(searchText)
+          area.district_name.toLowerCase().includes(searchText),
       )
     );
   });
@@ -113,7 +111,7 @@ export default function AgentsScreen() {
     <SafeAreaView className="flex-1 bg-[#0d0d0d]">
       {/* Header */}
       <View className="border-b border-[#222222] px-5 pb-4 pt-3">
-        <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center">
           <View className="flex-1">
             <Text className="text-2xl font-bold text-white">
               Agents
@@ -123,17 +121,6 @@ export default function AgentsScreen() {
               Meet our real estate professionals
             </Text>
           </View>
-
-          <Pressable
-            onPress={() => setMenuVisible(true)}
-            className="ml-4 h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
-          >
-            <Ionicons
-              name="menu-outline"
-              size={28}
-              color="#ffffff"
-            />
-          </Pressable>
         </View>
 
         {/* Search */}
@@ -144,14 +131,7 @@ export default function AgentsScreen() {
             color="#777777"
           />
 
-          <Pressable
-            className="flex-1"
-            onPress={() => {
-              // Search field is intentionally handled by the TextInput below.
-            }}
-          >
-            {/* Empty Pressable kept out of the actual input area */}
-          </Pressable>
+          <View className="flex-1" />
         </View>
       </View>
 
@@ -193,11 +173,6 @@ export default function AgentsScreen() {
           removeClippedSubviews
         />
       )}
-
-      <SideMenu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-      />
     </SafeAreaView>
   );
 }
