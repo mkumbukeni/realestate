@@ -116,7 +116,11 @@ function GlobalMenuButton({
       <Ionicons
         name="menu-outline"
         size={28}
-        color={isDark ? "#ffffff" : "#171717"}
+        color={
+          isDark
+            ? "#ffffff"
+            : "#171717"
+        }
       />
     </Pressable>
   );

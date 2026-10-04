@@ -945,39 +945,32 @@ export default function PropertiesScreen() {
             </View>
           </View>
 
-          {/* ==============================================
-              ACTIVE CATEGORY
-          =============================================== */}
+     {/* ==============================================
+    ACTIVE CATEGORY
+================================================ */}
 
-          {propertyTypeFilter !==
-            "all" && (
-            <View className="mt-3 flex-row items-center justify-between">
-              <Text className="text-sm text-gray-500">
-                Property type:
-              </Text>
+{propertyTypeFilter !== "all" && (
+  <View className="mt-2 items-center">
+    <Pressable
+      onPress={() =>
+        setPropertyTypeFilter("all")
+      }
+      className="flex-row items-center rounded-lg px-3 py-1.5"
+    >
+      <Text className="mr-1 text-sm font-semibold text-red-500">
+        {getPropertyTypeLabel(
+          propertyTypeFilter,
+        )}
+      </Text>
 
-              <Pressable
-                onPress={() =>
-                  setPropertyTypeFilter(
-                    "all",
-                  )
-                }
-                className="flex-row items-center"
-              >
-                <Text className="mr-1 text-sm font-semibold text-red-500">
-                  {getPropertyTypeLabel(
-                    propertyTypeFilter,
-                  )}
-                </Text>
-
-                <Ionicons
-                  name="close-circle"
-                  size={17}
-                  color="#ef4444"
-                />
-              </Pressable>
-            </View>
-          )}
+      <Ionicons
+        name="close-circle"
+        size={17}
+        color="#ef4444"
+      />
+    </Pressable>
+  </View>
+)}
 
           {/* ==============================================
               COUNT
