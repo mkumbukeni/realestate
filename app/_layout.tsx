@@ -12,7 +12,12 @@ import "react-native-reanimated";
 
 import "../global.css";
 
-import { AuthProvider } from "@/app/components/auth/AuthContext";
+
+import {
+  AuthProvider,
+  useAuth,
+} from "@/app/components/auth/AuthContext";
+
 import {
   ThemeProvider as AppThemeProvider,
   useTheme,
@@ -97,7 +102,7 @@ function GlobalMenuButton({
       accessibilityLabel="Open menu"
       className="
         absolute
-        right-5
+        left-5
         top-14
         z-50
         h-11
@@ -127,6 +132,62 @@ function GlobalMenuButton({
 }
 
 /* ============================================================
+   GLOBAL LOGIN / LOGOUT BUTTON
+   ============================================================ */
+
+function GlobalAuthButton({
+  onPress,
+}: {
+  onPress: () => void;
+}) {
+  const { isDark } = useTheme();
+  const { isLoggedIn } = useAuth();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={
+        isLoggedIn
+          ? "Logout"
+          : "Login"
+      }
+      className="
+        absolute
+        right-5
+        top-14
+        z-50
+        h-11
+        w-11
+        items-center
+        justify-center
+        rounded-full
+        border
+        border-neutral-200
+        bg-white
+        shadow-lg
+        dark:border-[#292929]
+        dark:bg-[#171717]
+      "
+    >
+      <Ionicons
+        name={
+          isLoggedIn
+            ? "log-out-outline"
+            : "person-outline"
+        }
+        size={26}
+        color={
+          isDark
+            ? "#ffffff"
+            : "#171717"
+        }
+      />
+    </Pressable>
+  );
+}
+
+/* ============================================================
    ROOT CONTENT
    ============================================================ */
 
@@ -136,10 +197,33 @@ function RootContent() {
     theme,
   } = useTheme();
 
+  const {
+    isLoggedIn,
+    logout,
+  } = useAuth();
+
   const [
     menuVisible,
     setMenuVisible,
   ] = useState(false);
+
+  /* ==========================================================
+     LOGIN / LOGOUT HANDLER
+     ========================================================== */
+
+  const handleAuthPress = () => {
+    if (isLoggedIn) {
+      void logout();
+      return;
+    }
+
+    /*
+     * When logged out, open the side menu.
+     * The Sign In option in the side menu
+     * handles the login flow.
+     */
+    setMenuVisible(true);
+  };
 
   return (
     <ThemeProvider
@@ -202,12 +286,22 @@ function RootContent() {
 
         {/* ====================================================
             GLOBAL MENU BUTTON
+            LEFT SIDE
             ==================================================== */}
 
         <GlobalMenuButton
           onPress={() =>
             setMenuVisible(true)
           }
+        />
+
+        {/* ====================================================
+            GLOBAL LOGIN / LOGOUT BUTTON
+            RIGHT SIDE
+            ==================================================== */}
+
+        <GlobalAuthButton
+          onPress={handleAuthPress}
         />
 
         {/* ====================================================
