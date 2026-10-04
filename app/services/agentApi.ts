@@ -1,4 +1,5 @@
-// services/agentApi.ts
+
+// app/services/agentApi.ts
 
 const EXPO_PUBLIC_API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -9,7 +10,7 @@ if (!EXPO_PUBLIC_API_URL) {
 }
 
 // ============================================================
-// API TYPES
+// AGENT MEDIA
 // ============================================================
 
 export interface AgentMediaImage {
@@ -24,6 +25,14 @@ export interface AgentMediaImage {
 export interface AgentMedia {
   images: AgentMediaImage[];
 }
+
+export interface AgentMedia {
+  images: AgentMediaImage[];
+}
+
+// ============================================================
+// AGENT USER
+// ============================================================
 
 export interface AgentUser {
   id: number;
@@ -42,6 +51,10 @@ export interface AgentUser {
   media: AgentMedia;
 }
 
+// ============================================================
+// COVERAGE AREA
+// ============================================================
+
 export interface CoverageArea {
   id: number;
   region: string;
@@ -57,10 +70,18 @@ export interface CoverageArea {
   updated_at: string;
 }
 
+// ============================================================
+// API AGENT
+// ============================================================
+
 export interface ApiAgent {
   id: number;
-  user: AgentUser;
+
+  // The API can return null here.
+  user: AgentUser | null;
+
   comps_count: number;
+
   user_id: string;
 
   phone_1: string | null;
@@ -81,21 +102,28 @@ export interface ApiAgent {
   facebook: string | null;
 
   address: string | null;
+
   account_name: string | null;
 
   is_agreement_signed: string;
+
   agent_type: string;
 
   about: string | null;
 
-  coverage_area: string | CoverageArea[] | null;
+  coverage_area:
+    | string
+    | CoverageArea[]
+    | null;
 
   license_number: string | null;
+
   license_status: string | null;
 
   specialization: string | null;
 
   created_at: string;
+
   updated_at: string;
 
   total_sales: number;
@@ -107,16 +135,21 @@ export interface ApiAgent {
 
 export interface Agent {
   id: string;
+
   userId: string;
 
   name: string;
+
   email: string;
+
   phone: string;
 
   image: string | null;
 
   agentType: string;
+
   licenseStatus: string;
+
   specialization: string;
 
   address: string;
@@ -124,20 +157,25 @@ export interface Agent {
   coverageAreas: CoverageArea[];
 
   totalSales: number;
+
   compsCount: number;
 
   about: string;
 
   linkedin: string | null;
+
   facebook: string | null;
 }
 
 // ============================================================
-// HELPERS
+// PARSE COVERAGE AREAS
 // ============================================================
 
 function parseCoverageAreas(
-  coverageArea: string | CoverageArea[] | null,
+  coverageArea:
+    | string
+    | CoverageArea[]
+    | null,
 ): CoverageArea[] {
   if (!coverageArea) {
     return [];
@@ -148,138 +186,305 @@ function parseCoverageAreas(
   }
 
   try {
-    const parsed: unknown = JSON.parse(coverageArea);
+    const parsed: unknown =
+      JSON.parse(coverageArea);
 
-    if (Array.isArray(parsed)) {
-      return parsed as CoverageArea[];
-    }
-
-    return [];
+    return Array.isArray(parsed)
+      ? (parsed as CoverageArea[])
+      : [];
   } catch {
     return [];
   }
 }
 
-function getAgentImage(user: AgentUser): string | null {
-  // First check avatar_url
+// ============================================================
+// GET AGENT IMAGE
+// ============================================================
+//
+// The API may return user: null.
+// Therefore this function must safely handle null/undefined.
+//
+// ============================================================
+
+function getAgentImage(
+  user: AgentUser | null | undefined,
+): string | null {
+  // ----------------------------------------------------------
+  // No user information
+  // ----------------------------------------------------------
+
+  if (!user) {
+    return null;
+  }
+
+  // ----------------------------------------------------------
+  // Prefer the user's avatar
+  // ----------------------------------------------------------
+
   if (user.avatar_url) {
     return user.avatar_url;
   }
 
-  // Then look for profile image
-  const images = user.media?.images ?? [];
+  // ----------------------------------------------------------
+  // Fall back to media images
+  // ----------------------------------------------------------
 
-  const profileImage = images.find(
-    (image) =>
-      image.name.toLowerCase() === "profile_image",
-  );
+  if (
+    user.media?.images &&
+    user.media.images.length > 0
+  ) {
+    const firstImage =
+      user.media.images[0];
 
-  if (profileImage?.original) {
-    return profileImage.original;
-  }
-
-  // Finally use the first available image
-  if (images.length > 0 && images[0]?.original) {
-    return images[0].original;
+    return (
+      firstImage.original ||
+      firstImage.storage_url ||
+      null
+    );
   }
 
   return null;
 }
 
-function getAgentPhone(apiAgent: ApiAgent): string {
-  return (
-    apiAgent.phone ??
-    apiAgent.phone_1 ??
-    apiAgent.phone_2 ??
-    apiAgent.user.phone ??
-    ""
-  );
-}
+// ============================================================
+// GET AGENT PHONE
+// ============================================================
 
-function getAgentEmail(apiAgent: ApiAgent): string {
+function getAgentPhone(
+  apiAgent: ApiAgent,
+): string {
   return (
-    apiAgent.email ??
-    apiAgent.user.email ??
+    apiAgent.phone ||
+    apiAgent.phone_1 ||
+    apiAgent.phone_2 ||
+    apiAgent.user?.phone ||
     ""
   );
 }
 
 // ============================================================
-// MAP API AGENT
+// GET AGENT EMAIL
 // ============================================================
 
-function mapApiAgent(apiAgent: ApiAgent): Agent {
+function getAgentEmail(
+  apiAgent: ApiAgent,
+): string {
+  return (
+    apiAgent.email ||
+    apiAgent.user?.email ||
+    ""
+  );
+}
+
+// ============================================================
+// MAP API AGENT TO APP AGENT
+// ============================================================
+//
+// This function is exported because propertyApi.ts also
+// receives nested agents directly from the properties API.
+//
+// Example:
+//
+// property.agent
+//   -> ApiAgent
+//   -> mapApiAgent()
+//   -> Agent
+//
+// ============================================================
+
+export function mapApiAgent(
+  apiAgent: ApiAgent,
+): Agent {
   return {
     id: String(apiAgent.id),
 
-    userId: String(apiAgent.user_id),
+    userId: String(
+      apiAgent.user_id || "",
+    ),
 
-    name: apiAgent.user?.name ?? "Unknown Agent",
+    name:
+      apiAgent.user?.name ||
+      "Unknown Agent",
 
-    email: getAgentEmail(apiAgent),
+    email:
+      getAgentEmail(apiAgent),
 
-    phone: getAgentPhone(apiAgent),
+    phone:
+      getAgentPhone(apiAgent),
 
-    image: getAgentImage(apiAgent.user),
+    image:
+      getAgentImage(
+        apiAgent.user,
+      ),
 
     agentType:
-      apiAgent.agent_type || "Real Estate Agent",
+      apiAgent.agent_type || "",
 
     licenseStatus:
-      apiAgent.license_status || "Unknown",
+      apiAgent.license_status || "",
 
     specialization:
-      apiAgent.specialization || "Real Estate",
+      apiAgent.specialization || "",
 
     address:
-      apiAgent.address ??
-      apiAgent.headline1 ??
-      "",
+      apiAgent.address || "",
 
     coverageAreas:
-      parseCoverageAreas(apiAgent.coverage_area),
+      parseCoverageAreas(
+        apiAgent.coverage_area,
+      ),
 
-    totalSales: apiAgent.total_sales ?? 0,
+    totalSales:
+      Number(
+        apiAgent.total_sales || 0,
+      ),
 
-    compsCount: apiAgent.comps_count ?? 0,
+    compsCount:
+      Number(
+        apiAgent.comps_count || 0,
+      ),
 
     about:
-      apiAgent.about ??
-      "Real estate professional helping clients find suitable properties.",
+      apiAgent.about || "",
 
-    linkedin: apiAgent.linkedin,
+    linkedin:
+      apiAgent.linkedin || null,
 
-    facebook: apiAgent.facebook,
+    facebook:
+      apiAgent.facebook || null,
   };
 }
+
+// ============================================================
+// AGENTS CACHE
+// ============================================================
+//
+// The cache prevents every screen from making another
+// GET /agents request.
+//
+// ============================================================
+
+let agentsCache: Agent[] | null =
+  null;
+
+// ============================================================
+// ACTIVE AGENTS REQUEST
+// ============================================================
+//
+// If several screens request agents at the same time,
+// they can share the same request.
+//
+// ============================================================
+
+let agentsRequest:
+  | Promise<Agent[]>
+  | null = null;
 
 // ============================================================
 // FETCH AGENTS
 // ============================================================
 
-export async function fetchAgents(): Promise<Agent[]> {
-  const response = await fetch(`${EXPO_PUBLIC_API_URL}/agents`);
-
-  if (!response.ok) {
-    throw new Error(
-      `Failed to load agents. Server returned ${response.status}.`,
-    );
-  }
-
-  const json: unknown = await response.json();
+export async function fetchAgents(
+  forceRefresh = false,
+): Promise<Agent[]> {
+  // ----------------------------------------------------------
+  // Return cached agents when available
+  // ----------------------------------------------------------
 
   if (
-    typeof json !== "object" ||
-    json === null ||
-    !("data" in json) ||
-    !Array.isArray(json.data)
+    !forceRefresh &&
+    agentsCache
   ) {
-    throw new Error(
-      "Invalid agents response from the server.",
-    );
+    return agentsCache;
   }
 
-  return json.data.map((agent) =>
-    mapApiAgent(agent as ApiAgent),
-  );
+  // ----------------------------------------------------------
+  // Reuse an active request
+  // ----------------------------------------------------------
+
+  if (
+    !forceRefresh &&
+    agentsRequest
+  ) {
+    return agentsRequest;
+  }
+
+  // ----------------------------------------------------------
+  // Make API request
+  // ----------------------------------------------------------
+
+  agentsRequest = (async () => {
+    const response =
+      await fetch(
+        `${EXPO_PUBLIC_API_URL}/v2/agents`,
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch agents: ${response.status}`,
+      );
+    }
+
+    const json: unknown =
+      await response.json();
+
+    // --------------------------------------------------------
+    // Validate API response
+    // --------------------------------------------------------
+
+    if (
+      !json ||
+      typeof json !== "object" ||
+      !("data" in json) ||
+      !Array.isArray(json.data)
+    ) {
+      throw new Error(
+        "Invalid agents API response.",
+      );
+    }
+
+    // --------------------------------------------------------
+    // Map API agents
+    // --------------------------------------------------------
+
+    const agents =
+      json.data.map(
+        (agent) =>
+          mapApiAgent(
+            agent as ApiAgent,
+          ),
+      );
+
+    // --------------------------------------------------------
+    // Save in cache
+    // --------------------------------------------------------
+
+    agentsCache = agents;
+
+    return agents;
+  })();
+
+  // ----------------------------------------------------------
+  // Clear active request when complete
+  // ----------------------------------------------------------
+
+  try {
+    return await agentsRequest;
+  } finally {
+    agentsRequest = null;
+  }
 }
+
+// ============================================================
+// CLEAR AGENTS CACHE
+// ============================================================
+//
+// Call this when agent information has changed and the next
+// fetch should retrieve fresh data from the API.
+//
+// ============================================================
+
+export function clearAgentsCache(): void {
+  agentsCache = null;
+}
+

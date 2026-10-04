@@ -1,4 +1,14 @@
+
 // app/services/propertyApi.ts
+
+import {
+  mapApiAgent,
+} from "./agentApi";
+
+import type {
+  Agent,
+  ApiAgent,
+} from "./agentApi";
 
 // ============================================================
 // API BASE URL
@@ -70,7 +80,26 @@ export interface OpenHouse {
 export interface ApiProperty {
   id: number;
 
+  /**
+   * Legacy/API valuer field.
+   *
+   * This is NOT used to determine the assigned agent because
+   * the API can return null even when an agent is assigned.
+   */
   valuer_id: number | null;
+
+  /**
+   * Authoritative property-agent relationship.
+   *
+   * Example from the API:
+   *
+   * "agent": {
+   *   "id": 7,
+   *   "user_id": "8",
+   *   "name": "Patricia Thonyiwa"
+   * }
+   */
+  agent: ApiAgent | null;
 
   property_number: string | null;
 
@@ -120,9 +149,8 @@ export interface ApiProperty {
 
   price: number | null;
 
-  /*
-   * IMPORTANT:
-   * This is the authoritative listing field.
+  /**
+   * Authoritative listing field.
    *
    * Expected values include:
    * "sale"
@@ -194,6 +222,28 @@ interface PropertiesApiResponse {
 export interface Property {
   id: string;
 
+  /**
+   * ID of the legacy valuer field.
+   *
+   * NOTE:
+   * This should NOT be used to determine the assigned agent.
+   * The API may return null while property.agent is populated.
+   */
+  valuerId: number | null;
+
+  /**
+   * Agent assigned/associated with this property.
+   *
+   * This comes directly from:
+   *
+   * ApiProperty.agent
+   *
+   * Example:
+   *
+   * property.agent.id === 7
+   */
+  agent: Agent | null;
+
   type: string;
 
   beds: number;
@@ -208,10 +258,10 @@ export interface Property {
 
   image: string;
 
-  /*
-   * This contains the normalized API listing_type.
+  /**
+   * Normalized API listing_type.
    *
-   * Example:
+   * Examples:
    * "sale"
    * "rent"
    */
@@ -269,8 +319,11 @@ export interface Property {
 
 export interface PropertyMediaItem {
   id: number;
+
   url: string;
+
   description?: string | null;
+
   collection?: string | null;
 }
 
@@ -402,8 +455,6 @@ function getPropertyImage(
 /**
  * Converts the API listing_type into a predictable value.
  *
- * The API field `listing_type` is the authoritative source.
- *
  * Examples:
  *
  * "sale"      -> "sale"
@@ -487,6 +538,24 @@ export function mapApiProperty(
       : null;
 
   // ----------------------------------------------------------
+  // Assigned Agent
+  //
+  // IMPORTANT:
+  //
+  // The API property response contains the authoritative
+  // relationship:
+  //
+  // property.agent.id
+  //
+  // We DO NOT use valuer_id here.
+  // ----------------------------------------------------------
+
+  const agent =
+    property.agent
+      ? mapApiAgent(property.agent)
+      : null;
+
+  // ----------------------------------------------------------
   // Listing Type
   //
   // IMPORTANT:
@@ -531,6 +600,11 @@ export function mapApiProperty(
   return {
     id: String(property.id),
 
+    valuerId:
+      property.valuer_id,
+
+    agent,
+
     type:
       property.property_type ||
       "Property",
@@ -553,10 +627,6 @@ export function mapApiProperty(
     image:
       getPropertyImage(property),
 
-    /*
-     * IMPORTANT:
-     * tag comes directly from listing_type.
-     */
     tag:
       listingType,
 
@@ -689,8 +759,18 @@ async function fetchPropertyEndpoint(
   const properties =
     validatePropertiesResponse(json);
 
+  // ----------------------------------------------------------
+  // IMPORTANT:
+  //
+  // The API already returns property.agent.
+  //
+  // Therefore we do not make another /agents request and
+  // do not try to match valuer_id.
+  // ----------------------------------------------------------
+
   return properties.map(
-    mapApiProperty,
+    (property) =>
+      mapApiProperty(property),
   );
 }
 
@@ -702,7 +782,7 @@ export async function fetchProperties(): Promise<
   Property[]
 > {
   return fetchPropertyEndpoint(
-    `${BASE_API_URL}/properties`,
+    `${BASE_API_URL}/v2/properties`,
   );
 }
 
@@ -714,7 +794,7 @@ export async function fetchFeaturedProperties(): Promise<
   Property[]
 > {
   return fetchPropertyEndpoint(
-    `${BASE_API_URL}/property/get-featured`,
+    `${BASE_API_URL}/v2/property/get-featured`,
   );
 }
 
@@ -726,7 +806,7 @@ export async function fetchMostViewedProperties(): Promise<
   Property[]
 > {
   return fetchPropertyEndpoint(
-    `${BASE_API_URL}/property/get-most-viewed`,
+    `${BASE_API_URL}/v2/property/get-most-viewed`,
   );
 }
 
@@ -738,7 +818,7 @@ export async function fetchNearestProperties(): Promise<
   Property[]
 > {
   return fetchPropertyEndpoint(
-    `${BASE_API_URL}/property/nearest`,
+    `${BASE_API_URL}/v2/property/nearest`,
   );
 }
 
@@ -752,7 +832,7 @@ export async function fetchNearbyProperties(
 ): Promise<Property[]> {
   const response =
     await fetch(
-      `${BASE_API_URL}/property/nearby`,
+      `${BASE_API_URL}/v2/property/nearby`,
       {
         method: "POST",
 
@@ -820,7 +900,7 @@ export const fetchPropertyImages =
     propertyId: string | number,
   ): Promise<PropertyMediaItem[]> => {
     const endpoint =
-      `${BASE_API_URL}/properties/${propertyId}/media/images`;
+      `${BASE_API_URL}/v2/properties/${propertyId}/media/images`;
 
     console.log(
       "Fetching property images from:",
@@ -873,7 +953,7 @@ export const fetchPropertyVideos =
     propertyId: string | number,
   ): Promise<PropertyMediaItem[]> => {
     const endpoint =
-      `${BASE_API_URL}/properties/${propertyId}/media/videos`;
+      `${BASE_API_URL}/v2/properties/${propertyId}/media/videos`;
 
     console.log(
       "Fetching property videos from:",
@@ -937,3 +1017,4 @@ export const fetchPropertyVideos =
 
     return [];
   };
+

@@ -51,7 +51,7 @@ interface BlogsResponse {
 */
 
 export async function getBlogs(): Promise<Blog[]> {
-  const url = `${API_URL}/blogs`;
+  const url = `${API_URL}/v2/blogs`;
 
   console.log("Fetching blogs from:", url);
 

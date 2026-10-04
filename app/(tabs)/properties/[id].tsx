@@ -1342,68 +1342,133 @@ export default function PropertyDetailsScreen() {
               Listing Agent
             </Text>
 
-            <View className="rounded-xl border border-[#292929] bg-[#171717] p-4">
-              <View className="flex-row items-center">
-                <View className="h-14 w-14 items-center justify-center rounded-full bg-[#292929]">
-                  <Ionicons
-                    name="person-outline"
-                    size={28}
-                    color="#777"
-                  />
-                </View>
-
-                <View className="ml-3 flex-1">
-                  <Text className="text-base font-bold text-white">
-                    {getValue(
-                      property,
-                      "agent_name",
-                      "agentName",
-                    ) ||
-                      "Listing Agent"}
-                  </Text>
-
-                  <Text className="mt-1 text-sm text-zinc-500">
-                    Property Agent
-                  </Text>
-                </View>
-              </View>
-
-              <View className="mt-4 border-t border-[#292929] pt-4">
+            {property.agent ? (
+              <View className="rounded-xl border border-[#292929] bg-[#171717] p-4">
                 <View className="flex-row items-center">
-                  <Ionicons
-                    name="mail-outline"
-                    size={19}
-                    color="#888"
-                  />
+                  {property.agent.image ? (
+                    <Image
+                      source={{
+                        uri: property.agent.image,
+                      }}
+                      className="h-14 w-14 rounded-full"
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View className="h-14 w-14 items-center justify-center rounded-full bg-[#292929]">
+                      <Ionicons
+                        name="person-outline"
+                        size={28}
+                        color="#777"
+                      />
+                    </View>
+                  )}
 
-                  <Text className="ml-3 text-sm text-zinc-400">
-                    {getValue(
-                      property,
-                      "agent_email",
-                      "agentEmail",
-                    ) ||
-                      "No email available"}
-                  </Text>
+                  <View className="ml-3 flex-1">
+                    <Text
+                      className="text-base font-bold text-white"
+                      numberOfLines={2}
+                    >
+                      {property.agent.name || "Listing Agent"}
+                    </Text>
+
+                    <Text className="mt-1 text-sm text-zinc-500">
+                      {property.agent.agentType ||
+                        "Property Agent"}
+                    </Text>
+                  </View>
                 </View>
 
-                <View className="mt-3 flex-row items-center">
-                  <Ionicons
-                    name="call-outline"
-                    size={19}
-                    color="#888"
-                  />
+                <View className="mt-4 border-t border-[#292929] pt-4">
+                  {property.agent.email ? (
+                    <View className="flex-row items-center">
+                      <Ionicons
+                        name="mail-outline"
+                        size={19}
+                        color="#888"
+                      />
 
-                  <Text className="ml-3 text-sm text-zinc-400">
-                    {getValue(
-                      property,
-                      "agent_phone",
-                      "agentPhone",
-                    ) ||
-                      "No phone available"}
+                      <Text
+                        className="ml-3 flex-1 text-sm text-zinc-400"
+                        numberOfLines={2}
+                      >
+                        {property.agent.email}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {property.agent.phone ? (
+                    <View
+                      className={`flex-row items-center ${
+                        property.agent.email ? "mt-3" : ""
+                      }`}
+                    >
+                      <Ionicons
+                        name="call-outline"
+                        size={19}
+                        color="#888"
+                      />
+
+                      <Text
+                        className="ml-3 flex-1 text-sm text-zinc-400"
+                        numberOfLines={2}
+                      >
+                        {property.agent.phone}
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {property.agent.specialization ? (
+                    <View className="mt-3 flex-row items-center">
+                      <Ionicons
+                        name="briefcase-outline"
+                        size={19}
+                        color="#888"
+                      />
+
+                      <Text
+                        className="ml-3 flex-1 text-sm text-zinc-400"
+                        numberOfLines={2}
+                      >
+                        {property.agent.specialization}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+
+                {property.agent.about ? (
+                  <View className="mt-4 border-t border-[#292929] pt-4">
+                    <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                      About the Agent
+                    </Text>
+
+                    <Text className="mt-2 text-sm leading-6 text-zinc-300">
+                      {property.agent.about}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : (
+              <View className="rounded-xl border border-[#292929] bg-[#171717] p-5">
+                <View className="items-center">
+                  <View className="h-14 w-14 items-center justify-center rounded-full bg-[#292929]">
+                    <Ionicons
+                      name="person-outline"
+                      size={28}
+                      color="#555"
+                    />
+                  </View>
+
+                  <Text className="mt-3 text-base font-semibold text-zinc-400">
+                    No listing agent assigned
+                  </Text>
+
+                  <Text className="mt-1 text-center text-sm leading-5 text-zinc-600">
+                    No agent is currently associated with
+                    this property.
                   </Text>
                 </View>
               </View>
-            </View>
+            )}
           </View>
         </View>
       </ScrollView>
