@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -57,12 +58,30 @@ export default function ProfileScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
+        {/* =====================================================
+            FIXED HEADER AREA
+
+            This area is NOT scrollable.
+
+            The global buttons from _layout.tsx are positioned
+            around top-14, so we reserve this space for them.
+        ====================================================== */}
+
+        <View className="absolute left-0 right-0 top-0 z-10 h-[110px] bg-[#0d0d0d]" />
+
+        {/* =====================================================
+            SCROLLABLE CONTENT
+
+            The content begins below the fixed header area.
+        ====================================================== */}
+
         <ScrollView
           className="flex-1 bg-[#0d0d0d]"
-          contentContainerClassName="px-4 pb-[350px]"
+          contentContainerClassName="px-4 pt-[110px] pb-[350px]"
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets
         >
           {/* =====================================================
               PROFILE
@@ -139,8 +158,6 @@ export default function ProfileScreen() {
               Update Password
             </Text>
 
-            {/* New Password */}
-
             <Text className="mb-1.5 text-sm text-gray-200">
               New Password
             </Text>
@@ -173,8 +190,6 @@ export default function ProfileScreen() {
                 />
               </Pressable>
             </View>
-
-            {/* Confirm Password */}
 
             <Text className="mb-1.5 text-sm text-gray-200">
               Confirm Password
