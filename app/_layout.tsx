@@ -50,11 +50,11 @@ function ThemeToggleButton() {
       }
       className="
         absolute
-        left-[66.66%]
+        left-[80%]
         top-14
         z-50
-        h-11
-        w-11
+        h-8
+        w-8
         -translate-x-1/2
         items-center
         justify-center
@@ -120,7 +120,7 @@ function GlobalMenuButton({
     >
       <Ionicons
         name="menu-outline"
-        size={28}
+        size={24}
         color={
           isDark
             ? "#ffffff"
@@ -157,8 +157,8 @@ function GlobalAuthButton({
         right-5
         top-14
         z-50
-        h-11
-        w-11
+        h-8
+        w-8
         items-center
         justify-center
         rounded-full

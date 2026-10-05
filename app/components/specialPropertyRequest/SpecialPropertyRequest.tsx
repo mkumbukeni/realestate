@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StatusBar,
@@ -12,12 +14,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function SpecialPropertyRequestScreen() {
-  /*
-  |--------------------------------------------------------------------------
-  | Form State
-  |--------------------------------------------------------------------------
-  */
-
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -35,25 +31,10 @@ export default function SpecialPropertyRequestScreen() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
 
-  /*
-  |--------------------------------------------------------------------------
-  | Dropdown State
-  |--------------------------------------------------------------------------
-  */
-
   const [activeDropdown, setActiveDropdown] =
     useState<string | null>(null);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Dropdown Options
-  |--------------------------------------------------------------------------
-  */
-
-  const listingTypes = [
-    "For Sale",
-    "For Rent",
-  ];
+  const listingTypes = ["For Sale", "For Rent"];
 
   const propertyTypes = [
     "Residential",
@@ -90,12 +71,6 @@ export default function SpecialPropertyRequestScreen() {
     "Area 25",
   ];
 
-  /*
-  |--------------------------------------------------------------------------
-  | Dropdown Component
-  |--------------------------------------------------------------------------
-  */
-
   const Dropdown = ({
     label,
     value,
@@ -124,9 +99,7 @@ export default function SpecialPropertyRequestScreen() {
         <Pressable
           disabled={disabled}
           onPress={() =>
-            setActiveDropdown(
-              isOpen ? null : name
-            )
+            setActiveDropdown(isOpen ? null : name)
           }
           className={`h-[48px] flex-row items-center justify-between rounded-md border px-3 ${
             disabled
@@ -153,7 +126,9 @@ export default function SpecialPropertyRequestScreen() {
             }
             size={17}
             color={
-              disabled ? "#444444" : "#777777"
+              disabled
+                ? "#444444"
+                : "#777777"
             }
           />
         </Pressable>
@@ -180,12 +155,6 @@ export default function SpecialPropertyRequestScreen() {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Submit
-  |--------------------------------------------------------------------------
-  */
-
   const handleSubmit = () => {
     if (
       !firstName.trim() ||
@@ -197,16 +166,18 @@ export default function SpecialPropertyRequestScreen() {
         "Missing Details",
         "Please fill in your contact information."
       );
-
       return;
     }
 
-    if (!listingType || !propertyType || !region) {
+    if (
+      !listingType ||
+      !propertyType ||
+      !region
+    ) {
       Alert.alert(
         "Missing Details",
         "Please select the listing type, property type and region."
       );
-
       return;
     }
 
@@ -216,12 +187,6 @@ export default function SpecialPropertyRequestScreen() {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Screen
-  |--------------------------------------------------------------------------
-  */
-
   return (
     <SafeAreaView className="flex-1 bg-[#080808]">
       <StatusBar
@@ -229,301 +194,350 @@ export default function SpecialPropertyRequestScreen() {
         backgroundColor="#080808"
       />
 
-      <ScrollView
+      {/* =====================================================
+          KEYBOARD AVOIDING VIEW
+
+          This moves the form upward when the keyboard opens
+          so the active input and bottom button remain accessible.
+          ===================================================== */}
+
+      <KeyboardAvoidingView
         className="flex-1"
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 35,
-        }}
+        behavior={
+          Platform.OS === "ios"
+            ? "padding"
+            : "height"
+        }
+        keyboardVerticalOffset={
+          Platform.OS === "ios" ? 0 : 0
+        }
       >
-        <View className="mx-3 mt-2 overflow-visible rounded-xl border border-[#303030] bg-[#0b0b0b] px-4 pb-5 pt-4">
+        {/* =====================================================
+            FORM CONTAINER
+
+            Pushed below the global header buttons.
+            ===================================================== */}
+
+        <View className="mx-3 mt-[78px] mb-2 flex-1 overflow-hidden rounded-xl border border-[#303030] bg-[#0b0b0b]">
           {/* =================================================
-              TITLE
+              FIXED TITLE
           ================================================== */}
 
-          <Text className="text-[20px] font-bold text-red-600">
-            FILL YOUR DETAILS
-          </Text>
-
-          {/* =================================================
-              CONTACT INFORMATION
-          ================================================== */}
-
-          <Text className="mb-5 mt-7 text-[18px] font-bold text-gray-200">
-            Contact Information
-          </Text>
-
-          {/* First / Last Name */}
-
-          <View className="flex-col gap-4 md:flex-row">
-            <View className="flex-1">
-              <Text className="mb-2 text-[14px] text-gray-200">
-                First Name
-              </Text>
-
-              <TextInput
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder=""
-                placeholderTextColor="#777777"
-                className="h-[48px] rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
-              />
-            </View>
-
-            <View className="flex-1">
-              <Text className="mb-2 text-[14px] text-gray-200">
-                Last Name
-              </Text>
-
-              <TextInput
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder=""
-                placeholderTextColor="#777777"
-                className="h-[48px] rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
-              />
-            </View>
+          <View className="flex items-center border-b border-[#303030] px-4 py-4">
+            <Text className="text-[20px] font-bold text-red-600">
+              FILL YOUR DETAILS
+            </Text>
           </View>
 
-          {/* Email / Phone / WhatsApp */}
+          {/* =================================================
+              SCROLLABLE FORM
+          ================================================== */}
 
-          <View className="mt-4 flex-col gap-4 md:flex-row">
-            {/* Email */}
+          <ScrollView
+            className="flex-1"
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={
+              Platform.OS === "ios"
+                ? "interactive"
+                : "on-drag"
+            }
+            automaticallyAdjustKeyboardInsets={
+              true
+            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingTop: 4,
+              paddingBottom: 120,
+            }}
+          >
+            {/* =================================================
+                CONTACT INFORMATION
+            ================================================== */}
 
-            <View className="flex-1">
-              <Text className="mb-2 text-[14px] text-gray-200">
-                Email
-              </Text>
+            <Text className="mb-5 mt-3 text-[18px] font-bold text-gray-200">
+              Contact Information
+            </Text>
 
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholder="example@gmail.com"
-                placeholderTextColor="#777777"
-                className="h-[48px] rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
-              />
-            </View>
+            {/* First / Last Name */}
 
-            {/* Phone */}
-
-            <View className="flex-1">
-              <Text className="mb-2 text-[14px] text-gray-200">
-                Phone
-              </Text>
-
-              <View className="h-[48px] flex-row items-center rounded-md border border-[#454545] bg-[#191919]">
-                <View className="flex-row items-center border-r border-[#383838] px-3">
-                  <Text className="text-[18px]">
-                    🇲🇼
-                  </Text>
-
-                  <Text className="ml-1 text-[13px] text-gray-300">
-                    +265
-                  </Text>
-                </View>
+            <View className="flex-col gap-4 md:flex-row">
+              <View className="flex-1">
+                <Text className="mb-2 text-[14px] text-gray-200">
+                  First Name
+                </Text>
 
                 <TextInput
-                  value={phone}
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  returnKeyType="next"
                   placeholder=""
                   placeholderTextColor="#777777"
-                  className="flex-1 px-3 text-[14px] text-white"
+                  className="h-[48px] rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
+                />
+              </View>
+
+              <View className="flex-1">
+                <Text className="mb-2 text-[14px] text-gray-200">
+                  Last Name
+                </Text>
+
+                <TextInput
+                  value={lastName}
+                  onChangeText={setLastName}
+                  returnKeyType="next"
+                  placeholder=""
+                  placeholderTextColor="#777777"
+                  className="h-[48px] rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
                 />
               </View>
             </View>
 
-            {/* WhatsApp */}
+            {/* Email / Phone / WhatsApp */}
 
-            <View className="flex-1">
-              <View className="mb-2 flex-row items-center">
-                <Pressable
-                  onPress={() =>
-                    setWhatsapp(!whatsapp)
-                  }
-                  className={`mr-2 h-5 w-5 items-center justify-center rounded border ${
+            <View className="mt-4 flex-col gap-4 md:flex-row">
+              {/* Email */}
+
+              <View className="flex-1">
+                <Text className="mb-2 text-[14px] text-gray-200">
+                  Email
+                </Text>
+
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  returnKeyType="next"
+                  placeholder="example@gmail.com"
+                  placeholderTextColor="#777777"
+                  className="h-[48px] rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
+                />
+              </View>
+
+              {/* Phone */}
+
+              <View className="flex-1">
+                <Text className="mb-2 text-[14px] text-gray-200">
+                  Phone
+                </Text>
+
+                <View className="h-[48px] flex-row items-center rounded-md border border-[#454545] bg-[#191919]">
+                  <View className="flex-row items-center border-r border-[#383838] px-3">
+                    <Text className="text-[18px]">
+                      🇲🇼
+                    </Text>
+
+                    <Text className="ml-1 text-[13px] text-gray-300">
+                      +265
+                    </Text>
+                  </View>
+
+                  <TextInput
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                    returnKeyType="next"
+                    placeholder=""
+                    placeholderTextColor="#777777"
+                    className="flex-1 px-3 text-[14px] text-white"
+                  />
+                </View>
+              </View>
+
+              {/* WhatsApp */}
+
+              <View className="flex-1">
+                <View className="mb-2 flex-row items-center">
+                  <Pressable
+                    onPress={() =>
+                      setWhatsapp(!whatsapp)
+                    }
+                    className={`mr-2 h-5 w-5 items-center justify-center rounded border ${
+                      whatsapp
+                        ? "border-red-600 bg-red-600"
+                        : "border-[#383838] bg-[#191919]"
+                    }`}
+                  >
+                    {whatsapp && (
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color="#ffffff"
+                      />
+                    )}
+                  </Pressable>
+
+                  <Text className="text-[14px] text-gray-200">
+                    Notify me via WhatsApp
+                  </Text>
+
+                  <Text className="ml-1 text-[13px]">
+                    🟢
+                  </Text>
+                </View>
+
+                <View
+                  className={`h-[48px] flex-row items-center rounded-md border ${
                     whatsapp
-                      ? "border-red-600 bg-red-600"
-                      : "border-[#383838] bg-[#191919]"
+                      ? "border-[#454545] bg-[#191919]"
+                      : "border-[#242424] bg-[#101010]"
                   }`}
                 >
-                  {whatsapp && (
-                    <Ionicons
-                      name="checkmark"
-                      size={14}
-                      color="#ffffff"
-                    />
-                  )}
-                </Pressable>
+                  <View className="flex-row items-center border-r border-[#383838] px-3">
+                    <Text className="text-[18px]">
+                      🇲🇼
+                    </Text>
 
-                <Text className="text-[14px] text-gray-200">
-                  Notify me via WhatsApp
-                </Text>
+                    <Text className="ml-1 text-[13px] text-gray-300">
+                      +265
+                    </Text>
+                  </View>
 
-                <Text className="ml-1 text-[13px]">
-                  🟢
-                </Text>
-              </View>
-
-              <View
-                className={`h-[48px] flex-row items-center rounded-md border ${
-                  whatsapp
-                    ? "border-[#454545] bg-[#191919]"
-                    : "border-[#242424] bg-[#101010]"
-                }`}
-              >
-                <View className="flex-row items-center border-r border-[#383838] px-3">
-                  <Text className="text-[18px]">
-                    🇲🇼
-                  </Text>
-
-                  <Text className="ml-1 text-[13px] text-gray-300">
-                    +265
-                  </Text>
+                  <TextInput
+                    value={whatsappPhone}
+                    onChangeText={setWhatsappPhone}
+                    editable={whatsapp}
+                    keyboardType="phone-pad"
+                    returnKeyType="next"
+                    placeholder=""
+                    placeholderTextColor="#777777"
+                    className="flex-1 px-3 text-[14px] text-white"
+                  />
                 </View>
+              </View>
+            </View>
 
-                <TextInput
-                  value={whatsappPhone}
-                  onChangeText={setWhatsappPhone}
-                  editable={whatsapp}
-                  keyboardType="phone-pad"
-                  placeholder=""
-                  placeholderTextColor="#777777"
-                  className="flex-1 px-3 text-[14px] text-white"
+            {/* =================================================
+                PROPERTY SPECIFICATIONS
+            ================================================== */}
+
+            <Text className="mb-5 mt-7 text-[18px] font-bold text-gray-200">
+              Property Specifications
+            </Text>
+
+            {/* Listing / Property / Region */}
+
+            <View className="flex-col gap-4 md:flex-row">
+              <Dropdown
+                label="Listing Type"
+                value={listingType}
+                placeholder="Select listing type"
+                options={listingTypes}
+                name="listing"
+                onSelect={setListingType}
+              />
+
+              <Dropdown
+                label="Property Type"
+                value={propertyType}
+                placeholder="Select property type"
+                options={propertyTypes}
+                name="property"
+                onSelect={setPropertyType}
+              />
+
+              <Dropdown
+                label="Region"
+                value={region}
+                placeholder="Select region"
+                options={regions}
+                name="region"
+                onSelect={(value) => {
+                  setRegion(value);
+                  setDistrict("");
+                  setArea("");
+                }}
+              />
+            </View>
+
+            {/* District / Areas */}
+
+            <View className="flex-col gap-4 md:flex-row">
+              <Dropdown
+                label="District"
+                value={district}
+                placeholder={
+                  region
+                    ? "Select District"
+                    : "Select Region first"
+                }
+                options={districts}
+                name="district"
+                disabled={!region}
+                onSelect={(value) => {
+                  setDistrict(value);
+                  setArea("");
+                }}
+              />
+
+              <View className="flex-[2]">
+                <Dropdown
+                  label="Areas"
+                  value={area}
+                  placeholder={
+                    district
+                      ? "Select Areas..."
+                      : "Select District first"
+                  }
+                  options={areas}
+                  name="area"
+                  disabled={!district}
+                  onSelect={setArea}
                 />
               </View>
             </View>
-          </View>
 
-          {/* =================================================
-              PROPERTY SPECIFICATIONS
-          ================================================== */}
+            {/* =================================================
+                PRICE RANGE
+            ================================================== */}
 
-          <Text className="mb-5 mt-7 text-[18px] font-bold text-gray-200">
-            Property Specifications
-          </Text>
+            <Text className="mb-2 text-[14px] text-gray-200">
+              Price Range
+            </Text>
 
-          {/* Listing / Property / Region */}
+            <View className="flex-row items-center">
+              <TextInput
+                value={minPrice}
+                onChangeText={setMinPrice}
+                keyboardType="numeric"
+                returnKeyType="next"
+                placeholder="min price"
+                placeholderTextColor="#777777"
+                className="h-[48px] flex-1 rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
+              />
 
-          <View className="flex-col gap-4 md:flex-row">
-            <Dropdown
-              label="Listing Type"
-              value={listingType}
-              placeholder="Select listing type"
-              options={listingTypes}
-              name="listing"
-              onSelect={setListingType}
-            />
+              <Text className="mx-2 text-gray-400">
+                -
+              </Text>
 
-            <Dropdown
-              label="Property Type"
-              value={propertyType}
-              placeholder="Select property type"
-              options={propertyTypes}
-              name="property"
-              onSelect={setPropertyType}
-            />
-
-            <Dropdown
-              label="Region"
-              value={region}
-              placeholder="Select region"
-              options={regions}
-              name="region"
-              onSelect={(value) => {
-                setRegion(value);
-                setDistrict("");
-                setArea("");
-              }}
-            />
-          </View>
-
-          {/* District / Areas */}
-
-          <View className="flex-col gap-4 md:flex-row">
-            <Dropdown
-              label="District"
-              value={district}
-              placeholder={
-                region
-                  ? "Select District"
-                  : "Select Region first"
-              }
-              options={districts}
-              name="district"
-              disabled={!region}
-              onSelect={(value) => {
-                setDistrict(value);
-                setArea("");
-              }}
-            />
-
-            <View className="flex-[2]">
-              <Dropdown
-                label="Areas"
-                value={area}
-                placeholder={
-                  district
-                    ? "Select Areas..."
-                    : "Select District first"
-                }
-                options={areas}
-                name="area"
-                disabled={!district}
-                onSelect={setArea}
+              <TextInput
+                value={maxPrice}
+                onChangeText={setMaxPrice}
+                keyboardType="numeric"
+                returnKeyType="done"
+                placeholder="max price"
+                placeholderTextColor="#777777"
+                className="h-[48px] flex-1 rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
               />
             </View>
-          </View>
 
-          {/* =================================================
-              PRICE RANGE
-          ================================================== */}
+            {/* =================================================
+                SUBMIT
+            ================================================== */}
 
-          <Text className="mb-2 text-[14px] text-gray-200">
-            Price Range
-          </Text>
+            <Pressable
+              onPress={handleSubmit}
+              className="mt-4 h-[44px] items-center justify-center rounded-md bg-red-600 active:bg-red-700"
+            >
+              <Text className="text-[14px] font-medium text-white">
+                Submit
+              </Text>
+            </Pressable>
 
-          <View className="flex-row items-center">
-            <TextInput
-              value={minPrice}
-              onChangeText={setMinPrice}
-              keyboardType="numeric"
-              placeholder="min price"
-              placeholderTextColor="#777777"
-              className="h-[48px] flex-1 rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
-            />
-
-            <Text className="mx-2 text-gray-400">
-              -
-            </Text>
-
-            <TextInput
-              value={maxPrice}
-              onChangeText={setMaxPrice}
-              keyboardType="numeric"
-              placeholder="max price"
-              placeholderTextColor="#777777"
-              className="h-[48px] flex-1 rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
-            />
-          </View>
-
-          {/* =================================================
-              SUBMIT
-          ================================================== */}
-
-          <Pressable
-            onPress={handleSubmit}
-            className="mt-4 h-[44px] items-center justify-center rounded-md bg-red-600 active:bg-red-700"
-          >
-            <Text className="text-[14px] font-medium text-white">
-              Submit
-            </Text>
-          </Pressable>
+          </ScrollView>
         </View>
-      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

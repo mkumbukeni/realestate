@@ -854,22 +854,21 @@ export default function HomeScreen() {
         backgroundColor="#0d0d0d"
       />
 
-      {/* ========================================================
-          HEADER
-          ======================================================== */}
+     {/* ========================================================
+    HEADER
+    ======================================================== */}
 
-      <View className="flex-row items-center border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
-        <View>
-          <Text className="text-2xl font-bold text-white">
-            Real Estate
-          </Text>
+<View className="items-center justify-center border-b border-[#222] bg-[#0d0d0d] px-5 pb-4 pt-3">
+  <View className="items-center justify-center">
+    <Text className="text-center text-xl font-bold text-white">
+      Real Estate Africa
+    </Text>
 
-          <Text className="mt-1 text-sm text-gray-500">
-            Find your next property
-          </Text>
-        </View>
-      </View>
-
+    <Text className="mt-1 text-center text-sm text-gray-500">
+      Find your next property
+    </Text>
+  </View>
+</View>
       {/* ========================================================
           CONTENT
           ======================================================== */}
@@ -1110,7 +1109,7 @@ export default function HomeScreen() {
           <Pressable
             onPress={() =>
               router.push(
-                "/appcomponents/listProperty/list-property",
+                "/components/specialPropertyRequest/SpecialPropertyRequest",
               )
             }
             accessibilityRole="button"
