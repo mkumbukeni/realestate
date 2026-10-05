@@ -14,6 +14,7 @@ import {
   StatusBar,
   Text,
   View,
+  useColorScheme,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -69,6 +70,12 @@ interface PropertyVideoProps {
 function PropertyVideo({
   video,
 }: PropertyVideoProps) {
+  const colorScheme =
+    useColorScheme();
+
+  const isDark =
+    colorScheme !== "light";
+
   const player = useVideoPlayer(
     video.url,
     (player) => {
@@ -77,7 +84,13 @@ function PropertyVideo({
   );
 
   return (
-    <View className="mb-4 overflow-hidden rounded-xl border border-[#292929] bg-black">
+    <View
+      className={
+        isDark
+          ? "mb-4 overflow-hidden rounded-xl border border-[#292929] bg-black"
+          : "mb-4 overflow-hidden rounded-xl border border-gray-200 bg-black"
+      }
+    >
       <VideoView
         player={player}
         style={{
@@ -89,8 +102,20 @@ function PropertyVideo({
       />
 
       {video.description ? (
-        <View className="bg-[#171717] px-4 py-3">
-          <Text className="text-sm text-zinc-300">
+        <View
+          className={
+            isDark
+              ? "bg-[#171717] px-4 py-3"
+              : "bg-gray-100 px-4 py-3"
+          }
+        >
+          <Text
+            className={
+              isDark
+                ? "text-sm text-zinc-300"
+                : "text-sm text-gray-700"
+            }
+          >
             {video.description}
           </Text>
         </View>
@@ -105,6 +130,12 @@ function PropertyVideo({
 
 export default function PropertyDetailsScreen() {
   const router = useRouter();
+
+  const colorScheme =
+    useColorScheme();
+
+  const isDark =
+    colorScheme !== "light";
 
   const params =
     useLocalSearchParams<{
@@ -437,20 +468,6 @@ export default function PropertyDetailsScreen() {
       return;
     }
 
-    /*
-     * The "19" in this URL is constant.
-     *
-     * Only the final number changes according
-     * to the property ID.
-     *
-     * Example:
-     *
-     * Property 6:
-     * https://dev.valuationsafrica.mw/property/makeoffer/19/6
-     *
-     * Property 7:
-     * https://dev.valuationsafrica.mw/property/makeoffer/19/7
-     */
     const makeOfferUrl =
       `https://dev.valuationsafrica.mw/property/makeoffer/19/${propertyId}`;
 
@@ -468,10 +485,6 @@ export default function PropertyDetailsScreen() {
         return;
       }
 
-      /*
-       * This opens the external website
-       * outside the Expo application.
-       */
       await Linking.openURL(
         makeOfferUrl,
       );
@@ -497,10 +510,24 @@ export default function PropertyDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+      <SafeAreaView
+        className={
+          isDark
+            ? "flex-1 bg-[#0d0d0d]"
+            : "flex-1 bg-white"
+        }
+      >
         <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
+          barStyle={
+            isDark
+              ? "light-content"
+              : "dark-content"
+          }
+          backgroundColor={
+            isDark
+              ? "#0d0d0d"
+              : "#ffffff"
+          }
         />
 
         <View className="flex-1 items-center justify-center">
@@ -509,7 +536,13 @@ export default function PropertyDetailsScreen() {
             color="#dc2626"
           />
 
-          <Text className="mt-4 text-sm text-zinc-400">
+          <Text
+            className={
+              isDark
+                ? "mt-4 text-sm text-zinc-400"
+                : "mt-4 text-sm text-gray-600"
+            }
+          >
             Loading property...
           </Text>
         </View>
@@ -523,25 +556,59 @@ export default function PropertyDetailsScreen() {
 
   if (!property) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+      <SafeAreaView
+        className={
+          isDark
+            ? "flex-1 bg-[#0d0d0d]"
+            : "flex-1 bg-gray-50"
+        }
+      >
         <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
+          barStyle={
+            isDark
+              ? "light-content"
+              : "dark-content"
+          }
+          backgroundColor={
+            isDark
+              ? "#0d0d0d"
+              : "#f9fafb"
+          }
         />
 
-        <View className="flex-row items-center border-b border-zinc-800 px-4 py-3">
+        <View
+          className={
+            isDark
+              ? "flex-row items-center border-b border-zinc-800 bg-[#0d0d0d] px-4 py-3"
+              : "flex-row items-center border-b border-gray-200 bg-white px-4 py-3"
+          }
+        >
           <Pressable
             onPress={handleBack}
-            className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+            className={
+              isDark
+                ? "h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+                : "h-11 w-11 items-center justify-center rounded-full bg-gray-100"
+            }
           >
             <Ionicons
               name="arrow-back"
               size={23}
-              color="#fff"
+              color={
+                isDark
+                  ? "#fff"
+                  : "#000"
+              }
             />
           </Pressable>
 
-          <Text className="ml-3 text-xl font-bold text-white">
+          <Text
+            className={
+              isDark
+                ? "ml-3 text-xl font-bold text-white"
+                : "ml-3 text-xl font-bold text-black"
+            }
+          >
             Property
           </Text>
         </View>
@@ -550,14 +617,30 @@ export default function PropertyDetailsScreen() {
           <Ionicons
             name="home-outline"
             size={60}
-            color="#555"
+            color={
+              isDark
+                ? "#555"
+                : "#9ca3af"
+            }
           />
 
-          <Text className="mt-5 text-center text-xl font-bold text-white">
+          <Text
+            className={
+              isDark
+                ? "mt-5 text-center text-xl font-bold text-white"
+                : "mt-5 text-center text-xl font-bold text-black"
+            }
+          >
             Property not found
           </Text>
 
-          <Text className="mt-2 text-center text-sm text-zinc-500">
+          <Text
+            className={
+              isDark
+                ? "mt-2 text-center text-sm text-zinc-500"
+                : "mt-2 text-center text-sm text-gray-500"
+            }
+          >
             The property may no longer be
             available.
           </Text>
@@ -670,7 +753,11 @@ export default function PropertyDetailsScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-[#0d0d0d]"
+      className={
+        isDark
+          ? "flex-1 bg-[#0d0d0d]"
+          : "flex-1 bg-gray-50"
+      }
       edges={[
         "top",
         "left",
@@ -678,36 +765,68 @@ export default function PropertyDetailsScreen() {
       ]}
     >
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
+        barStyle={
+          isDark
+            ? "light-content"
+            : "dark-content"
+        }
+        backgroundColor={
+          isDark
+            ? "#0d0d0d"
+            : "#f9fafb"
+        }
       />
 
       {/* ====================================================== */}
       {/* HEADER */}
       {/* ====================================================== */}
 
-      <View className="flex-row items-center justify-between border-b border-zinc-800 bg-[#0d0d0d] px-4 py-3">
+      <View
+        className={
+          isDark
+            ? "flex-row items-center justify-between border-b border-zinc-800 bg-[#0d0d0d] px-4 py-3"
+            : "flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3"
+        }
+      >
         <View className="flex-row items-center">
           <Pressable
             onPress={handleBack}
-            className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+            className={
+              isDark
+                ? "h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+                : "h-11 w-11 items-center justify-center rounded-full bg-gray-100"
+            }
           >
             <Ionicons
               name="arrow-back"
               size={23}
-              color="#fff"
+              color={
+                isDark
+                  ? "#fff"
+                  : "#000"
+              }
             />
           </Pressable>
 
           <View className="ml-3">
             <Text
-              className="text-lg font-bold text-white"
+              className={
+                isDark
+                  ? "text-lg font-bold text-white"
+                  : "text-lg font-bold text-black"
+              }
               numberOfLines={1}
             >
               Property Details
             </Text>
 
-            <Text className="text-xs text-zinc-500">
+            <Text
+              className={
+                isDark
+                  ? "text-xs text-zinc-500"
+                  : "text-xs text-gray-500"
+              }
+            >
               Property #{property.id}
             </Text>
           </View>
@@ -717,12 +836,20 @@ export default function PropertyDetailsScreen() {
           onPress={() =>
             setMenuVisible(true)
           }
-          className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+          className={
+            isDark
+              ? "h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+              : "h-11 w-11 items-center justify-center rounded-full bg-gray-100"
+          }
         >
           <Ionicons
             name="menu-outline"
             size={26}
-            color="#fff"
+            color={
+              isDark
+                ? "#fff"
+                : "#000"
+            }
           />
         </Pressable>
       </View>
@@ -741,7 +868,13 @@ export default function PropertyDetailsScreen() {
         {/* IMAGE GALLERY */}
         {/* ==================================================== */}
 
-        <View className="bg-[#111]">
+        <View
+          className={
+            isDark
+              ? "bg-[#111]"
+              : "bg-gray-100"
+          }
+        >
           {imagesLoading ? (
             <View
               style={{
@@ -754,7 +887,13 @@ export default function PropertyDetailsScreen() {
                 color="#dc2626"
               />
 
-              <Text className="mt-3 text-sm text-zinc-500">
+              <Text
+                className={
+                  isDark
+                    ? "mt-3 text-sm text-zinc-500"
+                    : "mt-3 text-sm text-gray-500"
+                }
+              >
                 Loading property images...
               </Text>
             </View>
@@ -852,15 +991,29 @@ export default function PropertyDetailsScreen() {
               style={{
                 height: IMAGE_HEIGHT,
               }}
-              className="items-center justify-center bg-[#222]"
+              className={
+                isDark
+                  ? "items-center justify-center bg-[#222]"
+                  : "items-center justify-center bg-gray-200"
+              }
             >
               <Ionicons
                 name="image-outline"
                 size={55}
-                color="#555"
+                color={
+                  isDark
+                    ? "#555"
+                    : "#9ca3af"
+                }
               />
 
-              <Text className="mt-3 text-sm text-zinc-500">
+              <Text
+                className={
+                  isDark
+                    ? "mt-3 text-sm text-zinc-500"
+                    : "mt-3 text-sm text-gray-500"
+                }
+              >
                 No property images
               </Text>
             </View>
@@ -881,13 +1034,25 @@ export default function PropertyDetailsScreen() {
             </View>
 
             {property.systemStatus ? (
-              <Text className="text-sm font-medium text-zinc-400">
+              <Text
+                className={
+                  isDark
+                    ? "text-sm font-medium text-zinc-400"
+                    : "text-sm font-medium text-gray-600"
+                }
+              >
                 {property.systemStatus}
               </Text>
             ) : null}
           </View>
 
-          <Text className="mt-4 text-2xl font-bold text-white">
+          <Text
+            className={
+              isDark
+                ? "mt-4 text-2xl font-bold text-white"
+                : "mt-4 text-2xl font-bold text-black"
+            }
+          >
             {property.title ||
               locationText ||
               "Property"}
@@ -901,20 +1066,38 @@ export default function PropertyDetailsScreen() {
             />
 
             <View className="ml-2 flex-1">
-              <Text className="text-base font-semibold text-zinc-300">
+              <Text
+                className={
+                  isDark
+                    ? "text-base font-semibold text-zinc-300"
+                    : "text-base font-semibold text-gray-700"
+                }
+              >
                 {locationText ||
                   "Location unavailable"}
               </Text>
 
               {zone ? (
-                <Text className="mt-1 text-sm text-zinc-500">
+                <Text
+                  className={
+                    isDark
+                      ? "mt-1 text-sm text-zinc-500"
+                      : "mt-1 text-sm text-gray-500"
+                  }
+                >
                   Zone: {zone}
                 </Text>
               ) : null}
             </View>
           </View>
 
-          <Text className="mt-5 text-2xl font-bold text-white">
+          <Text
+            className={
+              isDark
+                ? "mt-5 text-2xl font-bold text-white"
+                : "mt-5 text-2xl font-bold text-black"
+            }
+          >
             {property.price ||
               "Price on request"}
           </Text>
@@ -924,7 +1107,13 @@ export default function PropertyDetailsScreen() {
           {/* ================================================= */}
 
           <View className="mt-7">
-            <Text className="mb-4 text-xl font-bold text-white">
+            <Text
+              className={
+                isDark
+                  ? "mb-4 text-xl font-bold text-white"
+                  : "mb-4 text-xl font-bold text-black"
+              }
+            >
               Property Highlights
             </Text>
 
@@ -934,6 +1123,7 @@ export default function PropertyDetailsScreen() {
                   icon="eye-outline"
                   value={views}
                   label="Views"
+                  isDark={isDark}
                 />
               ) : null}
 
@@ -942,6 +1132,7 @@ export default function PropertyDetailsScreen() {
                   icon="bed-outline"
                   value={bedrooms}
                   label="Beds"
+                  isDark={isDark}
                 />
               ) : null}
 
@@ -950,6 +1141,7 @@ export default function PropertyDetailsScreen() {
                   icon="water-outline"
                   value={bathrooms}
                   label="Baths"
+                  isDark={isDark}
                 />
               ) : null}
 
@@ -958,6 +1150,7 @@ export default function PropertyDetailsScreen() {
                   icon="resize-outline"
                   value={`${buildingSize}m²`}
                   label="Area"
+                  isDark={isDark}
                 />
               ) : null}
 
@@ -969,6 +1162,7 @@ export default function PropertyDetailsScreen() {
                   }
                   label=""
                   wide
+                  isDark={isDark}
                 />
               ) : null}
 
@@ -978,6 +1172,7 @@ export default function PropertyDetailsScreen() {
                   value={titleDeed}
                   label="Title Deed"
                   wide
+                  isDark={isDark}
                 />
               ) : null}
             </View>
@@ -988,11 +1183,23 @@ export default function PropertyDetailsScreen() {
           {/* ================================================= */}
 
           <View className="mt-8">
-            <Text className="mb-4 text-xl font-bold text-white">
+            <Text
+              className={
+                isDark
+                  ? "mb-4 text-xl font-bold text-white"
+                  : "mb-4 text-xl font-bold text-black"
+              }
+            >
               Property Details
             </Text>
 
-            <View className="overflow-hidden rounded-xl border border-[#292929] bg-[#171717]">
+            <View
+              className={
+                isDark
+                  ? "overflow-hidden rounded-xl border border-[#292929] bg-[#171717]"
+                  : "overflow-hidden rounded-xl border border-gray-200 bg-white"
+              }
+            >
               <DetailRow
                 icon="location-outline"
                 label="Zone"
@@ -1000,6 +1207,7 @@ export default function PropertyDetailsScreen() {
                   zone ||
                   "Not specified"
                 }
+                isDark={isDark}
               />
 
               <DetailRow
@@ -1009,6 +1217,7 @@ export default function PropertyDetailsScreen() {
                   propertyType ||
                   "Not specified"
                 }
+                isDark={isDark}
               />
 
               <DetailRow
@@ -1019,6 +1228,7 @@ export default function PropertyDetailsScreen() {
                   "Not specified"
                 }
                 last
+                isDark={isDark}
               />
             </View>
           </View>
@@ -1028,12 +1238,30 @@ export default function PropertyDetailsScreen() {
           {/* ================================================= */}
 
           <View className="mt-8">
-            <Text className="mb-4 text-xl font-bold text-white">
+            <Text
+              className={
+                isDark
+                  ? "mb-4 text-xl font-bold text-white"
+                  : "mb-4 text-xl font-bold text-black"
+              }
+            >
               Description
             </Text>
 
-            <View className="rounded-xl border border-[#292929] bg-[#171717] p-4">
-              <Text className="text-sm leading-6 text-zinc-300">
+            <View
+              className={
+                isDark
+                  ? "rounded-xl border border-[#292929] bg-[#171717] p-4"
+                  : "rounded-xl border border-gray-200 bg-white p-4"
+              }
+            >
+              <Text
+                className={
+                  isDark
+                    ? "text-sm leading-6 text-zinc-300"
+                    : "text-sm leading-6 text-gray-700"
+                }
+              >
                 {description ||
                   "No description available for this property."}
               </Text>
@@ -1045,7 +1273,13 @@ export default function PropertyDetailsScreen() {
           {/* ================================================= */}
 
           <View className="mt-8">
-            <Text className="mb-4 text-xl font-bold text-white">
+            <Text
+              className={
+                isDark
+                  ? "mb-4 text-xl font-bold text-white"
+                  : "mb-4 text-xl font-bold text-black"
+              }
+            >
               Amenities
             </Text>
 
@@ -1073,7 +1307,11 @@ export default function PropertyDetailsScreen() {
                     return (
                       <View
                         key={`${value}-${index}`}
-                        className="mb-2 mr-2 flex-row items-center rounded-lg border border-[#292929] bg-[#171717] px-3 py-2"
+                        className={
+                          isDark
+                            ? "mb-2 mr-2 flex-row items-center rounded-lg border border-[#292929] bg-[#171717] px-3 py-2"
+                            : "mb-2 mr-2 flex-row items-center rounded-lg border border-gray-200 bg-white px-3 py-2"
+                        }
                       >
                         <Ionicons
                           name="checkmark-circle-outline"
@@ -1081,7 +1319,13 @@ export default function PropertyDetailsScreen() {
                           color="#ef4444"
                         />
 
-                        <Text className="ml-2 text-sm text-zinc-300">
+                        <Text
+                          className={
+                            isDark
+                              ? "ml-2 text-sm text-zinc-300"
+                              : "ml-2 text-sm text-gray-700"
+                          }
+                        >
                           {value}
                         </Text>
                       </View>
@@ -1090,8 +1334,20 @@ export default function PropertyDetailsScreen() {
                 )}
               </View>
             ) : (
-              <View className="rounded-xl border border-[#292929] bg-[#171717] p-4">
-                <Text className="text-sm text-zinc-500">
+              <View
+                className={
+                  isDark
+                    ? "rounded-xl border border-[#292929] bg-[#171717] p-4"
+                    : "rounded-xl border border-gray-200 bg-white p-4"
+                }
+              >
+                <Text
+                  className={
+                    isDark
+                      ? "text-sm text-zinc-500"
+                      : "text-sm text-gray-500"
+                  }
+                >
                   No amenities listed for
                   this property.
                 </Text>
@@ -1105,12 +1361,24 @@ export default function PropertyDetailsScreen() {
 
           <View className="mt-8">
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-xl font-bold text-white">
+              <Text
+                className={
+                  isDark
+                    ? "text-xl font-bold text-white"
+                    : "text-xl font-bold text-black"
+                }
+              >
                 Property Videos
               </Text>
 
               {videos.length > 0 ? (
-                <Text className="text-sm text-zinc-500">
+                <Text
+                  className={
+                    isDark
+                      ? "text-sm text-zinc-500"
+                      : "text-sm text-gray-500"
+                  }
+                >
                   {videos.length}{" "}
                   {videos.length === 1
                     ? "video"
@@ -1120,13 +1388,25 @@ export default function PropertyDetailsScreen() {
             </View>
 
             {videosLoading ? (
-              <View className="items-center rounded-xl border border-[#292929] bg-[#171717] py-10">
+              <View
+                className={
+                  isDark
+                    ? "items-center rounded-xl border border-[#292929] bg-[#171717] py-10"
+                    : "items-center rounded-xl border border-gray-200 bg-white py-10"
+                }
+              >
                 <ActivityIndicator
                   size="small"
                   color="#dc2626"
                 />
 
-                <Text className="mt-3 text-sm text-zinc-500">
+                <Text
+                  className={
+                    isDark
+                      ? "mt-3 text-sm text-zinc-500"
+                      : "mt-3 text-sm text-gray-500"
+                  }
+                >
                   Loading property videos...
                 </Text>
               </View>
@@ -1145,14 +1425,30 @@ export default function PropertyDetailsScreen() {
                 )}
               </View>
             ) : (
-              <View className="items-center rounded-xl border border-[#292929] bg-[#171717] px-5 py-8">
+              <View
+                className={
+                  isDark
+                    ? "items-center rounded-xl border border-[#292929] bg-[#171717] px-5 py-8"
+                    : "items-center rounded-xl border border-gray-200 bg-white px-5 py-8"
+                }
+              >
                 <Ionicons
                   name="videocam-outline"
                   size={42}
-                  color="#555"
+                  color={
+                    isDark
+                      ? "#555"
+                      : "#9ca3af"
+                  }
                 />
 
-                <Text className="mt-3 text-sm text-zinc-500">
+                <Text
+                  className={
+                    isDark
+                      ? "mt-3 text-sm text-zinc-500"
+                      : "mt-3 text-sm text-gray-500"
+                  }
+                >
                   No property videos
                   available.
                 </Text>
@@ -1184,11 +1480,23 @@ export default function PropertyDetailsScreen() {
           {/* ================================================= */}
 
           <View className="mt-8">
-            <Text className="mb-4 text-xl font-bold text-white">
+            <Text
+              className={
+                isDark
+                  ? "mb-4 text-xl font-bold text-white"
+                  : "mb-4 text-xl font-bold text-black"
+              }
+            >
               Open Houses
             </Text>
 
-            <View className="rounded-xl border border-[#292929] bg-[#171717] p-5">
+            <View
+              className={
+                isDark
+                  ? "rounded-xl border border-[#292929] bg-[#171717] p-5"
+                  : "rounded-xl border border-gray-200 bg-white p-5"
+              }
+            >
               {property.isOpenHouse ? (
                 <View className="flex-row items-center">
                   <Ionicons
@@ -1197,13 +1505,25 @@ export default function PropertyDetailsScreen() {
                     color="#ef4444"
                   />
 
-                  <Text className="ml-3 text-sm text-zinc-300">
+                  <Text
+                    className={
+                      isDark
+                        ? "ml-3 text-sm text-zinc-300"
+                        : "ml-3 text-sm text-gray-700"
+                    }
+                  >
                     Open house available
                     for this property.
                   </Text>
                 </View>
               ) : (
-                <Text className="text-sm text-zinc-500">
+                <Text
+                  className={
+                    isDark
+                      ? "text-sm text-zinc-500"
+                      : "text-sm text-gray-500"
+                  }
+                >
                   No open houses scheduled
                   at this time.
                 </Text>
@@ -1217,7 +1537,13 @@ export default function PropertyDetailsScreen() {
 
           <View className="mt-8">
             <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-xl font-bold text-white">
+              <Text
+                className={
+                  isDark
+                    ? "text-xl font-bold text-white"
+                    : "text-xl font-bold text-black"
+                }
+              >
                 Property Location
               </Text>
 
@@ -1231,7 +1557,13 @@ export default function PropertyDetailsScreen() {
             </View>
 
             {coordinates ? (
-              <View className="overflow-hidden rounded-xl border border-[#292929]">
+              <View
+                className={
+                  isDark
+                    ? "overflow-hidden rounded-xl border border-[#292929]"
+                    : "overflow-hidden rounded-xl border border-gray-200"
+                }
+              >
                 <MapView
                   provider={PROVIDER_GOOGLE}
                   style={{
@@ -1268,7 +1600,13 @@ export default function PropertyDetailsScreen() {
                   />
                 </MapView>
 
-                <View className="border-t border-[#292929] bg-[#171717] px-4 py-3">
+                <View
+                  className={
+                    isDark
+                      ? "border-t border-[#292929] bg-[#171717] px-4 py-3"
+                      : "border-t border-gray-200 bg-white px-4 py-3"
+                  }
+                >
                   <View className="flex-row items-center">
                     <Ionicons
                       name="location-outline"
@@ -1277,7 +1615,11 @@ export default function PropertyDetailsScreen() {
                     />
 
                     <Text
-                      className="ml-2 flex-1 text-sm text-zinc-300"
+                      className={
+                        isDark
+                          ? "ml-2 flex-1 text-sm text-zinc-300"
+                          : "ml-2 flex-1 text-sm text-gray-700"
+                      }
                       numberOfLines={2}
                     >
                       {locationText ||
@@ -1285,7 +1627,13 @@ export default function PropertyDetailsScreen() {
                     </Text>
                   </View>
 
-                  <Text className="mt-2 text-xs text-zinc-600">
+                  <Text
+                    className={
+                      isDark
+                        ? "mt-2 text-xs text-zinc-600"
+                        : "mt-2 text-xs text-gray-400"
+                    }
+                  >
                     {coordinates.latitude.toFixed(
                       6,
                     )}
@@ -1297,19 +1645,41 @@ export default function PropertyDetailsScreen() {
                 </View>
               </View>
             ) : (
-              <View className="items-center rounded-xl border border-[#292929] bg-[#171717] px-5 py-10">
+              <View
+                className={
+                  isDark
+                    ? "items-center rounded-xl border border-[#292929] bg-[#171717] px-5 py-10"
+                    : "items-center rounded-xl border border-gray-200 bg-white px-5 py-10"
+                }
+              >
                 <Ionicons
                   name="map-outline"
                   size={50}
-                  color="#555"
+                  color={
+                    isDark
+                      ? "#555"
+                      : "#9ca3af"
+                  }
                 />
 
-                <Text className="mt-3 text-center text-sm font-medium text-zinc-400">
+                <Text
+                  className={
+                    isDark
+                      ? "mt-3 text-center text-sm font-medium text-zinc-400"
+                      : "mt-3 text-center text-sm font-medium text-gray-600"
+                  }
+                >
                   Property coordinates
                   unavailable
                 </Text>
 
-                <Text className="mt-2 text-center text-xs leading-5 text-zinc-600">
+                <Text
+                  className={
+                    isDark
+                      ? "mt-2 text-center text-xs leading-5 text-zinc-600"
+                      : "mt-2 text-center text-xs leading-5 text-gray-500"
+                  }
+                >
                   This property does not
                   currently have valid
                   latitude and longitude
@@ -1321,10 +1691,20 @@ export default function PropertyDetailsScreen() {
                     <Ionicons
                       name="location-outline"
                       size={16}
-                      color="#777"
+                      color={
+                        isDark
+                          ? "#777"
+                          : "#6b7280"
+                      }
                     />
 
-                    <Text className="ml-2 text-xs text-zinc-500">
+                    <Text
+                      className={
+                        isDark
+                          ? "ml-2 text-xs text-zinc-500"
+                          : "ml-2 text-xs text-gray-500"
+                      }
+                    >
                       {locationText}
                     </Text>
                   </View>
@@ -1338,12 +1718,24 @@ export default function PropertyDetailsScreen() {
           {/* ================================================= */}
 
           <View className="mt-8">
-            <Text className="mb-4 text-xl font-bold text-white">
+            <Text
+              className={
+                isDark
+                  ? "mb-4 text-xl font-bold text-white"
+                  : "mb-4 text-xl font-bold text-black"
+              }
+            >
               Listing Agent
             </Text>
 
             {property.agent ? (
-              <View className="rounded-xl border border-[#292929] bg-[#171717] p-4">
+              <View
+                className={
+                  isDark
+                    ? "rounded-xl border border-[#292929] bg-[#171717] p-4"
+                    : "rounded-xl border border-gray-200 bg-white p-4"
+                }
+              >
                 <View className="flex-row items-center">
                   {property.agent.image ? (
                     <Image
@@ -1354,41 +1746,76 @@ export default function PropertyDetailsScreen() {
                       resizeMode="cover"
                     />
                   ) : (
-                    <View className="h-14 w-14 items-center justify-center rounded-full bg-[#292929]">
+                    <View
+                      className={
+                        isDark
+                          ? "h-14 w-14 items-center justify-center rounded-full bg-[#292929]"
+                          : "h-14 w-14 items-center justify-center rounded-full bg-gray-200"
+                      }
+                    >
                       <Ionicons
                         name="person-outline"
                         size={28}
-                        color="#777"
+                        color={
+                          isDark
+                            ? "#777"
+                            : "#6b7280"
+                        }
                       />
                     </View>
                   )}
 
                   <View className="ml-3 flex-1">
                     <Text
-                      className="text-base font-bold text-white"
+                      className={
+                        isDark
+                          ? "text-base font-bold text-white"
+                          : "text-base font-bold text-black"
+                      }
                       numberOfLines={2}
                     >
-                      {property.agent.name || "Listing Agent"}
+                      {property.agent.name ||
+                        "Listing Agent"}
                     </Text>
 
-                    <Text className="mt-1 text-sm text-zinc-500">
+                    <Text
+                      className={
+                        isDark
+                          ? "mt-1 text-sm text-zinc-500"
+                          : "mt-1 text-sm text-gray-500"
+                      }
+                    >
                       {property.agent.agentType ||
                         "Property Agent"}
                     </Text>
                   </View>
                 </View>
 
-                <View className="mt-4 border-t border-[#292929] pt-4">
+                <View
+                  className={
+                    isDark
+                      ? "mt-4 border-t border-[#292929] pt-4"
+                      : "mt-4 border-t border-gray-200 pt-4"
+                  }
+                >
                   {property.agent.email ? (
                     <View className="flex-row items-center">
                       <Ionicons
                         name="mail-outline"
                         size={19}
-                        color="#888"
+                        color={
+                          isDark
+                            ? "#888"
+                            : "#6b7280"
+                        }
                       />
 
                       <Text
-                        className="ml-3 flex-1 text-sm text-zinc-400"
+                        className={
+                          isDark
+                            ? "ml-3 flex-1 text-sm text-zinc-400"
+                            : "ml-3 flex-1 text-sm text-gray-600"
+                        }
                         numberOfLines={2}
                       >
                         {property.agent.email}
@@ -1399,17 +1826,27 @@ export default function PropertyDetailsScreen() {
                   {property.agent.phone ? (
                     <View
                       className={`flex-row items-center ${
-                        property.agent.email ? "mt-3" : ""
+                        property.agent.email
+                          ? "mt-3"
+                          : ""
                       }`}
                     >
                       <Ionicons
                         name="call-outline"
                         size={19}
-                        color="#888"
+                        color={
+                          isDark
+                            ? "#888"
+                            : "#6b7280"
+                        }
                       />
 
                       <Text
-                        className="ml-3 flex-1 text-sm text-zinc-400"
+                        className={
+                          isDark
+                            ? "ml-3 flex-1 text-sm text-zinc-400"
+                            : "ml-3 flex-1 text-sm text-gray-600"
+                        }
                         numberOfLines={2}
                       >
                         {property.agent.phone}
@@ -1422,47 +1859,104 @@ export default function PropertyDetailsScreen() {
                       <Ionicons
                         name="briefcase-outline"
                         size={19}
-                        color="#888"
+                        color={
+                          isDark
+                            ? "#888"
+                            : "#6b7280"
+                        }
                       />
 
                       <Text
-                        className="ml-3 flex-1 text-sm text-zinc-400"
+                        className={
+                          isDark
+                            ? "ml-3 flex-1 text-sm text-zinc-400"
+                            : "ml-3 flex-1 text-sm text-gray-600"
+                        }
                         numberOfLines={2}
                       >
-                        {property.agent.specialization}
+                        {
+                          property.agent
+                            .specialization
+                        }
                       </Text>
                     </View>
                   ) : null}
                 </View>
 
                 {property.agent.about ? (
-                  <View className="mt-4 border-t border-[#292929] pt-4">
-                    <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  <View
+                    className={
+                      isDark
+                        ? "mt-4 border-t border-[#292929] pt-4"
+                        : "mt-4 border-t border-gray-200 pt-4"
+                    }
+                  >
+                    <Text
+                      className={
+                        isDark
+                          ? "text-xs font-semibold uppercase tracking-wide text-zinc-500"
+                          : "text-xs font-semibold uppercase tracking-wide text-gray-500"
+                      }
+                    >
                       About the Agent
                     </Text>
 
-                    <Text className="mt-2 text-sm leading-6 text-zinc-300">
+                    <Text
+                      className={
+                        isDark
+                          ? "mt-2 text-sm leading-6 text-zinc-300"
+                          : "mt-2 text-sm leading-6 text-gray-700"
+                      }
+                    >
                       {property.agent.about}
                     </Text>
                   </View>
                 ) : null}
               </View>
             ) : (
-              <View className="rounded-xl border border-[#292929] bg-[#171717] p-5">
+              <View
+                className={
+                  isDark
+                    ? "rounded-xl border border-[#292929] bg-[#171717] p-5"
+                    : "rounded-xl border border-gray-200 bg-white p-5"
+                }
+              >
                 <View className="items-center">
-                  <View className="h-14 w-14 items-center justify-center rounded-full bg-[#292929]">
+                  <View
+                    className={
+                      isDark
+                        ? "h-14 w-14 items-center justify-center rounded-full bg-[#292929]"
+                        : "h-14 w-14 items-center justify-center rounded-full bg-gray-200"
+                    }
+                  >
                     <Ionicons
                       name="person-outline"
                       size={28}
-                      color="#555"
+                      color={
+                        isDark
+                          ? "#555"
+                          : "#9ca3af"
+                      }
                     />
                   </View>
 
-                  <Text className="mt-3 text-base font-semibold text-zinc-400">
+                  <Text
+                    className={
+                      isDark
+                        ? "mt-3 text-base font-semibold text-zinc-400"
+                        : "mt-3 text-base font-semibold text-gray-600"
+                    }
+                  >
                     No listing agent assigned
                   </Text>
 
-                  <Text className="mt-1 text-center text-sm leading-5 text-zinc-600">
+                  <Text
+                    className={
+                      isDark
+                        ? "mt-1 text-center text-sm leading-5 text-zinc-600"
+                        : "mt-1 text-center text-sm leading-5 text-gray-500"
+                    }
+                  >
                     No agent is currently associated with
                     this property.
                   </Text>
@@ -1498,6 +1992,7 @@ interface HighlightProps {
   value: string;
   label: string;
   wide?: boolean;
+  isDark: boolean;
 }
 
 function Highlight({
@@ -1505,10 +2000,15 @@ function Highlight({
   value,
   label,
   wide = false,
+  isDark,
 }: HighlightProps) {
   return (
     <View
-      className={`mb-2 mr-2 rounded-xl border border-[#292929] bg-[#171717] px-3 py-3 ${
+      className={`mb-2 mr-2 rounded-xl border px-3 py-3 ${
+        isDark
+          ? "border-[#292929] bg-[#171717]"
+          : "border-gray-200 bg-white"
+      } ${
         wide
           ? "flex-1"
           : "min-w-[30%]"
@@ -1521,7 +2021,11 @@ function Highlight({
       />
 
       <Text
-        className="mt-2 text-sm font-bold text-white"
+        className={
+          isDark
+            ? "mt-2 text-sm font-bold text-white"
+            : "mt-2 text-sm font-bold text-black"
+        }
         numberOfLines={2}
       >
         {value}
@@ -1529,7 +2033,11 @@ function Highlight({
 
       {label ? (
         <Text
-          className="mt-1 text-xs text-zinc-500"
+          className={
+            isDark
+              ? "mt-1 text-xs text-zinc-500"
+              : "mt-1 text-xs text-gray-500"
+          }
           numberOfLines={2}
         >
           {label}
@@ -1550,6 +2058,7 @@ interface DetailRowProps {
   label: string;
   value: string;
   last?: boolean;
+  isDark: boolean;
 }
 
 function DetailRow({
@@ -1557,16 +2066,25 @@ function DetailRow({
   label,
   value,
   last = false,
+  isDark,
 }: DetailRowProps) {
   return (
     <View
       className={`flex-row items-center px-4 py-4 ${
         last
           ? ""
-          : "border-b border-[#292929]"
+          : isDark
+            ? "border-b border-[#292929]"
+            : "border-b border-gray-200"
       }`}
     >
-      <View className="h-9 w-9 items-center justify-center rounded-lg bg-[#242424]">
+      <View
+        className={
+          isDark
+            ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
+            : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
+        }
+      >
         <Ionicons
           name={icon}
           size={18}
@@ -1574,12 +2092,22 @@ function DetailRow({
         />
       </View>
 
-      <Text className="ml-3 flex-1 text-sm text-zinc-500">
+      <Text
+        className={
+          isDark
+            ? "ml-3 flex-1 text-sm text-zinc-500"
+            : "ml-3 flex-1 text-sm text-gray-500"
+        }
+      >
         {label}
       </Text>
 
       <Text
-        className="max-w-[55%] text-right text-sm font-semibold text-zinc-200"
+        className={
+          isDark
+            ? "max-w-[55%] text-right text-sm font-semibold text-zinc-200"
+            : "max-w-[55%] text-right text-sm font-semibold text-gray-800"
+        }
         numberOfLines={2}
       >
         {value}
