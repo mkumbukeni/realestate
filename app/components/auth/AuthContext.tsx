@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useCallback,
@@ -17,9 +16,14 @@ import * as SecureStore from "expo-secure-store";
 
 import { loginUser } from "./authApi";
 
-const ACCESS_TOKEN_KEY = "imorrcs_access_token";
-const USER_KEY = "imorrcs_user";
-const LAST_ACTIVITY_KEY = "imorrcs_last_activity";
+const ACCESS_TOKEN_KEY =
+  "imorrcs_access_token";
+
+const USER_KEY =
+  "imorrcs_user";
+
+const LAST_ACTIVITY_KEY =
+  "imorrcs_last_activity";
 
 /**
  * User is automatically logged out after
@@ -74,10 +78,38 @@ interface LoginResponseData {
   [key: string]: unknown;
 }
 
+/**
+ * The API response can be returned in either of these
+ * forms:
+ *
+ * 1. {
+ *      data: {
+ *        api_token: "...",
+ *        ...
+ *      }
+ *    }
+ *
+ * 2. {
+ *      data: {
+ *        data: {
+ *          api_token: "...",
+ *          ...
+ *        }
+ *      },
+ *      ok: true,
+ *      status: 200
+ *    }
+ */
 interface LoginResponseWrapper {
-  data?: LoginResponseData;
+  data?:
+    | LoginResponseData
+    | {
+        data?: LoginResponseData;
+      };
   message?: string;
   msg?: string;
+  ok?: boolean;
+  status?: number;
 }
 
 interface AuthContextType {
@@ -111,28 +143,19 @@ const AuthContext =
     undefined,
   );
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
 /**
- * The API currently returns a Laravel-style token:
- *
- * 280|29oHiRqyEjKvWWiLVJgYwW0xHq5B7X2kfyBDy1Cned00d46e
- *
- * This is NOT a JWT.
- *
- * Therefore, there is no local JWT `exp` claim
- * to decode.
- *
- * Session expiration is handled using the
- * inactivity timestamp below.
+ * The backend returns a Laravel-style API token,
+ * not a JWT.
  */
 const isTokenExpired = (
   _token: string,
 ): boolean => {
   return false;
 };
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
 
 export function AuthProvider({
   children,
@@ -146,36 +169,20 @@ export function AuthProvider({
   const [isLoading, setIsLoading] =
     useState(true);
 
-  /**
-   * Timestamp of the user's latest activity.
-   */
   const lastActivityRef =
     useRef<number>(0);
 
-  /**
-   * Inactivity timeout.
-   */
   const inactivityTimerRef =
     useRef<ReturnType<
       typeof setTimeout
     > | null>(null);
 
-  /**
-   * Prevents repeated SecureStore writes
-   * on every API call.
-   */
   const lastPersistedActivityRef =
     useRef<number>(0);
 
-  /**
-   * Authentication restoration state.
-   */
   const authenticationReadyRef =
     useRef(false);
 
-  /**
-   * Clear the inactivity timer.
-   */
   const clearInactivityTimer =
     useCallback(() => {
       if (
@@ -190,9 +197,6 @@ export function AuthProvider({
       }
     }, []);
 
-  /**
-   * Remove all authentication data.
-   */
   const clearStoredAuthentication =
     useCallback(async () => {
       try {
@@ -215,9 +219,6 @@ export function AuthProvider({
       }
     }, []);
 
-  /**
-   * Logout implementation.
-   */
   const performLogout =
     useCallback(async () => {
       clearInactivityTimer();
@@ -236,9 +237,6 @@ export function AuthProvider({
       clearStoredAuthentication,
     ]);
 
-  /**
-   * Store the latest activity timestamp.
-   */
   const persistActivity =
     useCallback(
       async (timestamp: number) => {
@@ -260,9 +258,6 @@ export function AuthProvider({
       [],
     );
 
-  /**
-   * Start the inactivity timer.
-   */
   const startInactivityTimer =
     useCallback(
       (activityTimestamp: number) => {
@@ -276,9 +271,6 @@ export function AuthProvider({
           INACTIVITY_TIMEOUT -
           elapsed;
 
-        /**
-         * Session has already expired.
-         */
         if (remaining <= 0) {
           void performLogout();
           return;
@@ -299,11 +291,6 @@ export function AuthProvider({
       ],
     );
 
-  /**
-   * Record user activity.
-   *
-   * This refreshes the inactivity timer.
-   */
   const recordActivity =
     useCallback(async () => {
       if (
@@ -317,17 +304,8 @@ export function AuthProvider({
 
       lastActivityRef.current = now;
 
-      /**
-       * Restart the one-hour inactivity timer.
-       */
       startInactivityTimer(now);
 
-      /**
-       * Avoid writing to SecureStore
-       * on every single API call.
-       *
-       * Persist once every minute at most.
-       */
       if (
         now -
           lastPersistedActivityRef.current >=
@@ -342,7 +320,7 @@ export function AuthProvider({
     ]);
 
   /**
-   * Restore authentication when the application starts.
+   * Restore authentication when the app starts.
    */
   useEffect(() => {
     let mounted = true;
@@ -365,9 +343,6 @@ export function AuthProvider({
               LAST_ACTIVITY_KEY,
             );
 
-          /**
-           * No stored authentication.
-           */
           if (!storedToken) {
             if (mounted) {
               setToken(null);
@@ -377,10 +352,6 @@ export function AuthProvider({
             return;
           }
 
-          /**
-           * JWT check is currently not used because
-           * the backend returns a Laravel API token.
-           */
           if (
             isTokenExpired(
               storedToken,
@@ -396,9 +367,6 @@ export function AuthProvider({
             return;
           }
 
-          /**
-           * Check inactivity from the previous session.
-           */
           if (storedLastActivity) {
             const lastActivity =
               Number(
@@ -414,10 +382,6 @@ export function AuthProvider({
                 Date.now() -
                 lastActivity;
 
-              /**
-               * The user has been inactive for
-               * one hour or more.
-               */
               if (
                 elapsed >=
                 INACTIVITY_TIMEOUT
@@ -443,13 +407,6 @@ export function AuthProvider({
                 lastActivity;
             }
           } else {
-            /**
-             * Existing sessions from before the
-             * inactivity system was added do not
-             * have a timestamp.
-             *
-             * Start their inactivity period now.
-             */
             const now = Date.now();
 
             lastActivityRef.current =
@@ -458,9 +415,6 @@ export function AuthProvider({
             await persistActivity(now);
           }
 
-          /**
-           * Restore stored user.
-           */
           let parsedUser:
             | User
             | null = null;
@@ -514,8 +468,7 @@ export function AuthProvider({
   ]);
 
   /**
-   * Start the inactivity timer whenever an
-   * authenticated token is available.
+   * Start inactivity timer when authenticated.
    */
   useEffect(() => {
     if (
@@ -547,10 +500,7 @@ export function AuthProvider({
   ]);
 
   /**
-   * Monitor whether the application goes into
-   * the background or returns to the foreground.
-   *
-   * Returning to the app counts as activity.
+   * Monitor app foreground/background state.
    */
   useEffect(() => {
     const handleAppStateChange =
@@ -580,8 +530,7 @@ export function AuthProvider({
   ]);
 
   /**
-   * Store the authenticated user's token
-   * and profile.
+   * Store authenticated user.
    */
   const setAuthenticatedUser =
     useCallback(
@@ -616,11 +565,6 @@ export function AuthProvider({
           );
         }
 
-        /**
-         * Login is considered activity,
-         * so start a completely new one-hour
-         * inactivity period.
-         */
         const now = Date.now();
 
         lastActivityRef.current = now;
@@ -637,37 +581,18 @@ export function AuthProvider({
     );
 
   /**
-   * Login user.
-   *
-   * Actual API response:
-   *
-   * {
-   *   data: {
-   *     data: {
-   *       api_token: "...",
-   *       id: 19,
-   *       name: "Mhone Mhone",
-   *       email: "...",
-   *       role: "client"
-   *     }
-   *   },
-   *   ok: true,
-   *   status: 200
-   * }
-   *
-   * authApi.ts returns the inner data.data object,
-   * therefore api_token is available as
-   * response.data.api_token.
+   * Login.
    */
   const login = useCallback(
     async (
       email: string,
       password: string,
-    ) => {
+    ): Promise<{
+      success: boolean;
+      message: string;
+    }> => {
       const trimmedEmail =
-        email
-          .trim()
-          .toLowerCase();
+        email.trim().toLowerCase();
 
       if (
         !trimmedEmail ||
@@ -681,13 +606,6 @@ export function AuthProvider({
       }
 
       try {
-        console.log(
-          "Logging in user:",
-          {
-            email: trimmedEmail,
-          },
-        );
-
         const response =
           (await loginUser({
             email: trimmedEmail,
@@ -695,29 +613,83 @@ export function AuthProvider({
           })) as LoginResponseWrapper;
 
         console.log(
-          "Login response:",
+          "Processed login response:",
           response,
         );
 
         /**
-         * Support the current API token
-         * and common fallback names.
+         * Extract the actual user data.
+         *
+         * Supports:
+         *
+         * {
+         *   data: {
+         *     api_token: "...",
+         *     ...
+         *   }
+         * }
+         *
+         * and:
+         *
+         * {
+         *   data: {
+         *     data: {
+         *       api_token: "...",
+         *       ...
+         *     }
+         *   }
+         * }
+         */
+        let responseData:
+          | LoginResponseData
+          | undefined;
+
+        if (
+          response.data &&
+          typeof response.data ===
+            "object"
+        ) {
+          const possibleNestedData =
+            response.data as {
+              data?: LoginResponseData;
+            };
+
+          if (
+            possibleNestedData.data &&
+            typeof possibleNestedData.data ===
+              "object"
+          ) {
+            responseData =
+              possibleNestedData.data;
+          } else {
+            responseData =
+              response.data as LoginResponseData;
+          }
+        }
+
+        if (!responseData) {
+          return {
+            success: false,
+            message:
+              response.message ??
+              response.msg ??
+              "Login failed. The server returned an invalid response.",
+          };
+        }
+
+        /**
+         * Get the authentication token.
          */
         const newToken =
-          response.data?.api_token ??
-          response.data?.token ??
-          response.data?.access_token;
+          responseData.api_token ??
+          responseData.token ??
+          responseData.access_token;
 
         if (
           typeof newToken !==
             "string" ||
           !newToken.trim()
         ) {
-          console.error(
-            "Login response did not contain an API token:",
-            response,
-          );
-
           return {
             success: false,
             message:
@@ -728,38 +700,24 @@ export function AuthProvider({
         }
 
         /**
-         * The API puts the authenticated user's
-         * information in the same object as api_token.
+         * Store the authenticated user.
          */
         const authenticatedUser: User =
           {
-            ...response.data,
+            ...responseData,
 
-            id: response.data.id,
-
-            name: response.data.name,
-
+            id: responseData.id,
+            name: responseData.name,
             email:
-              response.data.email,
-
+              responseData.email,
             phone:
-              response.data.phone,
-
+              responseData.phone,
             role:
-              response.data.role,
+              responseData.role,
           };
 
         await setAuthenticatedUser(
           newToken,
-          authenticatedUser,
-        );
-
-        console.log(
-          "Authentication token stored successfully.",
-        );
-
-        console.log(
-          "Authenticated user:",
           authenticatedUser,
         );
 
@@ -771,9 +729,18 @@ export function AuthProvider({
             "Signed in successfully.",
         };
       } catch (error) {
-        console.error(
-          "Authentication error:",
-          error,
+        /**
+         * Login failures are expected when the
+         * credentials are incorrect.
+         *
+         * Use console.log instead of console.error
+         * so Expo does not show a red ERROR message.
+         */
+        console.log(
+          "Login failed:",
+          error instanceof Error
+            ? error.message
+            : "Unable to sign in. Please try again.",
         );
 
         return {
@@ -788,9 +755,6 @@ export function AuthProvider({
     [setAuthenticatedUser],
   );
 
-  /**
-   * Logout user and remove stored authentication.
-   */
   const logout = useCallback(
     async () => {
       await performLogout();
@@ -799,8 +763,7 @@ export function AuthProvider({
   );
 
   /**
-   * Return authorization headers for
-   * authenticated API calls.
+   * Get authorization headers.
    */
   const getAuthHeaders =
     useCallback(
@@ -811,10 +774,6 @@ export function AuthProvider({
           return {};
         }
 
-        /**
-         * Check whether the local inactivity
-         * period has already expired.
-         */
         const lastActivity =
           lastActivityRef.current;
 
@@ -829,10 +788,6 @@ export function AuthProvider({
           return {};
         }
 
-        /**
-         * An authenticated API call is
-         * considered user activity.
-         */
         await recordActivity();
 
         return {
@@ -846,13 +801,6 @@ export function AuthProvider({
       ],
     );
 
-  /**
-   * If a token exists, the user is authenticated.
-   *
-   * The current backend token is a Laravel API
-   * token rather than a JWT, so local expiration
-   * is handled using the inactivity system.
-   */
   const isLoggedIn = !!token;
 
   const value = useMemo(
@@ -897,4 +845,3 @@ export function useAuth(): AuthContextType {
 
   return context;
 }
-

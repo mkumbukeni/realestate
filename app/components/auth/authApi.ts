@@ -1,4 +1,3 @@
-
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 if (!API_BASE_URL) {
@@ -37,6 +36,23 @@ type RegisterUserResponse = {
   [key: string]: unknown;
 };
 
+type LoginUserData = {
+  email: string;
+  password: string;
+};
+
+type LoginUserResponse = {
+  success?: boolean;
+  message?: string;
+  msg?: string;
+  token?: string;
+  access_token?: string;
+  api_token?: string;
+  data?: unknown;
+  user?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
 /**
  * Safely read an API response.
  *
@@ -67,7 +83,10 @@ const getErrorMessage = (
   data: unknown,
   fallback: string,
 ): string => {
-  if (typeof data === "string" && data.trim()) {
+  if (
+    typeof data === "string" &&
+    data.trim()
+  ) {
     return data;
   }
 
@@ -75,10 +94,8 @@ const getErrorMessage = (
     typeof data === "object" &&
     data !== null
   ) {
-    const objectData = data as Record<
-      string,
-      unknown
-    >;
+    const objectData =
+      data as Record<string, unknown>;
 
     if (
       typeof objectData.message === "string" &&
@@ -147,12 +164,6 @@ const getErrorMessage = (
  *
  * Endpoint:
  * POST /v1/generate-otp
- *
- * Request:
- * {
- *   "channel": "email",
- *   "email": "user@example.com"
- * }
  */
 export const generateOtp = async (
   email: string,
@@ -229,15 +240,6 @@ export const generateOtp = async (
  *
  * Endpoint:
  * POST /v1/verify-otp
- *
- * Request:
- * {
- *   "handler": "user@example.com",
- *   "otp": 123456
- * }
- *
- * The API expects "handler", not "email".
- * The OTP must also be sent as a number.
  */
 export const verifyOtp = async (
   email: string,
@@ -262,9 +264,7 @@ export const verifyOtp = async (
   }
 
   if (!trimmedOtp) {
-    throw new Error(
-      "OTP is required.",
-    );
+    throw new Error("OTP is required.");
   }
 
   if (!Number.isInteger(numericOtp)) {
@@ -335,16 +335,6 @@ export const verifyOtp = async (
  *
  * Endpoint:
  * POST /registration/register-user
- *
- * Request:
- * {
- *   "phone": "string",
- *   "address": "string",
- *   "email": "string",
- *   "name": "string",
- *   "role_name": "client",
- *   "channel": "email"
- * }
  */
 export const registerUser = async (
   userData: RegisterUserData,
@@ -419,30 +409,11 @@ export const registerUser = async (
   };
 };
 
-
-
-
-
-type LoginUserData = {
-  email: string;
-  password: string;
-};
-
-type LoginUserResponse = {
-  success?: boolean;
-  message?: string;
-  msg?: string;
-  token?: string;
-  access_token?: string;
-  user?: Record<string, unknown>;
-  [key: string]: unknown;
-};
-
 /**
  * Login user
  *
  * Endpoint:
- * POST /login
+ * POST /v2/login
  *
  * Request:
  * {
@@ -518,5 +489,3 @@ export const loginUser = async (
         : undefined,
   };
 };
-
-

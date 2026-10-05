@@ -1,3 +1,4 @@
+
 import React, {
   useEffect,
   useMemo,
@@ -1578,17 +1579,15 @@ export default function PropertyDetailsScreen() {
                     latitudeDelta: 0.01,
                     longitudeDelta: 0.01,
                   }}
-                  showsCompass
-                  zoomEnabled
-                  scrollEnabled
-                  rotateEnabled
-                  pitchEnabled
-                  toolbarEnabled
+                  showsCompass={false}
+                  zoomEnabled={false}
+                  scrollEnabled={false}
+                  rotateEnabled={false}
+                  pitchEnabled={false}
+                  toolbarEnabled={false}
                 >
                   <Marker
-                    coordinate={
-                      coordinates
-                    }
+                    coordinate={coordinates}
                     title={
                       property.title ??
                       "Property"
@@ -1626,22 +1625,6 @@ export default function PropertyDetailsScreen() {
                         "Property location"}
                     </Text>
                   </View>
-
-                  <Text
-                    className={
-                      isDark
-                        ? "mt-2 text-xs text-zinc-600"
-                        : "mt-2 text-xs text-gray-400"
-                    }
-                  >
-                    {coordinates.latitude.toFixed(
-                      6,
-                    )}
-                    {"  "}
-                    {coordinates.longitude.toFixed(
-                      6,
-                    )}
-                  </Text>
                 </View>
               </View>
             ) : (

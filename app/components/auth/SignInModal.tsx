@@ -1,22 +1,28 @@
 import { useAuth } from "@/app/components/auth/AuthContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
 import {
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    View,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 interface SignInModalProps {
   visible: boolean;
   onClose: () => void;
-  onSignIn?: (email: string, password: string) => void;
+  onSignIn?: (
+    email: string,
+    password: string,
+  ) => void;
   onRegister?: () => void;
 }
 
@@ -27,61 +33,158 @@ export default function SignInModal({
   onRegister,
 }: SignInModalProps) {
   const router = useRouter();
+
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
+  const [email, setEmail] =
+    useState("");
 
+  const [password, setPassword] =
+    useState("");
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [success, setSuccess] =
+    useState("");
+
+  /**
+   * Reset the form whenever the modal closes.
+   */
   useEffect(() => {
     if (!visible) {
       setEmail("");
       setPassword("");
       setShowPassword(false);
       setError("");
+      setSuccess("");
     }
   }, [visible]);
 
-  const handleSignIn = () => {
-    const trimmedEmail = email.trim();
-
-    if (!trimmedEmail || !password) {
-      setError("Please enter your email and password.");
+  /**
+   * Automatically hide the error message
+   * after 3 seconds.
+   */
+  useEffect(() => {
+    if (!error) {
       return;
     }
 
-    setError("");
-
-    const result = login(trimmedEmail, password);
-
-    if (!result.success) {
-      setError(result.message);
-      return;
-    }
-
-    // Allow the parent component to know that sign in was successful.
-    onSignIn?.(trimmedEmail, password);
-
-    // Close the modal after successful login.
-    onClose();
-  };
-
-  const handleRegister = () => {
-    setError("");
-
-    onClose();
-
-    if (onRegister) {
+    const timer =
       setTimeout(() => {
-        onRegister();
-      }, 250);
+        setError("");
+      }, 3000);
 
-      return;
-    }
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [error]);
 
-    router.push("/register");
-  };
+  /**
+   * Sign in.
+   */
+  const handleSignIn =
+    async () => {
+      const trimmedEmail =
+        email.trim();
+
+      if (
+        !trimmedEmail ||
+        !password
+      ) {
+        setError(
+          "Please enter your email and password.",
+        );
+
+        setSuccess("");
+
+        return;
+      }
+
+      /**
+       * Remove previous messages
+       * before starting a new request.
+       */
+      setError("");
+      setSuccess("");
+
+      try {
+        const result =
+          await login(
+            trimmedEmail,
+            password,
+          );
+
+        /**
+         * Login failed.
+         */
+        if (!result.success) {
+          setError(result.message);
+          return;
+        }
+
+        /**
+         * Login succeeded.
+         *
+         * Show the success notification.
+         */
+        setSuccess(
+          "Signed in successfully.",
+        );
+
+        /**
+         * Notify the parent component.
+         */
+        onSignIn?.(
+          trimmedEmail,
+          password,
+        );
+
+        /**
+         * Keep the success notification visible
+         * briefly before closing the modal.
+         */
+        setTimeout(() => {
+          onClose();
+        }, 1200);
+      } catch (error) {
+        /**
+         * Extra safety in case something unexpected
+         * escapes AuthContext.login().
+         */
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Unable to sign in. Please try again.";
+
+        setError(message);
+        setSuccess("");
+      }
+    };
+
+  /**
+   * Open registration.
+   */
+  const handleRegister =
+    () => {
+      setError("");
+      setSuccess("");
+
+      onClose();
+
+      if (onRegister) {
+        setTimeout(() => {
+          onRegister();
+        }, 250);
+
+        return;
+      }
+
+      router.push("/register");
+    };
 
   return (
     <Modal
@@ -92,10 +195,17 @@ export default function SignInModal({
     >
       <KeyboardAvoidingView
         className="flex-1 justify-end"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={
+          Platform.OS === "ios"
+            ? "padding"
+            : "height"
+        }
       >
         {/* Dark background */}
-        <Pressable className="absolute inset-0 bg-black/70" onPress={onClose} />
+        <Pressable
+          className="absolute inset-0 bg-black/70"
+          onPress={onClose}
+        />
 
         {/* Bottom Sheet */}
         <View className="max-h-[90%] w-full rounded-t-3xl border-t border-[#292929] bg-[#111111]">
@@ -107,9 +217,13 @@ export default function SignInModal({
           <ScrollView
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={
-              Platform.OS === "ios" ? "interactive" : "on-drag"
+              Platform.OS === "ios"
+                ? "interactive"
+                : "on-drag"
             }
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={
+              false
+            }
             contentContainerStyle={{
               paddingBottom: 30,
             }}
@@ -118,7 +232,9 @@ export default function SignInModal({
               {/* Header */}
               <View className="mb-6 flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="text-2xl font-bold text-white">Sign In</Text>
+                  <Text className="text-2xl font-bold text-white">
+                    Sign In
+                  </Text>
 
                   <Text className="mt-1 text-sm text-gray-400">
                     Sign in to view full property details.
@@ -131,7 +247,11 @@ export default function SignInModal({
                   accessibilityLabel="Close sign in"
                   className="ml-4 h-10 w-10 items-center justify-center rounded-full bg-[#222222] active:opacity-70"
                 >
-                  <Ionicons name="close" size={22} color="#ffffff" />
+                  <Ionicons
+                    name="close"
+                    size={22}
+                    color="#ffffff"
+                  />
                 </Pressable>
               </View>
 
@@ -150,6 +270,23 @@ export default function SignInModal({
                 </View>
               ) : null}
 
+              {/* Success Notification */}
+              {success ? (
+                <View className="mb-5 flex-row items-center rounded-xl border border-green-800/60 bg-green-950/40 px-4 py-3">
+                  <View className="h-8 w-8 items-center justify-center rounded-full bg-green-600/20">
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={22}
+                      color="#22c55e"
+                    />
+                  </View>
+
+                  <Text className="ml-3 flex-1 text-sm font-semibold text-green-400">
+                    {success}
+                  </Text>
+                </View>
+              ) : null}
+
               {/* Email */}
               <View className="mb-4">
                 <Text className="mb-2 text-sm font-semibold text-gray-300">
@@ -157,14 +294,25 @@ export default function SignInModal({
                 </Text>
 
                 <View className="h-13 flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
-                  <Ionicons name="mail-outline" size={20} color="#9ca3af" />
+                  <Ionicons
+                    name="mail-outline"
+                    size={20}
+                    color="#9ca3af"
+                  />
 
                   <TextInput
                     value={email}
-                    onChangeText={(value) => {
+                    onChangeText={(
+                      value,
+                    ) => {
                       setEmail(value);
+
                       if (error) {
                         setError("");
+                      }
+
+                      if (success) {
+                        setSuccess("");
                       }
                     }}
                     placeholder="Enter your email"
@@ -193,32 +341,56 @@ export default function SignInModal({
 
                   <TextInput
                     value={password}
-                    onChangeText={(value) => {
+                    onChangeText={(
+                      value,
+                    ) => {
                       setPassword(value);
+
                       if (error) {
                         setError("");
+                      }
+
+                      if (success) {
+                        setSuccess("");
                       }
                     }}
                     placeholder="Enter your password"
                     placeholderTextColor="#6b7280"
-                    secureTextEntry={!showPassword}
+                    secureTextEntry={
+                      !showPassword
+                    }
                     autoCapitalize="none"
                     autoCorrect={false}
                     returnKeyType="done"
-                    onSubmitEditing={handleSignIn}
+                    onSubmitEditing={
+                      handleSignIn
+                    }
                     className="ml-3 flex-1 py-3.5 text-[15px] text-white"
                   />
 
                   <Pressable
-                    onPress={() => setShowPassword((previous) => !previous)}
+                    onPress={() =>
+                      setShowPassword(
+                        (
+                          previous,
+                        ) =>
+                          !previous,
+                      )
+                    }
                     accessibilityRole="button"
                     accessibilityLabel={
-                      showPassword ? "Hide password" : "Show password"
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
                     }
                     className="ml-2 h-10 w-10 items-center justify-center active:opacity-70"
                   >
                     <Ionicons
-                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      name={
+                        showPassword
+                          ? "eye-off-outline"
+                          : "eye-outline"
+                      }
                       size={21}
                       color="#9ca3af"
                     />
@@ -230,7 +402,10 @@ export default function SignInModal({
               <Pressable
                 onPress={() => {
                   onClose();
-                  router.push("/forgot-password");
+
+                  router.push(
+                    "/forgot-password",
+                  );
                 }}
                 className="mb-5 self-end active:opacity-70"
               >
@@ -241,19 +416,35 @@ export default function SignInModal({
 
               {/* Sign In Button */}
               <Pressable
-                onPress={handleSignIn}
-                disabled={!email.trim() || !password}
+                onPress={
+                  handleSignIn
+                }
+                disabled={
+                  !email.trim() ||
+                  !password ||
+                  !!success
+                }
                 accessibilityRole="button"
                 accessibilityLabel="Sign in"
                 className={`h-13 items-center justify-center rounded-xl bg-red-600 active:opacity-70 ${
-                  !email.trim() || !password ? "opacity-50" : ""
+                  !email.trim() ||
+                  !password ||
+                  !!success
+                    ? "opacity-50"
+                    : ""
                 }`}
               >
                 <View className="flex-row items-center">
-                  <Ionicons name="log-in-outline" size={20} color="#ffffff" />
+                  <Ionicons
+                    name="log-in-outline"
+                    size={20}
+                    color="#ffffff"
+                  />
 
                   <Text className="ml-2 text-[15px] font-bold text-white">
-                    Sign In
+                    {success
+                      ? "Signed In"
+                      : "Sign In"}
                   </Text>
                 </View>
               </Pressable>
@@ -265,7 +456,10 @@ export default function SignInModal({
                 </Text>
 
                 <Pressable
-                  onPress={handleRegister}
+                  onPress={
+                    handleRegister
+                  }
+                  disabled={!!success}
                   className="ml-1.5 active:opacity-70"
                 >
                   <Text className="text-sm font-bold text-red-500">
