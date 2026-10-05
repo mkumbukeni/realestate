@@ -1,12 +1,15 @@
-
 import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
-import { useColorScheme } from "react-native";
+import {
+  Appearance,
+  useColorScheme,
+} from "react-native";
 
 export type ThemeMode = "light" | "dark";
 
@@ -107,6 +110,12 @@ interface ThemeProviderProps {
 export function ThemeProvider({
   children,
 }: ThemeProviderProps) {
+  /*
+   * React Native's system color scheme.
+   *
+   * This is only used to determine the initial theme.
+   * After that, the custom theme toggle controls the theme.
+   */
   const systemColorScheme = useColorScheme();
 
   const [mode, setModeState] = useState<ThemeMode>(
@@ -115,12 +124,53 @@ export function ThemeProvider({
       : "dark",
   );
 
+  /*
+   * ============================================================
+   * SYNCHRONIZE CUSTOM THEME WITH REACT NATIVE APPEARANCE
+   * ============================================================
+   *
+   * Screens such as PropertyCard and HomeScreen use
+   * React Native's useColorScheme().
+   *
+   * Our custom ThemeContext has its own "mode" state.
+   *
+   * Without this synchronization:
+   *
+   *     toggleTheme()
+   *          ↓
+   *     ThemeContext changes
+   *          ↓
+   *     useColorScheme() does NOT necessarily change
+   *
+   * By setting the React Native appearance here, both systems
+   * stay synchronized.
+   */
+  useEffect(() => {
+    Appearance.setColorScheme(
+      mode === "dark"
+        ? "dark"
+        : "light",
+    );
+  }, [mode]);
+
+  /*
+   * ============================================================
+   * SET THEME MODE
+   * ============================================================
+   */
+
   const setMode = useCallback(
     (newMode: ThemeMode) => {
       setModeState(newMode);
     },
     [],
   );
+
+  /*
+   * ============================================================
+   * TOGGLE THEME
+   * ============================================================
+   */
 
   const toggleTheme = useCallback(() => {
     setModeState((currentMode) => {
@@ -132,6 +182,12 @@ export function ThemeProvider({
     });
   }, []);
 
+  /*
+   * ============================================================
+   * ACTIVE THEME
+   * ============================================================
+   */
+
   const theme = useMemo<AppTheme>(() => {
     if (mode === "dark") {
       return darkTheme;
@@ -139,6 +195,12 @@ export function ThemeProvider({
 
     return lightTheme;
   }, [mode]);
+
+  /*
+   * ============================================================
+   * CONTEXT VALUE
+   * ============================================================
+   */
 
   const contextValue = useMemo<ThemeContextValue>(
     () => ({
@@ -148,7 +210,12 @@ export function ThemeProvider({
       setMode,
       toggleTheme,
     }),
-    [theme, mode, setMode, toggleTheme],
+    [
+      theme,
+      mode,
+      setMode,
+      toggleTheme,
+    ],
   );
 
   return (
@@ -157,6 +224,12 @@ export function ThemeProvider({
     </ThemeContext.Provider>
   );
 }
+
+/*
+ * ============================================================
+ * USE THEME
+ * ============================================================
+ */
 
 export function useTheme(): ThemeContextValue {
   const context = useContext(ThemeContext);
@@ -169,4 +242,3 @@ export function useTheme(): ThemeContextValue {
 
   return context;
 }
-

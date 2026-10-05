@@ -38,6 +38,10 @@ import type {
   Property,
 } from "../../services/propertyApi";
 
+import {
+  useTheme,
+} from "@/app/components/theme/ThemeContext";
+
 // ============================================================
 // TYPES
 // ============================================================
@@ -194,6 +198,18 @@ export default function PropertiesScreen() {
   const { width } =
     useWindowDimensions();
 
+  /*
+   * ==========================================================
+   * THEME
+   * ==========================================================
+   *
+   * Use the application's ThemeContext as the source of truth.
+   * This means the global light/dark button controls this screen
+   * immediately.
+   */
+
+  const { isDark } = useTheme();
+
   const params =
     useLocalSearchParams<{
       category?:
@@ -259,8 +275,6 @@ export default function PropertiesScreen() {
       "all",
     );
 
-  // Which of the three dropdowns
-  // is currently open.
   const [
     openDropdown,
     setOpenDropdown,
@@ -696,7 +710,13 @@ export default function PropertiesScreen() {
     ];
 
     return (
-      <View className="absolute left-0 right-0 top-[52px] z-50 overflow-hidden rounded-xl border border-[#292929] bg-[#171717] shadow-lg">
+      <View
+        className={`absolute left-0 right-0 top-[52px] z-50 overflow-hidden rounded-xl border shadow-lg ${
+          isDark
+            ? "border-[#292929] bg-[#171717]"
+            : "border-gray-200 bg-white"
+        }`}
+      >
         {options.map(
           (option) => {
             const selected =
@@ -713,17 +733,25 @@ export default function PropertiesScreen() {
                     option.value,
                   )
                 }
-                className={`flex-row items-center justify-between border-b border-[#292929] px-4 py-3.5 ${
+                className={`flex-row items-center justify-between border-b px-4 py-3.5 ${
+                  isDark
+                    ? "border-[#292929]"
+                    : "border-gray-200"
+                } ${
                   selected
                     ? "bg-red-600"
-                    : "bg-[#171717]"
+                    : isDark
+                      ? "bg-[#171717]"
+                      : "bg-white"
                 }`}
               >
                 <Text
                   className={`text-sm font-medium ${
                     selected
                       ? "text-white"
-                      : "text-gray-300"
+                      : isDark
+                        ? "text-gray-300"
+                        : "text-gray-700"
                   }`}
                 >
                   {
@@ -752,18 +780,42 @@ export default function PropertiesScreen() {
 
   const renderHeader =
     () => (
-      <View className="bg-[#0d0d0d]">
+      <View
+        className={
+          isDark
+            ? "bg-[#0d0d0d]"
+            : "bg-white"
+        }
+      >
         {/* ================================================
             TITLE
         ================================================= */}
 
-        <View className="border-b border-[#222] px-5 pb-3.5 pt-2.5">
-          <Text className="text-2xl font-bold text-white">
+        <View
+          className={`border-b px-5 pb-3.5 pt-2.5 ${
+            isDark
+              ? "border-[#222]"
+              : "border-gray-200"
+          }`}
+        >
+          <Text
+            className={`text-2xl font-bold ${
+              isDark
+                ? "text-white"
+                : "text-black"
+            }`}
+          >
             {screenTitle}
           </Text>
 
           {isAllPropertiesMode && (
-            <Text className="mt-1 text-sm text-gray-500">
+            <Text
+              className={`mt-1 text-sm ${
+                isDark
+                  ? "text-gray-500"
+                  : "text-gray-600"
+              }`}
+            >
               Explore all available
               properties
             </Text>
@@ -775,11 +827,35 @@ export default function PropertiesScreen() {
         ================================================= */}
 
         <View className="px-5 pt-4">
-          <View className="flex-row items-center rounded-xl border border-[#292929] bg-[#171717] px-4">
+          <View
+            className={`flex-row items-center rounded-xl border px-4 ${
+              isDark
+                ? "border-[#292929] bg-[#171717]"
+                : "border-gray-200 bg-white"
+            }`}
+            style={
+              isDark
+                ? undefined
+                : {
+                    shadowColor: "#000",
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.06,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }
+            }
+          >
             <Ionicons
               name="search-outline"
               size={20}
-              color="#777"
+              color={
+                isDark
+                  ? "#777"
+                  : "#737373"
+              }
             />
 
             <TextInput
@@ -788,8 +864,16 @@ export default function PropertiesScreen() {
                 setSearchQuery
               }
               placeholder="Search properties..."
-              placeholderTextColor="#666"
-              className="ml-3 flex-1 py-3.5 text-sm text-white"
+              placeholderTextColor={
+                isDark
+                  ? "#666"
+                  : "#a3a3a3"
+              }
+              className={`ml-3 flex-1 py-3.5 text-sm ${
+                isDark
+                  ? "text-white"
+                  : "text-black"
+              }`}
               returnKeyType="search"
             />
 
@@ -833,10 +917,21 @@ export default function PropertiesScreen() {
                   listingFilter ===
                   "all"
                     ? "bg-red-600"
-                    : "bg-[#181818]"
+                    : isDark
+                      ? "bg-[#181818]"
+                      : "bg-gray-100"
                 }`}
               >
-                <Text className="text-sm font-semibold text-white">
+                <Text
+                  className={`text-sm font-semibold ${
+                    listingFilter ===
+                    "all"
+                      ? "text-white"
+                      : isDark
+                        ? "text-gray-200"
+                        : "text-gray-800"
+                  }`}
+                >
                   All
                 </Text>
 
@@ -848,7 +943,14 @@ export default function PropertiesScreen() {
                       : "chevron-down"
                   }
                   size={16}
-                  color="#ffffff"
+                  color={
+                    listingFilter ===
+                    "all"
+                      ? "#ffffff"
+                      : isDark
+                        ? "#d4d4d4"
+                        : "#525252"
+                  }
                   style={{
                     marginLeft: 6,
                   }}
@@ -875,10 +977,21 @@ export default function PropertiesScreen() {
                   listingFilter ===
                   "sale"
                     ? "bg-red-600"
-                    : "bg-[#181818]"
+                    : isDark
+                      ? "bg-[#181818]"
+                      : "bg-gray-100"
                 }`}
               >
-                <Text className="text-sm font-semibold text-white">
+                <Text
+                  className={`text-sm font-semibold ${
+                    listingFilter ===
+                    "sale"
+                      ? "text-white"
+                      : isDark
+                        ? "text-gray-200"
+                        : "text-gray-800"
+                  }`}
+                >
                   For Sale
                 </Text>
 
@@ -890,7 +1003,14 @@ export default function PropertiesScreen() {
                       : "chevron-down"
                   }
                   size={16}
-                  color="#ffffff"
+                  color={
+                    listingFilter ===
+                    "sale"
+                      ? "#ffffff"
+                      : isDark
+                        ? "#d4d4d4"
+                        : "#525252"
+                  }
                   style={{
                     marginLeft: 6,
                   }}
@@ -917,10 +1037,21 @@ export default function PropertiesScreen() {
                   listingFilter ===
                   "rent"
                     ? "bg-red-600"
-                    : "bg-[#181818]"
+                    : isDark
+                      ? "bg-[#181818]"
+                      : "bg-gray-100"
                 }`}
               >
-                <Text className="text-sm font-semibold text-white">
+                <Text
+                  className={`text-sm font-semibold ${
+                    listingFilter ===
+                    "rent"
+                      ? "text-white"
+                      : isDark
+                        ? "text-gray-200"
+                        : "text-gray-800"
+                  }`}
+                >
                   For Rent
                 </Text>
 
@@ -932,7 +1063,14 @@ export default function PropertiesScreen() {
                       : "chevron-down"
                   }
                   size={16}
-                  color="#ffffff"
+                  color={
+                    listingFilter ===
+                    "rent"
+                      ? "#ffffff"
+                      : isDark
+                        ? "#d4d4d4"
+                        : "#525252"
+                  }
                   style={{
                     marginLeft: 6,
                   }}
@@ -945,38 +1083,47 @@ export default function PropertiesScreen() {
             </View>
           </View>
 
-     {/* ==============================================
-    ACTIVE CATEGORY
-================================================ */}
+          {/* ==============================================
+              ACTIVE CATEGORY
+          =============================================== */}
 
-{propertyTypeFilter !== "all" && (
-  <View className="mt-2 items-center">
-    <Pressable
-      onPress={() =>
-        setPropertyTypeFilter("all")
-      }
-      className="flex-row items-center rounded-lg px-3 py-1.5"
-    >
-      <Text className="mr-1 text-sm font-semibold text-red-500">
-        {getPropertyTypeLabel(
-          propertyTypeFilter,
-        )}
-      </Text>
+          {propertyTypeFilter !==
+            "all" && (
+            <View className="mt-2 items-center">
+              <Pressable
+                onPress={() =>
+                  setPropertyTypeFilter(
+                    "all",
+                  )
+                }
+                className="flex-row items-center rounded-lg px-3 py-1.5"
+              >
+                <Text className="mr-1 text-sm font-semibold text-red-500">
+                  {getPropertyTypeLabel(
+                    propertyTypeFilter,
+                  )}
+                </Text>
 
-      <Ionicons
-        name="close-circle"
-        size={17}
-        color="#ef4444"
-      />
-    </Pressable>
-  </View>
-)}
+                <Ionicons
+                  name="close-circle"
+                  size={17}
+                  color="#ef4444"
+                />
+              </Pressable>
+            </View>
+          )}
 
           {/* ==============================================
               COUNT
           =============================================== */}
 
-          <Text className="mt-3 text-sm font-medium text-gray-500">
+          <Text
+            className={`mt-3 text-sm font-medium ${
+              isDark
+                ? "text-gray-500"
+                : "text-gray-600"
+            }`}
+          >
             {filteredProperties.length}{" "}
             {filteredProperties.length ===
             1
@@ -993,14 +1140,40 @@ export default function PropertiesScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+      <SafeAreaView
+        className={`flex-1 ${
+          isDark
+            ? "bg-[#0d0d0d]"
+            : "bg-white"
+        }`}
+      >
         <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
+          barStyle={
+            isDark
+              ? "light-content"
+              : "dark-content"
+          }
+          backgroundColor={
+            isDark
+              ? "#0d0d0d"
+              : "#ffffff"
+          }
         />
 
-        <View className="px-5 pb-3.5 pt-2.5">
-          <Text className="text-2xl font-bold text-white">
+        <View
+          className={`border-b px-5 pb-3.5 pt-2.5 ${
+            isDark
+              ? "border-[#222]"
+              : "border-gray-200"
+          }`}
+        >
+          <Text
+            className={`text-2xl font-bold ${
+              isDark
+                ? "text-white"
+                : "text-black"
+            }`}
+          >
             {screenTitle}
           </Text>
         </View>
@@ -1011,7 +1184,13 @@ export default function PropertiesScreen() {
             color="#ef4444"
           />
 
-          <Text className="mt-4 text-sm text-gray-400">
+          <Text
+            className={`mt-4 text-sm ${
+              isDark
+                ? "text-gray-400"
+                : "text-gray-600"
+            }`}
+          >
             Loading properties...
           </Text>
         </View>
@@ -1028,14 +1207,40 @@ export default function PropertiesScreen() {
     properties.length === 0
   ) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+      <SafeAreaView
+        className={`flex-1 ${
+          isDark
+            ? "bg-[#0d0d0d]"
+            : "bg-white"
+        }`}
+      >
         <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
+          barStyle={
+            isDark
+              ? "light-content"
+              : "dark-content"
+          }
+          backgroundColor={
+            isDark
+              ? "#0d0d0d"
+              : "#ffffff"
+          }
         />
 
-        <View className="px-5 pb-3.5 pt-2.5">
-          <Text className="text-2xl font-bold text-white">
+        <View
+          className={`border-b px-5 pb-3.5 pt-2.5 ${
+            isDark
+              ? "border-[#222]"
+              : "border-gray-200"
+          }`}
+        >
+          <Text
+            className={`text-2xl font-bold ${
+              isDark
+                ? "text-white"
+                : "text-black"
+            }`}
+          >
             {screenTitle}
           </Text>
         </View>
@@ -1062,19 +1267,55 @@ export default function PropertiesScreen() {
             />
           }
         >
-          <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
+          <View
+            className={`items-center rounded-2xl border px-5 py-10 ${
+              isDark
+                ? "border-[#292929] bg-[#171717]"
+                : "border-gray-200 bg-white"
+            }`}
+            style={
+              isDark
+                ? undefined
+                : {
+                    shadowColor: "#000",
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 5,
+                    elevation: 3,
+                  }
+            }
+          >
             <Ionicons
               name="cloud-offline-outline"
               size={50}
-              color="#555"
+              color={
+                isDark
+                  ? "#555"
+                  : "#9ca3af"
+              }
             />
 
-            <Text className="mt-4 text-center text-lg font-semibold text-white">
+            <Text
+              className={`mt-4 text-center text-lg font-semibold ${
+                isDark
+                  ? "text-white"
+                  : "text-black"
+              }`}
+            >
               Unable to load
               properties
             </Text>
 
-            <Text className="mt-2 text-center text-sm leading-5 text-gray-500">
+            <Text
+              className={`mt-2 text-center text-sm leading-5 ${
+                isDark
+                  ? "text-gray-500"
+                  : "text-gray-600"
+              }`}
+            >
               {error}
             </Text>
 
@@ -1099,10 +1340,24 @@ export default function PropertiesScreen() {
   // ==========================================================
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+    <SafeAreaView
+      className={`flex-1 ${
+        isDark
+          ? "bg-[#0d0d0d]"
+          : "bg-white"
+      }`}
+    >
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
+        barStyle={
+          isDark
+            ? "light-content"
+            : "dark-content"
+        }
+        backgroundColor={
+          isDark
+            ? "#0d0d0d"
+            : "#ffffff"
+        }
       />
 
       {/* ====================================================
@@ -1117,7 +1372,11 @@ export default function PropertiesScreen() {
       ===================================================== */}
 
       <ScrollView
-        className="flex-1"
+        className={
+          isDark
+            ? "flex-1 bg-[#0d0d0d]"
+            : "flex-1 bg-white"
+        }
         showsVerticalScrollIndicator={
           false
         }
@@ -1143,19 +1402,55 @@ export default function PropertiesScreen() {
       >
         {filteredProperties.length ===
         0 ? (
-          <View className="mt-8 items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-12">
+          <View
+            className={`mt-8 items-center rounded-2xl border px-5 py-12 ${
+              isDark
+                ? "border-[#292929] bg-[#171717]"
+                : "border-gray-200 bg-white"
+            }`}
+            style={
+              isDark
+                ? undefined
+                : {
+                    shadowColor: "#000",
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 5,
+                    elevation: 3,
+                  }
+            }
+          >
             <Ionicons
               name="home-outline"
               size={52}
-              color="#444"
+              color={
+                isDark
+                  ? "#444"
+                  : "#9ca3af"
+              }
             />
 
-            <Text className="mt-4 text-lg font-semibold text-gray-400">
+            <Text
+              className={`mt-4 text-lg font-semibold ${
+                isDark
+                  ? "text-gray-400"
+                  : "text-gray-700"
+              }`}
+            >
               No properties
               found
             </Text>
 
-            <Text className="mt-1 text-center text-sm text-gray-600">
+            <Text
+              className={`mt-1 text-center text-sm ${
+                isDark
+                  ? "text-gray-600"
+                  : "text-gray-500"
+              }`}
+            >
               Try changing
               your search or
               listing filter.

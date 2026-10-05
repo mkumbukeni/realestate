@@ -1,3 +1,4 @@
+
 // app/components/properties/PropertyCard.tsx
 
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -7,6 +8,7 @@ import {
   Pressable,
   Text,
   View,
+  useColorScheme,
 } from "react-native";
 
 import type { Property } from "@/app/services/propertyApi";
@@ -22,6 +24,10 @@ const PropertyCard = ({
   isFullWidth = false,
   onPress,
 }: PropertyCardProps) => {
+  const colorScheme = useColorScheme();
+
+  const isDark = colorScheme !== "light";
+
   return (
     <Pressable
       onPress={() => onPress(property)}
@@ -38,7 +44,11 @@ const PropertyCard = ({
       })}
     >
       <View
-        className="mb-4 w-full overflow-hidden rounded-xl border border-[#242424] bg-[#151515]"
+        className={
+          isDark
+            ? "mb-4 w-full overflow-hidden rounded-xl border border-[#242424] bg-[#151515]"
+            : "mb-4 w-full overflow-hidden rounded-xl border border-gray-200 bg-white"
+        }
       >
         {/* ================================================== */}
         {/* TOP INFORMATION */}
@@ -57,7 +67,11 @@ const PropertyCard = ({
           </View>
 
           <Text
-            className="text-sm font-semibold text-gray-300"
+            className={
+              isDark
+                ? "text-sm font-semibold text-gray-300"
+                : "text-sm font-semibold text-gray-700"
+            }
             numberOfLines={1}
           >
             {property.systemStatus}
@@ -77,14 +91,26 @@ const PropertyCard = ({
             resizeMode="cover"
           />
         ) : (
-          <View className="h-40 w-full items-center justify-center bg-[#222]">
+          <View
+            className={
+              isDark
+                ? "h-40 w-full items-center justify-center bg-[#222]"
+                : "h-40 w-full items-center justify-center bg-gray-100"
+            }
+          >
             <Ionicons
               name="image-outline"
               size={35}
-              color="#555"
+              color={isDark ? "#555" : "#999"}
             />
 
-            <Text className="mt-1 text-xs text-gray-500">
+            <Text
+              className={
+                isDark
+                  ? "mt-1 text-xs text-gray-500"
+                  : "mt-1 text-xs text-gray-600"
+              }
+            >
               No image
             </Text>
           </View>
@@ -98,7 +124,11 @@ const PropertyCard = ({
           {/* PRICE */}
 
           <Text
-            className="mb-2 text-sm font-bold text-white"
+            className={
+              isDark
+                ? "mb-2 text-sm font-bold text-white"
+                : "mb-2 text-sm font-bold text-black"
+            }
             numberOfLines={1}
             adjustsFontSizeToFit
           >
@@ -112,15 +142,25 @@ const PropertyCard = ({
           <View className="mb-2 flex-row items-center">
             {/* PROPERTY TYPE */}
 
-            <View className="mr-2 flex-1 flex-row items-center rounded-md bg-[#242424] px-2.5 py-1.5">
+            <View
+              className={
+                isDark
+                  ? "mr-2 flex-1 flex-row items-center rounded-md bg-[#242424] px-2.5 py-1.5"
+                  : "mr-2 flex-1 flex-row items-center rounded-md bg-gray-100 px-2.5 py-1.5"
+              }
+            >
               <Ionicons
                 name="business-outline"
                 size={15}
-                color="#d1d1d1"
+                color={isDark ? "#d1d1d1" : "#333"}
               />
 
               <Text
-                className="ml-1 flex-1 text-xs text-gray-300"
+                className={
+                  isDark
+                    ? "ml-1 flex-1 text-xs text-gray-300"
+                    : "ml-1 flex-1 text-xs text-gray-800"
+                }
                 numberOfLines={1}
               >
                 {property.type}
@@ -129,28 +169,52 @@ const PropertyCard = ({
 
             {/* BEDROOMS */}
 
-            <View className="mr-2 flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
+            <View
+              className={
+                isDark
+                  ? "mr-2 flex-row items-center rounded-md bg-[#242424] px-2 py-1.5"
+                  : "mr-2 flex-row items-center rounded-md bg-gray-100 px-2 py-1.5"
+              }
+            >
               <Ionicons
                 name="bed-outline"
                 size={15}
-                color="#d1d1d1"
+                color={isDark ? "#d1d1d1" : "#333"}
               />
 
-              <Text className="ml-1 text-xs text-gray-300">
+              <Text
+                className={
+                  isDark
+                    ? "ml-1 text-xs text-gray-300"
+                    : "ml-1 text-xs text-gray-800"
+                }
+              >
                 {property.beds} Beds
               </Text>
             </View>
 
             {/* BATHROOMS */}
 
-            <View className="flex-row items-center rounded-md bg-[#242424] px-2 py-1.5">
+            <View
+              className={
+                isDark
+                  ? "flex-row items-center rounded-md bg-[#242424] px-2 py-1.5"
+                  : "flex-row items-center rounded-md bg-gray-100 px-2 py-1.5"
+              }
+            >
               <Ionicons
                 name="water-outline"
                 size={15}
-                color="#d1d1d1"
+                color={isDark ? "#d1d1d1" : "#333"}
               />
 
-              <Text className="ml-1 text-xs text-gray-300">
+              <Text
+                className={
+                  isDark
+                    ? "ml-1 text-xs text-gray-300"
+                    : "ml-1 text-xs text-gray-800"
+                }
+              >
                 {property.baths} Baths
               </Text>
             </View>
@@ -164,11 +228,15 @@ const PropertyCard = ({
             <Ionicons
               name="location-outline"
               size={17}
-              color="#999"
+              color={isDark ? "#999" : "#555"}
             />
 
             <Text
-              className="ml-1 flex-1 text-xs text-gray-400"
+              className={
+                isDark
+                  ? "ml-1 flex-1 text-xs text-gray-400"
+                  : "ml-1 flex-1 text-xs text-gray-700"
+              }
               numberOfLines={1}
               ellipsizeMode="tail"
             >
@@ -192,3 +260,4 @@ const PropertyCard = ({
 };
 
 export default PropertyCard;
+

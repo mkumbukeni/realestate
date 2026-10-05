@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useMemo,
@@ -13,6 +12,7 @@ import {
   StatusBar,
   Text,
   View,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -65,6 +65,9 @@ function PropertySection({
   onPropertyPress,
   onViewAll,
 }: PropertySectionProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
   const [sectionY, setSectionY] = useState(0);
   const [sectionHeight, setSectionHeight] = useState(0);
 
@@ -116,7 +119,11 @@ function PropertySection({
         <View className="flex-row items-center">
           <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
-          <Text className="text-lg font-bold text-white">
+          <Text
+            className={`text-lg font-bold ${
+              isDark ? "text-white" : "text-black"
+            }`}
+          >
             {title}
           </Text>
         </View>
@@ -127,46 +134,100 @@ function PropertySection({
           accessibilityLabel={`View all ${title}`}
           className="flex-row items-center"
         >
-          <Text className="mr-1 text-sm font-semibold text-red-500">
-            View All
-          </Text>
-
-          <Ionicons
-            name="arrow-forward"
-            size={16}
-            color="#ef4444"
-          />
+          
         </Pressable>
       </View>
 
       {/* LOADING */}
 
       {loading ? (
-        <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] py-10">
+        <View
+          className={`items-center rounded-2xl border py-10 ${
+            isDark
+              ? "border-[#292929] bg-[#171717]"
+              : "border-gray-200 bg-white"
+          }`}
+          style={
+            isDark
+              ? undefined
+              : {
+                  shadowColor: "#000",
+                  shadowOffset: {
+                    width: 0,
+                    height: 2,
+                  },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 5,
+                  elevation: 3,
+                }
+          }
+        >
           <ActivityIndicator
             size="large"
             color="#ef4444"
           />
 
-          <Text className="mt-3 text-sm text-gray-500">
+          <Text
+            className={`mt-3 text-sm ${
+              isDark
+                ? "text-gray-500"
+                : "text-gray-600"
+            }`}
+          >
             Loading {title.toLowerCase()}...
           </Text>
         </View>
       ) : sectionProperties.length === 0 ? (
         /* EMPTY */
 
-        <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
+        <View
+          className={`items-center rounded-2xl border px-5 py-10 ${
+            isDark
+              ? "border-[#292929] bg-[#171717]"
+              : "border-gray-200 bg-white"
+          }`}
+          style={
+            isDark
+              ? undefined
+              : {
+                  shadowColor: "#000",
+                  shadowOffset: {
+                    width: 0,
+                    height: 2,
+                  },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 5,
+                  elevation: 3,
+                }
+          }
+        >
           <Ionicons
             name="home-outline"
             size={44}
-            color="#444"
+            color={
+              isDark
+                ? "#444"
+                : "#9ca3af"
+            }
           />
 
-          <Text className="mt-4 text-base font-semibold text-gray-400">
+          <Text
+            className={`mt-4 text-base font-semibold ${
+              isDark
+                ? "text-gray-400"
+                : "text-gray-700"
+            }`}
+          >
             No {title.toLowerCase()} available
           </Text>
 
-          <Text className="mt-1 text-center text-sm text-gray-600">
+          <Text
+            className={`mt-1 text-center text-sm ${
+              isDark
+                ? "text-gray-600"
+                : "text-gray-500"
+            }`}
+          >
             Please check again later.
           </Text>
         </View>
@@ -237,6 +298,9 @@ function NearbyPropertySection({
   onUseMyLocation,
   onViewAll,
 }: NearbyPropertySectionProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
   const [sectionY, setSectionY] = useState(0);
   const [sectionHeight, setSectionHeight] = useState(0);
 
@@ -284,11 +348,23 @@ function NearbyPropertySection({
         <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
         <View>
-          <Text className="text-lg font-bold text-white">
+          <Text
+            className={`text-lg font-bold ${
+              isDark
+                ? "text-white"
+                : "text-black"
+            }`}
+          >
             Properties in My Location
           </Text>
 
-          <Text className="mt-1 text-xs text-gray-500">
+          <Text
+            className={`mt-1 text-xs ${
+              isDark
+                ? "text-gray-500"
+                : "text-gray-600"
+            }`}
+          >
             Find properties near your current location
           </Text>
         </View>
@@ -337,18 +413,54 @@ function NearbyPropertySection({
 
       {!nearbyRequested &&
         !loadingNearby && (
-          <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-8">
+          <View
+            className={`items-center rounded-2xl border px-5 py-8 ${
+              isDark
+                ? "border-[#292929] bg-[#171717]"
+                : "border-gray-200 bg-white"
+            }`}
+            style={
+              isDark
+                ? undefined
+                : {
+                    shadowColor: "#000",
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 5,
+                    elevation: 3,
+                  }
+            }
+          >
             <Ionicons
               name="location-outline"
               size={44}
-              color="#555"
+              color={
+                isDark
+                  ? "#555"
+                  : "#9ca3af"
+              }
             />
 
-            <Text className="mt-4 text-base font-semibold text-gray-400">
+            <Text
+              className={`mt-4 text-base font-semibold ${
+                isDark
+                  ? "text-gray-400"
+                  : "text-gray-700"
+              }`}
+            >
               Find properties near you
             </Text>
 
-            <Text className="mt-1 text-center text-sm leading-5 text-gray-600">
+            <Text
+              className={`mt-1 text-center text-sm leading-5 ${
+                isDark
+                  ? "text-gray-600"
+                  : "text-gray-500"
+              }`}
+            >
               Press "Use My Location" to discover
               properties close to your current location.
             </Text>
@@ -358,13 +470,39 @@ function NearbyPropertySection({
       {/* LOADING */}
 
       {loadingNearby && (
-        <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] py-10">
+        <View
+          className={`items-center rounded-2xl border py-10 ${
+            isDark
+              ? "border-[#292929] bg-[#171717]"
+              : "border-gray-200 bg-white"
+          }`}
+          style={
+            isDark
+              ? undefined
+              : {
+                  shadowColor: "#000",
+                  shadowOffset: {
+                    width: 0,
+                    height: 2,
+                  },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 5,
+                  elevation: 3,
+                }
+          }
+        >
           <ActivityIndicator
             size="large"
             color="#ef4444"
           />
 
-          <Text className="mt-3 text-sm text-gray-500">
+          <Text
+            className={`mt-3 text-sm ${
+              isDark
+                ? "text-gray-500"
+                : "text-gray-600"
+            }`}
+          >
             Searching near your location...
           </Text>
         </View>
@@ -375,18 +513,54 @@ function NearbyPropertySection({
       {nearbyRequested &&
         !loadingNearby &&
         nearbyProperties.length === 0 && (
-          <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
+          <View
+            className={`items-center rounded-2xl border px-5 py-10 ${
+              isDark
+                ? "border-[#292929] bg-[#171717]"
+                : "border-gray-200 bg-white"
+            }`}
+            style={
+              isDark
+                ? undefined
+                : {
+                    shadowColor: "#000",
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 5,
+                    elevation: 3,
+                  }
+            }
+          >
             <Ionicons
               name="location-outline"
               size={44}
-              color="#444"
+              color={
+                isDark
+                  ? "#444"
+                  : "#9ca3af"
+              }
             />
 
-            <Text className="mt-4 text-base font-semibold text-gray-400">
+            <Text
+              className={`mt-4 text-base font-semibold ${
+                isDark
+                  ? "text-gray-400"
+                  : "text-gray-700"
+              }`}
+            >
               No nearby properties found
             </Text>
 
-            <Text className="mt-1 text-center text-sm leading-5 text-gray-600">
+            <Text
+              className={`mt-1 text-center text-sm leading-5 ${
+                isDark
+                  ? "text-gray-600"
+                  : "text-gray-500"
+              }`}
+            >
               There are currently no properties
               available within the nearby search radius.
             </Text>
@@ -434,6 +608,13 @@ function NearbyPropertySection({
 
 export default function HomeScreen() {
   const router = useRouter();
+
+  // ============================================================
+  // THEME
+  // ============================================================
+
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
 
   // ============================================================
   // GENERAL STATE
@@ -807,10 +988,24 @@ export default function HomeScreen() {
 
   if (showWelcome) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+      <SafeAreaView
+        className={`flex-1 ${
+          isDark
+            ? "bg-[#0d0d0d]"
+            : "bg-white"
+        }`}
+      >
         <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
+          barStyle={
+            isDark
+              ? "light-content"
+              : "dark-content"
+          }
+          backgroundColor={
+            isDark
+              ? "#0d0d0d"
+              : "#ffffff"
+          }
         />
 
         <View className="flex-1 items-center justify-center px-6">
@@ -827,12 +1022,24 @@ export default function HomeScreen() {
               Welcome to iMORRCS
             </Text>
 
-            <Text className="mt-3 text-center text-3xl font-bold leading-10 text-white">
+            <Text
+              className={`mt-3 text-center text-3xl font-bold leading-10 ${
+                isDark
+                  ? "text-white"
+                  : "text-black"
+              }`}
+            >
               Your next property{"\n"}
               starts here.
             </Text>
 
-            <Text className="mt-4 max-w-sm text-center text-base leading-6 text-gray-400">
+            <Text
+              className={`mt-4 max-w-sm text-center text-base leading-6 ${
+                isDark
+                  ? "text-gray-400"
+                  : "text-gray-600"
+              }`}
+            >
               Discover homes, commercial properties,
               rentals, and investment opportunities
               across Malawi.
@@ -848,25 +1055,49 @@ export default function HomeScreen() {
   // ============================================================
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+    <SafeAreaView
+      className={`flex-1 ${
+        isDark
+          ? "bg-[#0d0d0d]"
+          : "bg-white"
+      }`}
+    >
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
+        barStyle={
+          isDark
+            ? "light-content"
+            : "dark-content"
+        }
+        backgroundColor={
+          isDark
+            ? "#0d0d0d"
+            : "#ffffff"
+        }
       />
-
-     {/* ========================================================
+{/* ========================================================
     HEADER
     ======================================================== */}
 
-<View className="items-center justify-center border-b border-[#222] bg-[#0d0d0d] px-5 pb-4 pt-3">
+<View
+  className={`items-center justify-center border-b px-5 pb-4 pt-3 ${
+    isDark
+      ? "border-[#222] bg-[#0d0d0d]"
+      : "border-gray-200 bg-white"
+  }`}
+>
   <View className="items-center justify-center">
-    <Text className="text-center text-2xl font-bold text-red-500">
+    <Text
+      className={`text-center text-2xl font-bold ${
+        isDark
+          ? "text-red-500"
+          : "text-red-600"
+      }`}
+    >
       Real Estate Africa
     </Text>
-
-    
   </View>
 </View>
+
       {/* ========================================================
           CONTENT
           ======================================================== */}
@@ -894,11 +1125,23 @@ export default function HomeScreen() {
             ====================================================== */}
 
         <View className="mb-6">
-          <Text className="text-2xl font-bold text-white">
+          <Text
+            className={`text-2xl font-bold ${
+              isDark
+                ? "text-white"
+                : "text-black"
+            }`}
+          >
             Discover Properties
           </Text>
 
-          <Text className="mt-1 text-sm leading-5 text-gray-500">
+          <Text
+            className={`mt-1 text-sm leading-5 ${
+              isDark
+                ? "text-gray-500"
+                : "text-gray-600"
+            }`}
+          >
             Explore properties available for sale and rent.
           </Text>
         </View>
@@ -1016,7 +1259,13 @@ export default function HomeScreen() {
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
-            <Text className="text-lg font-bold text-white">
+            <Text
+              className={`text-lg font-bold ${
+                isDark
+                  ? "text-white"
+                  : "text-black"
+              }`}
+            >
               Our Agents
             </Text>
           </View>
@@ -1028,23 +1277,65 @@ export default function HomeScreen() {
                 color="#ef4444"
               />
 
-              <Text className="mt-3 text-sm text-gray-500">
+              <Text
+                className={`mt-3 text-sm ${
+                  isDark
+                    ? "text-gray-500"
+                    : "text-gray-600"
+                }`}
+              >
                 Loading agents...
               </Text>
             </View>
           ) : agents.length === 0 ? (
-            <View className="items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10">
+            <View
+              className={`items-center rounded-2xl border px-5 py-10 ${
+                isDark
+                  ? "border-[#292929] bg-[#171717]"
+                  : "border-gray-200 bg-white"
+              }`}
+              style={
+                isDark
+                  ? undefined
+                  : {
+                      shadowColor: "#000",
+                      shadowOffset: {
+                        width: 0,
+                        height: 2,
+                      },
+                      shadowOpacity: 0.08,
+                      shadowRadius: 5,
+                      elevation: 3,
+                    }
+              }
+            >
               <Ionicons
                 name="people-outline"
                 size={48}
-                color="#444"
+                color={
+                  isDark
+                    ? "#444"
+                    : "#9ca3af"
+                }
               />
 
-              <Text className="mt-4 text-base font-semibold text-gray-400">
+              <Text
+                className={`mt-4 text-base font-semibold ${
+                  isDark
+                    ? "text-gray-400"
+                    : "text-gray-700"
+                }`}
+              >
                 No agents available
               </Text>
 
-              <Text className="mt-1 text-center text-sm text-gray-600">
+              <Text
+                className={`mt-1 text-center text-sm ${
+                  isDark
+                    ? "text-gray-600"
+                    : "text-gray-500"
+                }`}
+              >
                 Please check again later.
               </Text>
             </View>
@@ -1097,7 +1388,13 @@ export default function HomeScreen() {
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
-            <Text className="text-lg font-bold text-white">
+            <Text
+              className={`text-lg font-bold ${
+                isDark
+                  ? "text-white"
+                  : "text-black"
+              }`}
+            >
               Quick Actions
             </Text>
           </View>
@@ -1112,7 +1409,25 @@ export default function HomeScreen() {
             }
             accessibilityRole="button"
             accessibilityLabel="List your property"
-            className="mb-3 w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"
+            className={`mb-3 w-full flex-row items-center rounded-2xl border px-4 py-4 ${
+              isDark
+                ? "border-[#292929] bg-[#171717] active:bg-[#222]"
+                : "border-gray-200 bg-white active:bg-gray-50"
+            }`}
+            style={
+              isDark
+                ? undefined
+                : {
+                    shadowColor: "#000",
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 5,
+                    elevation: 3,
+                  }
+            }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
               <Ionicons
@@ -1123,11 +1438,23 @@ export default function HomeScreen() {
             </View>
 
             <View className="flex-1">
-              <Text className="text-base font-bold text-white">
+              <Text
+                className={`text-base font-bold ${
+                  isDark
+                    ? "text-white"
+                    : "text-black"
+                }`}
+              >
                 List Property
               </Text>
 
-              <Text className="mt-1 text-sm text-gray-500">
+              <Text
+                className={`mt-1 text-sm ${
+                  isDark
+                    ? "text-gray-500"
+                    : "text-gray-600"
+                }`}
+              >
                 List your property for sale or rent
               </Text>
             </View>
@@ -1149,7 +1476,25 @@ export default function HomeScreen() {
             }
             accessibilityRole="button"
             accessibilityLabel="Special property request"
-            className="mb-3 w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"
+            className={`mb-3 w-full flex-row items-center rounded-2xl border px-4 py-4 ${
+              isDark
+                ? "border-[#292929] bg-[#171717] active:bg-[#222]"
+                : "border-gray-200 bg-white active:bg-gray-50"
+            }`}
+            style={
+              isDark
+                ? undefined
+                : {
+                    shadowColor: "#000",
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 5,
+                    elevation: 3,
+                  }
+            }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
               <Ionicons
@@ -1160,11 +1505,23 @@ export default function HomeScreen() {
             </View>
 
             <View className="flex-1">
-              <Text className="text-base font-bold text-white">
+              <Text
+                className={`text-base font-bold ${
+                  isDark
+                    ? "text-white"
+                    : "text-black"
+                }`}
+              >
                 Special Property Request
               </Text>
 
-              <Text className="mt-1 text-sm text-gray-500">
+              <Text
+                className={`mt-1 text-sm ${
+                  isDark
+                    ? "text-gray-500"
+                    : "text-gray-600"
+                }`}
+              >
                 Tell us what property you are looking for
               </Text>
             </View>
@@ -1184,7 +1541,25 @@ export default function HomeScreen() {
             }
             accessibilityRole="button"
             accessibilityLabel="Open blogs"
-            className="w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"
+            className={`w-full flex-row items-center rounded-2xl border px-4 py-4 ${
+              isDark
+                ? "border-[#292929] bg-[#171717] active:bg-[#222]"
+                : "border-gray-200 bg-white active:bg-gray-50"
+            }`}
+            style={
+              isDark
+                ? undefined
+                : {
+                    shadowColor: "#000",
+                    shadowOffset: {
+                      width: 0,
+                      height: 2,
+                    },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 5,
+                    elevation: 3,
+                  }
+            }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
               <Ionicons
@@ -1195,11 +1570,23 @@ export default function HomeScreen() {
             </View>
 
             <View className="flex-1">
-              <Text className="text-base font-bold text-white">
+              <Text
+                className={`text-base font-bold ${
+                  isDark
+                    ? "text-white"
+                    : "text-black"
+                }`}
+              >
                 Subscribe to our newsletter
               </Text>
 
-              <Text className="mt-1 text-sm text-gray-500">
+              <Text
+                className={`mt-1 text-sm ${
+                  isDark
+                    ? "text-gray-500"
+                    : "text-gray-600"
+                }`}
+              >
                 Get the latest property news and updates
               </Text>
             </View>
