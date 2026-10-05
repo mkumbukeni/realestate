@@ -1,26 +1,36 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React from "react";
+import { Tabs } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-
+import { useTheme } from "@/app/components/theme/ThemeContext";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { isDark, theme } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
 
-        
-
-        tabBarActiveTintColor: '#ef4444',
-        tabBarInactiveTintColor: '#8a8a8a',
+        // ==========================================
+        // TAB TEXT + ICON COLORS
+        // ==========================================
+        //
+        // Active:
+        // Red in both dark and light modes
+        //
+        // Inactive:
+        // White in dark mode
+        // Black in light mode
+        //
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: isDark ? "#ffffff" : "#111111",
 
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontWeight: "600",
           marginTop: 2,
         },
 
@@ -30,9 +40,16 @@ export default function TabLayout() {
           marginVertical: 6,
         },
 
+        // ==========================================
+        // TAB BAR
+        // ==========================================
         tabBarStyle: {
-          backgroundColor: '#121212',
-          borderTopColor: '#242424',
+          backgroundColor: isDark ? "#171717" : "#ffffff",
+
+          borderTopColor: isDark
+            ? "#2a2a2a"
+            : "#e5e5e5",
+
           borderTopWidth: 1,
 
           height: 70 + insets.bottom,
@@ -45,21 +62,17 @@ export default function TabLayout() {
       }}
     >
       {/* ==========================================
-          PROPERTIES TAB
+          HOME TAB
       ========================================== */}
 
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: "Home",
 
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={
-                focused
-                  ? 'home'
-                  : 'home-outline'
-              }
+              name={focused ? "home" : "home-outline"}
               size={22}
               color={color}
             />
@@ -67,17 +80,21 @@ export default function TabLayout() {
         }}
       />
 
+      {/* ==========================================
+          PROPERTIES TAB
+      ========================================== */}
+
       <Tabs.Screen
         name="properties"
         options={{
-          title: 'Properties',
+          title: "Properties",
 
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={
                 focused
-                  ? 'business'
-                  : 'business-outline'
+                  ? "business"
+                  : "business-outline"
               }
               size={22}
               color={color}
@@ -93,14 +110,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="agents"
         options={{
-          title: 'Agents',
+          title: "Agents",
 
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={
                 focused
-                  ? 'people'
-                  : 'people-outline'
+                  ? "people"
+                  : "people-outline"
               }
               size={23}
               color={color}
@@ -109,7 +126,6 @@ export default function TabLayout() {
         }}
       />
 
-
       {/* ==========================================
           PROFILE TAB
       ========================================== */}
@@ -117,14 +133,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: "Profile",
 
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={
                 focused
-                  ? 'person-circle'
-                  : 'person-circle-outline'
+                  ? "person-circle"
+                  : "person-circle-outline"
               }
               size={24}
               color={color}
@@ -132,7 +148,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
 
       {/* ==========================================
           OTHERS TAB
@@ -141,14 +156,14 @@ export default function TabLayout() {
       <Tabs.Screen
         name="others"
         options={{
-          title: 'Others',
+          title: "Others",
 
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={
                 focused
-                  ? 'ellipsis-horizontal'
-                  : 'ellipsis-horizontal-outline'
+                  ? "ellipsis-horizontal"
+                  : "ellipsis-horizontal-outline"
               }
               size={24}
               color={color}
@@ -156,7 +171,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
     </Tabs>
   );
 }
