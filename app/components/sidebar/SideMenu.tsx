@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useRef,
@@ -18,6 +17,7 @@ import { useRouter } from "expo-router";
 
 import RegisterModal from "@/app/components/auth/RegisterModal";
 import LoginModal from "@/app/components/auth/LoginModal";
+import { useTheme } from "@/app/components/theme/ThemeContext";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -77,6 +77,8 @@ const SideMenu = ({
   items = DEFAULT_MENU_ITEMS,
 }: SideMenuProps) => {
   const router = useRouter();
+
+  const { isDark, theme } = useTheme();
 
   const [
     registerVisible,
@@ -297,8 +299,8 @@ const SideMenu = ({
                 translateX: slideAnim,
               },
             ],
+            backgroundColor: theme.background,
           }}
-          className="bg-[#111111]"
         >
           {/* ==================================================
               FIXED MENU HEADER
@@ -306,14 +308,30 @@ const SideMenu = ({
               This section DOES NOT scroll.
               ================================================== */}
 
-          <View className="border-b border-[#292929] px-5 pb-5 pt-12">
+          <View
+            className="px-5 pb-5 pt-12"
+            style={{
+              borderBottomWidth: 1,
+              borderBottomColor: theme.border,
+            }}
+          >
             <View className="flex-row items-center justify-between">
               <View>
-                <Text className="text-xl font-bold text-white">
+                <Text
+                  className="text-xl font-bold"
+                  style={{
+                    color: theme.text,
+                  }}
+                >
                   Menu
                 </Text>
 
-                <Text className="mt-1 text-xs text-gray-500">
+                <Text
+                  className="mt-1 text-xs"
+                  style={{
+                    color: theme.textMuted,
+                  }}
+                >
                   Real Estate
                 </Text>
               </View>
@@ -324,15 +342,16 @@ const SideMenu = ({
                 onPress={closeMenu}
                 accessibilityRole="button"
                 accessibilityLabel="Close menu"
-                className="h-10 w-10 items-center justify-center rounded-full bg-[#222222]"
+                className="h-10 w-10 items-center justify-center rounded-full"
                 style={({ pressed }) => ({
                   opacity: pressed ? 0.6 : 1,
+                  backgroundColor: theme.surface,
                 })}
               >
                 <Ionicons
                   name="close"
                   size={23}
-                  color="#fff"
+                  color={theme.icon}
                 />
               </Pressable>
             </View>
@@ -368,25 +387,37 @@ const SideMenu = ({
                 style={({ pressed }) => ({
                   opacity: pressed ? 0.75 : 1,
                   backgroundColor: pressed
-                    ? "#241616"
+                    ? isDark
+                      ? "#241616"
+                      : "#fef2f2"
                     : "transparent",
                 })}
                 className="mb-1 flex-row items-center rounded-xl px-2 py-3.5"
               >
                 {/* ICON */}
 
-                <View className="h-10 w-10 items-center justify-center rounded-lg bg-[#241616]">
+                <View
+                  className="h-10 w-10 items-center justify-center rounded-lg"
+                  style={{
+                    backgroundColor: isDark
+                      ? "#241616"
+                      : "#fef2f2",
+                  }}
+                >
                   <Ionicons
                     name={item.icon}
                     size={21}
-                    color="#f87171"
+                    color={theme.accent}
                   />
                 </View>
 
                 {/* LABEL */}
 
                 <Text
-                  className="ml-3 flex-1 text-sm font-semibold text-white"
+                  className="ml-3 flex-1 text-sm font-semibold"
+                  style={{
+                    color: theme.text,
+                  }}
                   numberOfLines={2}
                 >
                   {item.label}
@@ -397,7 +428,7 @@ const SideMenu = ({
                 <Ionicons
                   name="chevron-forward"
                   size={17}
-                  color="#666"
+                  color={theme.textMuted}
                 />
               </Pressable>
             ))}
@@ -445,4 +476,3 @@ const SideMenu = ({
 };
 
 export default SideMenu;
-

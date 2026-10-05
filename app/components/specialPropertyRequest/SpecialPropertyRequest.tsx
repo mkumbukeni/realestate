@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Alert,
@@ -9,11 +10,15 @@ import {
   Text,
   TextInput,
   View,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function SpecialPropertyRequestScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -92,10 +97,18 @@ export default function SpecialPropertyRequestScreen() {
 
     return (
       <View className="mb-4 flex-1">
-        <Text className="mb-2 text-[14px] text-gray-200">
+        {/* LABEL */}
+        <Text
+          className={
+            isDark
+              ? "mb-2 text-[14px] text-gray-200"
+              : "mb-2 text-[14px] text-gray-700"
+          }
+        >
           {label}
         </Text>
 
+        {/* DROPDOWN BUTTON */}
         <Pressable
           disabled={disabled}
           onPress={() =>
@@ -103,16 +116,24 @@ export default function SpecialPropertyRequestScreen() {
           }
           className={`h-[48px] flex-row items-center justify-between rounded-md border px-3 ${
             disabled
-              ? "border-[#242424] bg-[#101010]"
-              : "border-[#303030] bg-[#191919]"
+              ? isDark
+                ? "border-[#242424] bg-[#101010]"
+                : "border-gray-200 bg-gray-100"
+              : isDark
+                ? "border-[#303030] bg-[#191919]"
+                : "border-gray-300 bg-white"
           }`}
         >
           <Text
             numberOfLines={1}
             className={`flex-1 text-[14px] ${
               value
-                ? "text-gray-100"
-                : "text-gray-500"
+                ? isDark
+                  ? "text-gray-100"
+                  : "text-gray-900"
+                : isDark
+                  ? "text-gray-500"
+                  : "text-gray-400"
             }`}
           >
             {value || placeholder}
@@ -127,14 +148,25 @@ export default function SpecialPropertyRequestScreen() {
             size={17}
             color={
               disabled
-                ? "#444444"
-                : "#777777"
+                ? isDark
+                  ? "#444444"
+                  : "#aaaaaa"
+                : isDark
+                  ? "#777777"
+                  : "#666666"
             }
           />
         </Pressable>
 
+        {/* DROPDOWN OPTIONS */}
         {isOpen && !disabled && (
-          <View className="absolute left-0 right-0 top-[75px] z-50 overflow-hidden rounded-md border border-[#383838] bg-[#202020]">
+          <View
+            className={`absolute left-0 right-0 top-[75px] z-50 overflow-hidden rounded-md border ${
+              isDark
+                ? "border-[#383838] bg-[#202020]"
+                : "border-gray-200 bg-white"
+            }`}
+          >
             {options.map((option) => (
               <Pressable
                 key={option}
@@ -142,9 +174,19 @@ export default function SpecialPropertyRequestScreen() {
                   onSelect(option);
                   setActiveDropdown(null);
                 }}
-                className="border-b border-[#303030] px-3 py-3 active:bg-[#303030]"
+                className={
+                  isDark
+                    ? "border-b border-[#303030] px-3 py-3 active:bg-[#303030]"
+                    : "border-b border-gray-200 px-3 py-3 active:bg-gray-100"
+                }
               >
-                <Text className="text-[14px] text-gray-200">
+                <Text
+                  className={
+                    isDark
+                      ? "text-[14px] text-gray-200"
+                      : "text-[14px] text-gray-800"
+                  }
+                >
                   {option}
                 </Text>
               </Pressable>
@@ -188,18 +230,26 @@ export default function SpecialPropertyRequestScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#080808]">
+    <SafeAreaView
+      className={
+        isDark
+          ? "flex-1 bg-[#080808]"
+          : "flex-1 bg-gray-100"
+      }
+    >
+      {/* STATUS BAR */}
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#080808"
+        barStyle={
+          isDark
+            ? "light-content"
+            : "dark-content"
+        }
+        backgroundColor={
+          isDark
+            ? "#080808"
+            : "#f3f4f6"
+        }
       />
-
-      {/* =====================================================
-          KEYBOARD AVOIDING VIEW
-
-          This moves the form upward when the keyboard opens
-          so the active input and bottom button remain accessible.
-          ===================================================== */}
 
       <KeyboardAvoidingView
         className="flex-1"
@@ -212,27 +262,28 @@ export default function SpecialPropertyRequestScreen() {
           Platform.OS === "ios" ? 0 : 0
         }
       >
-        {/* =====================================================
-            FORM CONTAINER
-
-            Pushed below the global header buttons.
-            ===================================================== */}
-
-        <View className="mx-3 mt-[78px] mb-2 flex-1 overflow-hidden rounded-xl border border-[#303030] bg-[#0b0b0b]">
-          {/* =================================================
-              FIXED TITLE
-          ================================================== */}
-
-          <View className="flex items-center border-b border-[#303030] px-4 py-4">
+        {/* FORM CONTAINER */}
+        <View
+          className={`mx-3 mt-[78px] mb-2 flex-1 overflow-hidden rounded-xl border ${
+            isDark
+              ? "border-[#303030] bg-[#0b0b0b]"
+              : "border-gray-200 bg-white"
+          }`}
+        >
+          {/* FIXED TITLE */}
+          <View
+            className={`flex items-center border-b px-4 py-4 ${
+              isDark
+                ? "border-[#303030]"
+                : "border-gray-200"
+            }`}
+          >
             <Text className="text-[20px] font-bold text-red-600">
               FILL YOUR DETAILS
             </Text>
           </View>
 
-          {/* =================================================
-              SCROLLABLE FORM
-          ================================================== */}
-
+          {/* SCROLLABLE FORM */}
           <ScrollView
             className="flex-1"
             keyboardShouldPersistTaps="handled"
@@ -241,9 +292,7 @@ export default function SpecialPropertyRequestScreen() {
                 ? "interactive"
                 : "on-drag"
             }
-            automaticallyAdjustKeyboardInsets={
-              true
-            }
+            automaticallyAdjustKeyboardInsets={true}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingHorizontal: 16,
@@ -251,19 +300,29 @@ export default function SpecialPropertyRequestScreen() {
               paddingBottom: 120,
             }}
           >
-            {/* =================================================
-                CONTACT INFORMATION
-            ================================================== */}
+            {/* CONTACT INFORMATION */}
 
-            <Text className="mb-5 mt-3 text-[18px] font-bold text-gray-200">
+            <Text
+              className={
+                isDark
+                  ? "mb-5 mt-3 text-[18px] font-bold text-gray-200"
+                  : "mb-5 mt-3 text-[18px] font-bold text-gray-800"
+              }
+            >
               Contact Information
             </Text>
 
-            {/* First / Last Name */}
+            {/* FIRST / LAST NAME */}
 
             <View className="flex-col gap-4 md:flex-row">
               <View className="flex-1">
-                <Text className="mb-2 text-[14px] text-gray-200">
+                <Text
+                  className={
+                    isDark
+                      ? "mb-2 text-[14px] text-gray-200"
+                      : "mb-2 text-[14px] text-gray-700"
+                  }
+                >
                   First Name
                 </Text>
 
@@ -272,13 +331,25 @@ export default function SpecialPropertyRequestScreen() {
                   onChangeText={setFirstName}
                   returnKeyType="next"
                   placeholder=""
-                  placeholderTextColor="#777777"
-                  className="h-[48px] rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
+                  placeholderTextColor={
+                    isDark ? "#777777" : "#999999"
+                  }
+                  className={`h-[48px] rounded-md border px-3 text-[14px] ${
+                    isDark
+                      ? "border-[#303030] bg-[#191919] text-white"
+                      : "border-gray-300 bg-white text-gray-900"
+                  }`}
                 />
               </View>
 
               <View className="flex-1">
-                <Text className="mb-2 text-[14px] text-gray-200">
+                <Text
+                  className={
+                    isDark
+                      ? "mb-2 text-[14px] text-gray-200"
+                      : "mb-2 text-[14px] text-gray-700"
+                  }
+                >
                   Last Name
                 </Text>
 
@@ -287,19 +358,31 @@ export default function SpecialPropertyRequestScreen() {
                   onChangeText={setLastName}
                   returnKeyType="next"
                   placeholder=""
-                  placeholderTextColor="#777777"
-                  className="h-[48px] rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
+                  placeholderTextColor={
+                    isDark ? "#777777" : "#999999"
+                  }
+                  className={`h-[48px] rounded-md border px-3 text-[14px] ${
+                    isDark
+                      ? "border-[#303030] bg-[#191919] text-white"
+                      : "border-gray-300 bg-white text-gray-900"
+                  }`}
                 />
               </View>
             </View>
 
-            {/* Email / Phone / WhatsApp */}
+            {/* EMAIL / PHONE / WHATSAPP */}
 
             <View className="mt-4 flex-col gap-4 md:flex-row">
-              {/* Email */}
+              {/* EMAIL */}
 
               <View className="flex-1">
-                <Text className="mb-2 text-[14px] text-gray-200">
+                <Text
+                  className={
+                    isDark
+                      ? "mb-2 text-[14px] text-gray-200"
+                      : "mb-2 text-[14px] text-gray-700"
+                  }
+                >
                   Email
                 </Text>
 
@@ -310,25 +393,55 @@ export default function SpecialPropertyRequestScreen() {
                   autoCapitalize="none"
                   returnKeyType="next"
                   placeholder="example@gmail.com"
-                  placeholderTextColor="#777777"
-                  className="h-[48px] rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
+                  placeholderTextColor={
+                    isDark ? "#777777" : "#999999"
+                  }
+                  className={`h-[48px] rounded-md border px-3 text-[14px] ${
+                    isDark
+                      ? "border-[#303030] bg-[#191919] text-white"
+                      : "border-gray-300 bg-white text-gray-900"
+                  }`}
                 />
               </View>
 
-              {/* Phone */}
+              {/* PHONE */}
 
               <View className="flex-1">
-                <Text className="mb-2 text-[14px] text-gray-200">
+                <Text
+                  className={
+                    isDark
+                      ? "mb-2 text-[14px] text-gray-200"
+                      : "mb-2 text-[14px] text-gray-700"
+                  }
+                >
                   Phone
                 </Text>
 
-                <View className="h-[48px] flex-row items-center rounded-md border border-[#454545] bg-[#191919]">
-                  <View className="flex-row items-center border-r border-[#383838] px-3">
+                <View
+                  className={`h-[48px] flex-row items-center rounded-md border ${
+                    isDark
+                      ? "border-[#454545] bg-[#191919]"
+                      : "border-gray-300 bg-white"
+                  }`}
+                >
+                  <View
+                    className={`flex-row items-center border-r px-3 ${
+                      isDark
+                        ? "border-[#383838]"
+                        : "border-gray-200"
+                    }`}
+                  >
                     <Text className="text-[18px]">
                       🇲🇼
                     </Text>
 
-                    <Text className="ml-1 text-[13px] text-gray-300">
+                    <Text
+                      className={
+                        isDark
+                          ? "ml-1 text-[13px] text-gray-300"
+                          : "ml-1 text-[13px] text-gray-600"
+                      }
+                    >
                       +265
                     </Text>
                   </View>
@@ -339,13 +452,19 @@ export default function SpecialPropertyRequestScreen() {
                     keyboardType="phone-pad"
                     returnKeyType="next"
                     placeholder=""
-                    placeholderTextColor="#777777"
-                    className="flex-1 px-3 text-[14px] text-white"
+                    placeholderTextColor={
+                      isDark ? "#777777" : "#999999"
+                    }
+                    className={`flex-1 px-3 text-[14px] ${
+                      isDark
+                        ? "text-white"
+                        : "text-gray-900"
+                    }`}
                   />
                 </View>
               </View>
 
-              {/* WhatsApp */}
+              {/* WHATSAPP */}
 
               <View className="flex-1">
                 <View className="mb-2 flex-row items-center">
@@ -356,7 +475,9 @@ export default function SpecialPropertyRequestScreen() {
                     className={`mr-2 h-5 w-5 items-center justify-center rounded border ${
                       whatsapp
                         ? "border-red-600 bg-red-600"
-                        : "border-[#383838] bg-[#191919]"
+                        : isDark
+                          ? "border-[#383838] bg-[#191919]"
+                          : "border-gray-300 bg-white"
                     }`}
                   >
                     {whatsapp && (
@@ -368,7 +489,13 @@ export default function SpecialPropertyRequestScreen() {
                     )}
                   </Pressable>
 
-                  <Text className="text-[14px] text-gray-200">
+                  <Text
+                    className={
+                      isDark
+                        ? "text-[14px] text-gray-200"
+                        : "text-[14px] text-gray-700"
+                    }
+                  >
                     Notify me via WhatsApp
                   </Text>
 
@@ -380,16 +507,32 @@ export default function SpecialPropertyRequestScreen() {
                 <View
                   className={`h-[48px] flex-row items-center rounded-md border ${
                     whatsapp
-                      ? "border-[#454545] bg-[#191919]"
-                      : "border-[#242424] bg-[#101010]"
+                      ? isDark
+                        ? "border-[#454545] bg-[#191919]"
+                        : "border-gray-300 bg-white"
+                      : isDark
+                        ? "border-[#242424] bg-[#101010]"
+                        : "border-gray-200 bg-gray-100"
                   }`}
                 >
-                  <View className="flex-row items-center border-r border-[#383838] px-3">
+                  <View
+                    className={`flex-row items-center border-r px-3 ${
+                      isDark
+                        ? "border-[#383838]"
+                        : "border-gray-200"
+                    }`}
+                  >
                     <Text className="text-[18px]">
                       🇲🇼
                     </Text>
 
-                    <Text className="ml-1 text-[13px] text-gray-300">
+                    <Text
+                      className={
+                        isDark
+                          ? "ml-1 text-[13px] text-gray-300"
+                          : "ml-1 text-[13px] text-gray-600"
+                      }
+                    >
                       +265
                     </Text>
                   </View>
@@ -401,22 +544,32 @@ export default function SpecialPropertyRequestScreen() {
                     keyboardType="phone-pad"
                     returnKeyType="next"
                     placeholder=""
-                    placeholderTextColor="#777777"
-                    className="flex-1 px-3 text-[14px] text-white"
+                    placeholderTextColor={
+                      isDark ? "#777777" : "#999999"
+                    }
+                    className={`flex-1 px-3 text-[14px] ${
+                      isDark
+                        ? "text-white"
+                        : "text-gray-900"
+                    }`}
                   />
                 </View>
               </View>
             </View>
 
-            {/* =================================================
-                PROPERTY SPECIFICATIONS
-            ================================================== */}
+            {/* PROPERTY SPECIFICATIONS */}
 
-            <Text className="mb-5 mt-7 text-[18px] font-bold text-gray-200">
+            <Text
+              className={
+                isDark
+                  ? "mb-5 mt-7 text-[18px] font-bold text-gray-200"
+                  : "mb-5 mt-7 text-[18px] font-bold text-gray-800"
+              }
+            >
               Property Specifications
             </Text>
 
-            {/* Listing / Property / Region */}
+            {/* LISTING / PROPERTY / REGION */}
 
             <View className="flex-col gap-4 md:flex-row">
               <Dropdown
@@ -451,7 +604,7 @@ export default function SpecialPropertyRequestScreen() {
               />
             </View>
 
-            {/* District / Areas */}
+            {/* DISTRICT / AREAS */}
 
             <View className="flex-col gap-4 md:flex-row">
               <Dropdown
@@ -488,11 +641,15 @@ export default function SpecialPropertyRequestScreen() {
               </View>
             </View>
 
-            {/* =================================================
-                PRICE RANGE
-            ================================================== */}
+            {/* PRICE RANGE */}
 
-            <Text className="mb-2 text-[14px] text-gray-200">
+            <Text
+              className={
+                isDark
+                  ? "mb-2 text-[14px] text-gray-200"
+                  : "mb-2 text-[14px] text-gray-700"
+              }
+            >
               Price Range
             </Text>
 
@@ -503,11 +660,23 @@ export default function SpecialPropertyRequestScreen() {
                 keyboardType="numeric"
                 returnKeyType="next"
                 placeholder="min price"
-                placeholderTextColor="#777777"
-                className="h-[48px] flex-1 rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
+                placeholderTextColor={
+                  isDark ? "#777777" : "#999999"
+                }
+                className={`h-[48px] flex-1 rounded-md border px-3 text-[14px] ${
+                  isDark
+                    ? "border-[#303030] bg-[#191919] text-white"
+                    : "border-gray-300 bg-white text-gray-900"
+                }`}
               />
 
-              <Text className="mx-2 text-gray-400">
+              <Text
+                className={
+                  isDark
+                    ? "mx-2 text-gray-400"
+                    : "mx-2 text-gray-500"
+                }
+              >
                 -
               </Text>
 
@@ -517,14 +686,18 @@ export default function SpecialPropertyRequestScreen() {
                 keyboardType="numeric"
                 returnKeyType="done"
                 placeholder="max price"
-                placeholderTextColor="#777777"
-                className="h-[48px] flex-1 rounded-md border border-[#303030] bg-[#191919] px-3 text-[14px] text-white"
+                placeholderTextColor={
+                  isDark ? "#777777" : "#999999"
+                }
+                className={`h-[48px] flex-1 rounded-md border px-3 text-[14px] ${
+                  isDark
+                    ? "border-[#303030] bg-[#191919] text-white"
+                    : "border-gray-300 bg-white text-gray-900"
+                }`}
               />
             </View>
 
-            {/* =================================================
-                SUBMIT
-            ================================================== */}
+            {/* SUBMIT */}
 
             <Pressable
               onPress={handleSubmit}
@@ -534,10 +707,10 @@ export default function SpecialPropertyRequestScreen() {
                 Submit
               </Text>
             </Pressable>
-
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+

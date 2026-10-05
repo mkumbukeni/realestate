@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import SideMenu from "@/app/components/sidebar/SideMenu";
 import PropertyCard from "@/app/components/properties/PropertyCard";
+import { useTheme } from "@/app/components/theme/ThemeContext";
 
 import {
   fetchProperties,
@@ -31,6 +32,8 @@ import {
 
 export default function AgentDetailsScreen() {
   const router = useRouter();
+
+  const { theme, isDark } = useTheme();
 
   const params = useLocalSearchParams<{
     id?: string | string[];
@@ -214,18 +217,35 @@ export default function AgentDetailsScreen() {
       }
 
       return (
-        <View className="mx-4 items-center justify-center rounded-2xl border border-[#292929] bg-[#171717] px-6 py-12">
+        <View
+          className="mx-4 items-center justify-center rounded-2xl px-6 py-12"
+          style={{
+            backgroundColor: theme.card,
+            borderWidth: 1,
+            borderColor: theme.border,
+          }}
+        >
           <Ionicons
             name="home-outline"
             size={52}
-            color="#444444"
+            color={theme.textMuted}
           />
 
-          <Text className="mt-4 text-center text-lg font-bold text-gray-300">
+          <Text
+            className="mt-4 text-center text-lg font-bold"
+            style={{
+              color: theme.text,
+            }}
+          >
             No properties assigned
           </Text>
 
-          <Text className="mt-2 text-center text-sm leading-5 text-gray-500">
+          <Text
+            className="mt-2 text-center text-sm leading-5"
+            style={{
+              color: theme.textMuted,
+            }}
+          >
             There are currently no properties
             assigned to this agent.
           </Text>
@@ -239,20 +259,39 @@ export default function AgentDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
-        <View className="flex-row items-center border-b border-[#222222] px-4 py-3">
+      <SafeAreaView
+        className="flex-1"
+        style={{
+          backgroundColor: theme.background,
+        }}
+      >
+        <View
+          className="flex-row items-center px-4 py-3"
+          style={{
+            borderBottomWidth: 1,
+            borderBottomColor: theme.border,
+          }}
+        >
           <Pressable
             onPress={handleBack}
-            className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+            className="h-11 w-11 items-center justify-center rounded-full"
+            style={{
+              backgroundColor: theme.card,
+            }}
           >
             <Ionicons
               name="arrow-back"
               size={23}
-              color="#ffffff"
+              color={theme.icon}
             />
           </Pressable>
 
-          <Text className="ml-3 text-xl font-bold text-white">
+          <Text
+            className="ml-3 text-xl font-bold"
+            style={{
+              color: theme.text,
+            }}
+          >
             Agent Details
           </Text>
         </View>
@@ -260,10 +299,15 @@ export default function AgentDetailsScreen() {
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator
             size="large"
-            color="#ef4444"
+            color={theme.accent}
           />
 
-          <Text className="mt-3 text-sm text-gray-500">
+          <Text
+            className="mt-3 text-sm"
+            style={{
+              color: theme.textMuted,
+            }}
+          >
             Loading agent details...
           </Text>
         </View>
@@ -277,20 +321,39 @@ export default function AgentDetailsScreen() {
 
   if (!agent) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
-        <View className="flex-row items-center border-b border-[#222222] px-4 py-3">
+      <SafeAreaView
+        className="flex-1"
+        style={{
+          backgroundColor: theme.background,
+        }}
+      >
+        <View
+          className="flex-row items-center px-4 py-3"
+          style={{
+            borderBottomWidth: 1,
+            borderBottomColor: theme.border,
+          }}
+        >
           <Pressable
             onPress={handleBack}
-            className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+            className="h-11 w-11 items-center justify-center rounded-full"
+            style={{
+              backgroundColor: theme.card,
+            }}
           >
             <Ionicons
               name="arrow-back"
               size={23}
-              color="#ffffff"
+              color={theme.icon}
             />
           </Pressable>
 
-          <Text className="ml-3 text-xl font-bold text-white">
+          <Text
+            className="ml-3 text-xl font-bold"
+            style={{
+              color: theme.text,
+            }}
+          >
             Agent Details
           </Text>
         </View>
@@ -299,14 +362,24 @@ export default function AgentDetailsScreen() {
           <Ionicons
             name="person-outline"
             size={60}
-            color="#444444"
+            color={theme.textMuted}
           />
 
-          <Text className="mt-5 text-center text-xl font-bold text-white">
+          <Text
+            className="mt-5 text-center text-xl font-bold"
+            style={{
+              color: theme.text,
+            }}
+          >
             Agent not found
           </Text>
 
-          <Text className="mt-2 text-center text-sm text-gray-500">
+          <Text
+            className="mt-2 text-center text-sm"
+            style={{
+              color: theme.textMuted,
+            }}
+          >
             The requested agent could not be
             found.
           </Text>
@@ -330,7 +403,10 @@ export default function AgentDetailsScreen() {
 
   return (
     <SafeAreaView
-      className="flex-1 bg-[#0d0d0d]"
+      className="flex-1"
+      style={{
+        backgroundColor: theme.background,
+      }}
       edges={[
         "top",
         "left",
@@ -341,28 +417,46 @@ export default function AgentDetailsScreen() {
       {/* HEADER */}
       {/* ====================================================== */}
 
-      <View className="flex-row items-center justify-between border-b border-[#222222] bg-[#0d0d0d] px-4 py-3">
+      <View
+        className="flex-row items-center justify-between px-4 py-3"
+        style={{
+          backgroundColor: theme.background,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.border,
+        }}
+      >
         <View className="flex-1 flex-row items-center">
           <Pressable
             onPress={handleBack}
-            className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+            className="h-11 w-11 items-center justify-center rounded-full"
+            style={{
+              backgroundColor: theme.card,
+            }}
           >
             <Ionicons
               name="arrow-back"
               size={23}
-              color="#ffffff"
+              color={theme.icon}
             />
           </Pressable>
 
           <View className="ml-3 flex-1">
             <Text
-              className="text-lg font-bold text-white"
+              className="text-lg font-bold"
+              style={{
+                color: theme.text,
+              }}
               numberOfLines={1}
             >
               Agent Details
             </Text>
 
-            <Text className="text-xs text-zinc-500">
+            <Text
+              className="text-xs"
+              style={{
+                color: theme.textMuted,
+              }}
+            >
               Agent #{agent.id}
             </Text>
           </View>
@@ -372,12 +466,15 @@ export default function AgentDetailsScreen() {
           onPress={() =>
             setMenuVisible(true)
           }
-          className="h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
+          className="h-11 w-11 items-center justify-center rounded-full"
+          style={{
+            backgroundColor: theme.card,
+          }}
         >
           <Ionicons
             name="menu-outline"
             size={27}
-            color="#ffffff"
+            color={theme.icon}
           />
         </Pressable>
       </View>
@@ -398,7 +495,14 @@ export default function AgentDetailsScreen() {
             {/* AGENT PROFILE */}
             {/* ================================================= */}
 
-            <View className="overflow-hidden rounded-2xl border border-[#292929] bg-[#171717]">
+            <View
+              className="overflow-hidden rounded-2xl"
+              style={{
+                backgroundColor: theme.card,
+                borderWidth: 1,
+                borderColor: theme.border,
+              }}
+            >
               <View className="items-center px-5 pb-6 pt-7">
                 {agent.image ? (
                   <Image
@@ -409,16 +513,27 @@ export default function AgentDetailsScreen() {
                     resizeMode="cover"
                   />
                 ) : (
-                  <View className="h-28 w-28 items-center justify-center rounded-full border-2 border-red-600 bg-[#242424]">
+                  <View
+                    className="h-28 w-28 items-center justify-center rounded-full border-2 border-red-600"
+                    style={{
+                      backgroundColor:
+                        theme.surface,
+                    }}
+                  >
                     <Ionicons
                       name="person-outline"
                       size={52}
-                      color="#777777"
+                      color={theme.textMuted}
                     />
                   </View>
                 )}
 
-                <Text className="mt-4 text-2xl font-bold text-white">
+                <Text
+                  className="mt-4 text-2xl font-bold"
+                  style={{
+                    color: theme.text,
+                  }}
+                >
                   {agent.name ||
                     "Unnamed Agent"}
                 </Text>
@@ -439,7 +554,12 @@ export default function AgentDetailsScreen() {
                       color="#22c55e"
                     />
 
-                    <Text className="ml-1.5 text-xs text-zinc-400">
+                    <Text
+                      className="ml-1.5 text-xs"
+                      style={{
+                        color: theme.textMuted,
+                      }}
+                    >
                       {agent.licenseStatus}
                     </Text>
                   </View>
@@ -450,7 +570,13 @@ export default function AgentDetailsScreen() {
               {/* CONTACT INFORMATION */}
               {/* ================================================= */}
 
-              <View className="border-t border-[#292929] px-4">
+              <View
+                className="px-4"
+                style={{
+                  borderTopWidth: 1,
+                  borderTopColor: theme.border,
+                }}
+              >
                 {agent.email ? (
                   <InfoRow
                     icon="mail-outline"
@@ -502,12 +628,32 @@ export default function AgentDetailsScreen() {
 
             {agent.about ? (
               <View className="mt-6">
-                <Text className="mb-3 text-xl font-bold text-white">
+                <Text
+                  className="mb-3 text-xl font-bold"
+                  style={{
+                    color: theme.text,
+                  }}
+                >
                   About
                 </Text>
 
-                <View className="rounded-2xl border border-[#292929] bg-[#171717] p-4">
-                  <Text className="text-sm leading-6 text-zinc-300">
+                <View
+                  className="rounded-2xl p-4"
+                  style={{
+                    backgroundColor:
+                      theme.card,
+                    borderWidth: 1,
+                    borderColor:
+                      theme.border,
+                  }}
+                >
+                  <Text
+                    className="text-sm leading-6"
+                    style={{
+                      color:
+                        theme.textSecondary,
+                    }}
+                  >
                     {agent.about}
                   </Text>
                 </View>
@@ -521,7 +667,12 @@ export default function AgentDetailsScreen() {
             {agent.coverageAreas.length >
             0 ? (
               <View className="mt-6">
-                <Text className="mb-3 text-xl font-bold text-white">
+                <Text
+                  className="mb-3 text-xl font-bold"
+                  style={{
+                    color: theme.text,
+                  }}
+                >
                   Coverage Areas
                 </Text>
 
@@ -547,22 +698,43 @@ export default function AgentDetailsScreen() {
                       return (
                         <View
                           key={`${areaName}-${district}-${index}`}
-                          className="mb-2 mr-2 rounded-xl border border-[#292929] bg-[#171717] px-3 py-2.5"
+                          className="mb-2 mr-2 rounded-xl px-3 py-2.5"
+                          style={{
+                            backgroundColor:
+                              theme.card,
+                            borderWidth: 1,
+                            borderColor:
+                              theme.border,
+                          }}
                         >
                           <View className="flex-row items-center">
                             <Ionicons
                               name="location-outline"
                               size={17}
-                              color="#ef4444"
+                              color={
+                                theme.accent
+                              }
                             />
 
-                            <Text className="ml-2 text-sm font-medium text-zinc-300">
+                            <Text
+                              className="ml-2 text-sm font-medium"
+                              style={{
+                                color:
+                                  theme.textSecondary,
+                              }}
+                            >
                               {areaName}
                             </Text>
                           </View>
 
                           {district ? (
-                            <Text className="ml-6 mt-1 text-xs text-zinc-500">
+                            <Text
+                              className="ml-6 mt-1 text-xs"
+                              style={{
+                                color:
+                                  theme.textMuted,
+                              }}
+                            >
                               {district}
                             </Text>
                           ) : null}
@@ -581,34 +753,69 @@ export default function AgentDetailsScreen() {
             {agent.linkedin ||
             agent.facebook ? (
               <View className="mt-6">
-                <Text className="mb-3 text-xl font-bold text-white">
+                <Text
+                  className="mb-3 text-xl font-bold"
+                  style={{
+                    color: theme.text,
+                  }}
+                >
                   Social Profiles
                 </Text>
 
                 <View className="flex-row">
                   {agent.linkedin ? (
-                    <View className="mr-2 flex-row items-center rounded-xl border border-[#292929] bg-[#171717] px-4 py-3">
+                    <View
+                      className="mr-2 flex-row items-center rounded-xl px-4 py-3"
+                      style={{
+                        backgroundColor:
+                          theme.card,
+                        borderWidth: 1,
+                        borderColor:
+                          theme.border,
+                      }}
+                    >
                       <Ionicons
                         name="logo-linkedin"
                         size={20}
                         color="#60a5fa"
                       />
 
-                      <Text className="ml-2 text-sm text-zinc-300">
+                      <Text
+                        className="ml-2 text-sm"
+                        style={{
+                          color:
+                            theme.textSecondary,
+                        }}
+                      >
                         LinkedIn
                       </Text>
                     </View>
                   ) : null}
 
                   {agent.facebook ? (
-                    <View className="flex-row items-center rounded-xl border border-[#292929] bg-[#171717] px-4 py-3">
+                    <View
+                      className="flex-row items-center rounded-xl px-4 py-3"
+                      style={{
+                        backgroundColor:
+                          theme.card,
+                        borderWidth: 1,
+                        borderColor:
+                          theme.border,
+                      }}
+                    >
                       <Ionicons
                         name="logo-facebook"
                         size={20}
                         color="#60a5fa"
                       />
 
-                      <Text className="ml-2 text-sm text-zinc-300">
+                      <Text
+                        className="ml-2 text-sm"
+                        style={{
+                          color:
+                            theme.textSecondary,
+                        }}
+                      >
                         Facebook
                       </Text>
                     </View>
@@ -623,11 +830,21 @@ export default function AgentDetailsScreen() {
 
             <View className="mb-4 mt-8 flex-row items-center justify-between">
               <View className="flex-1">
-                <Text className="text-xl font-bold text-white">
+                <Text
+                  className="text-xl font-bold"
+                  style={{
+                    color: theme.text,
+                  }}
+                >
                   Assigned Properties
                 </Text>
 
-                <Text className="mt-1 text-sm text-zinc-500">
+                <Text
+                  className="mt-1 text-sm"
+                  style={{
+                    color: theme.textMuted,
+                  }}
+                >
                   Properties assigned to{" "}
                   {agent.name}
                 </Text>
@@ -652,7 +869,7 @@ export default function AgentDetailsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor="#ef4444"
+            tintColor={theme.accent}
           />
         }
         keyboardShouldPersistTaps="handled"
@@ -695,29 +912,49 @@ function InfoRow({
   value,
   last = false,
 }: InfoRowProps) {
+  const { theme } = useTheme();
+
   return (
     <View
-      className={`flex-row items-center py-4 ${
+      className="flex-row items-center py-4"
+      style={
         last
-          ? ""
-          : "border-b border-[#292929]"
-      }`}
+          ? undefined
+          : {
+              borderBottomWidth: 1,
+              borderBottomColor:
+                theme.border,
+            }
+      }
     >
-      <View className="h-9 w-9 items-center justify-center rounded-lg bg-[#242424]">
+      <View
+        className="h-9 w-9 items-center justify-center rounded-lg"
+        style={{
+          backgroundColor: theme.surface,
+        }}
+      >
         <Ionicons
           name={icon}
           size={18}
-          color="#ef4444"
+          color={theme.accent}
         />
       </View>
 
       <View className="ml-3 flex-1">
-        <Text className="text-xs text-zinc-500">
+        <Text
+          className="text-xs"
+          style={{
+            color: theme.textMuted,
+          }}
+        >
           {label}
         </Text>
 
         <Text
-          className="mt-1 text-sm font-semibold text-zinc-200"
+          className="mt-1 text-sm font-semibold"
+          style={{
+            color: theme.textSecondary,
+          }}
           numberOfLines={3}
         >
           {value}

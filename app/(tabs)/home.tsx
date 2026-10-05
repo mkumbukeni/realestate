@@ -1342,7 +1342,7 @@ export default function HomeScreen() {
           ) : (
             <View>
               {agents
-                .slice(0, 2)
+                .slice(0, 1)
                 .map((agent) => (
                   <AgentCard
                     key={agent.id}
@@ -1404,7 +1404,7 @@ export default function HomeScreen() {
           <Pressable
             onPress={() =>
               router.push(
-                "/components/specialPropertyRequest/SpecialPropertyRequest",
+                "/properties/list-property",
               )
             }
             accessibilityRole="button"
@@ -1445,7 +1445,7 @@ export default function HomeScreen() {
                     : "text-black"
                 }`}
               >
-                List Property
+                List Property 
               </Text>
 
               <Text

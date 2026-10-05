@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   ScrollView,
@@ -9,6 +8,7 @@ import {
   View,
   KeyboardAvoidingView,
   Platform,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -44,6 +44,7 @@ const InputField = ({
   onChangeText,
   keyboardType = "default",
   multiline = false,
+  isDark,
 }: {
   label: string;
   placeholder: string;
@@ -55,23 +56,38 @@ const InputField = ({
     | "phone-pad"
     | "numeric";
   multiline?: boolean;
+  isDark: boolean;
 }) => (
   <View className="mb-4 w-full">
-    <Text className="mb-2 text-sm font-medium text-gray-400">
+    <Text
+      className={
+        isDark
+          ? "mb-2 text-sm font-medium text-gray-400"
+          : "mb-2 text-sm font-medium text-gray-700"
+      }
+    >
       {label}
     </Text>
 
     <TextInput
-      className={`w-full rounded-xl border border-[#292929] bg-[#171717] px-4 text-white ${
+      className={`w-full rounded-xl border px-4 ${
         multiline ? "h-32 pt-4" : "h-14"
+      } ${
+        isDark
+          ? "border-[#292929] bg-[#171717] text-white"
+          : "border-gray-300 bg-white text-gray-900"
       }`}
       placeholder={placeholder}
-      placeholderTextColor="#666"
+      placeholderTextColor={
+        isDark ? "#666666" : "#999999"
+      }
       value={value}
       onChangeText={onChangeText}
       keyboardType={keyboardType}
       multiline={multiline}
-      textAlignVertical={multiline ? "top" : "center"}
+      textAlignVertical={
+        multiline ? "top" : "center"
+      }
     />
   </View>
 );
@@ -85,26 +101,42 @@ const SelectField = ({
   placeholder,
   value,
   onPress,
+  isDark,
 }: {
   label: string;
   placeholder: string;
   value: string | null;
   onPress: () => void;
+  isDark: boolean;
 }) => (
   <View className="mb-4 w-full">
-    <Text className="mb-2 text-sm font-medium text-gray-400">
+    <Text
+      className={
+        isDark
+          ? "mb-2 text-sm font-medium text-gray-400"
+          : "mb-2 text-sm font-medium text-gray-700"
+      }
+    >
       {label}
     </Text>
 
     <Pressable
       onPress={onPress}
-      className="h-14 w-full flex-row items-center justify-between rounded-xl border border-[#292929] bg-[#171717] px-4"
+      className={`h-14 w-full flex-row items-center justify-between rounded-xl border px-4 ${
+        isDark
+          ? "border-[#292929] bg-[#171717]"
+          : "border-gray-300 bg-white"
+      }`}
     >
       <Text
         className={
           value
-            ? "flex-1 text-white"
-            : "flex-1 text-[#666]"
+            ? isDark
+              ? "flex-1 text-white"
+              : "flex-1 text-gray-900"
+            : isDark
+              ? "flex-1 text-[#666]"
+              : "flex-1 text-gray-400"
         }
         numberOfLines={1}
       >
@@ -114,7 +146,7 @@ const SelectField = ({
       <Ionicons
         name="chevron-down"
         size={20}
-        color="#666"
+        color={isDark ? "#666" : "#777"}
       />
     </Pressable>
   </View>
@@ -128,10 +160,12 @@ const RadioButton = ({
   selected,
   label,
   onPress,
+  isDark,
 }: {
   selected: boolean;
   label: string;
   onPress: () => void;
+  isDark: boolean;
 }) => (
   <Pressable
     onPress={onPress}
@@ -141,7 +175,9 @@ const RadioButton = ({
       className={`mr-2 h-5 w-5 items-center justify-center rounded-full border-2 ${
         selected
           ? "border-red-500"
-          : "border-gray-600"
+          : isDark
+            ? "border-gray-600"
+            : "border-gray-400"
       }`}
     >
       {selected && (
@@ -149,7 +185,13 @@ const RadioButton = ({
       )}
     </View>
 
-    <Text className="text-base text-white">
+    <Text
+      className={
+        isDark
+          ? "text-base text-white"
+          : "text-base text-gray-800"
+      }
+    >
       {label}
     </Text>
   </Pressable>
@@ -159,8 +201,11 @@ const RadioButton = ({
 // MAIN SCREEN
 // ============================================================
 
-export default function PropertyForm() {
+export default function ListPropertyForm() {
   const router = useRouter();
+
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
 
   // ==========================================================
   // FORM STATE
@@ -200,36 +245,72 @@ export default function PropertyForm() {
   // ==========================================================
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+    <SafeAreaView
+      className={
+        isDark
+          ? "flex-1 bg-[#0d0d0d]"
+          : "flex-1 bg-gray-100"
+      }
+    >
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
+        barStyle={
+          isDark
+            ? "light-content"
+            : "dark-content"
+        }
+        backgroundColor={
+          isDark
+            ? "#0d0d0d"
+            : "#f3f4f6"
+        }
       />
 
       {/* ======================================================
           HEADER
       ====================================================== */}
 
-      <View className="flex-row items-center border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5">
+      <View
+        className={`flex-row items-center border-b px-5 pb-3.5 pt-2.5 ${
+          isDark
+            ? "border-[#222] bg-[#0d0d0d]"
+            : "border-gray-200 bg-gray-100"
+        }`}
+      >
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
           accessibilityLabel="Go back"
-          className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#171717]"
+          className={`mr-3 h-10 w-10 items-center justify-center rounded-full ${
+            isDark
+              ? "bg-[#171717]"
+              : "bg-white"
+          }`}
         >
           <Ionicons
             name="arrow-back"
             size={24}
-            color="#fff"
+            color={isDark ? "#fff" : "#222"}
           />
         </Pressable>
 
         <View>
-          <Text className="text-xl font-bold text-white">
+          <Text
+            className={
+              isDark
+                ? "text-xl font-bold text-white"
+                : "text-xl font-bold text-gray-900"
+            }
+          >
             List Property
           </Text>
 
-          <Text className="mt-0.5 text-xs text-gray-500">
+          <Text
+            className={
+              isDark
+                ? "mt-0.5 text-xs text-gray-500"
+                : "mt-0.5 text-xs text-gray-600"
+            }
+          >
             Fill in the details below
           </Text>
         </View>
@@ -259,7 +340,13 @@ export default function PropertyForm() {
               TOP AUTH SECTION
           ================================================== */}
 
-          <View className="mb-8 items-center rounded-2xl border border-[#292929] bg-[#171717] p-6">
+          <View
+            className={`mb-8 items-center rounded-2xl border p-6 ${
+              isDark
+                ? "border-[#292929] bg-[#171717]"
+                : "border-gray-200 bg-white"
+            }`}
+          >
             <Text className="mb-5 text-center text-base font-bold leading-6 text-red-500">
               To List Your Property Please Sign In or Register
             </Text>
@@ -284,7 +371,11 @@ export default function PropertyForm() {
                 onPress={() => router.push("/register")}
                 accessibilityRole="button"
                 accessibilityLabel="Register"
-                className="flex-1 items-center justify-center rounded-xl border border-red-600 bg-transparent py-3 active:bg-red-900/20"
+                className={`flex-1 items-center justify-center rounded-xl border border-red-600 bg-transparent py-3 ${
+                  isDark
+                    ? "active:bg-red-900/20"
+                    : "active:bg-red-50"
+                }`}
               >
                 <Text className="text-base font-bold text-red-500">
                   Register
@@ -300,17 +391,28 @@ export default function PropertyForm() {
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
-            <Text className="text-lg font-bold text-white">
+            <Text
+              className={
+                isDark
+                  ? "text-lg font-bold text-white"
+                  : "text-lg font-bold text-gray-900"
+              }
+            >
               Fill Your Details
             </Text>
           </View>
 
           {/* ==================================================
               PERSONAL INFORMATION
-              EACH FIELD IS FULL WIDTH
           ================================================== */}
 
-          <Text className="mb-4 text-base font-semibold text-gray-300">
+          <Text
+            className={
+              isDark
+                ? "mb-4 text-base font-semibold text-gray-300"
+                : "mb-4 text-base font-semibold text-gray-700"
+            }
+          >
             Personal Information
           </Text>
 
@@ -323,6 +425,7 @@ export default function PropertyForm() {
             onChangeText={(value) =>
               handleChange("firstName", value)
             }
+            isDark={isDark}
           />
 
           {/* LAST NAME */}
@@ -334,6 +437,7 @@ export default function PropertyForm() {
             onChangeText={(value) =>
               handleChange("lastName", value)
             }
+            isDark={isDark}
           />
 
           {/* EMAIL */}
@@ -346,24 +450,43 @@ export default function PropertyForm() {
             onChangeText={(value) =>
               handleChange("email", value)
             }
+            isDark={isDark}
           />
 
           {/* PHONE */}
 
           <View className="mb-4 w-full">
-            <Text className="mb-2 text-sm font-medium text-gray-400">
+            <Text
+              className={
+                isDark
+                  ? "mb-2 text-sm font-medium text-gray-400"
+                  : "mb-2 text-sm font-medium text-gray-700"
+              }
+            >
               Phone
             </Text>
 
-            <View className="h-14 w-full flex-row items-center rounded-xl border border-[#292929] bg-[#171717] px-3">
+            <View
+              className={`h-14 w-full flex-row items-center rounded-xl border px-3 ${
+                isDark
+                  ? "border-[#292929] bg-[#171717]"
+                  : "border-gray-300 bg-white"
+              }`}
+            >
               <Text className="mr-2 text-xl">
                 🇲🇼
               </Text>
 
               <TextInput
-                className="h-full flex-1 text-white"
+                className={
+                  isDark
+                    ? "h-full flex-1 text-white"
+                    : "h-full flex-1 text-gray-900"
+                }
                 placeholder="+265"
-                placeholderTextColor="#666"
+                placeholderTextColor={
+                  isDark ? "#666" : "#999"
+                }
                 keyboardType="phone-pad"
                 value={formData.phone}
                 onChangeText={(value) =>
@@ -380,7 +503,13 @@ export default function PropertyForm() {
           <View className="mb-4 mt-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
-            <Text className="text-lg font-bold text-white">
+            <Text
+              className={
+                isDark
+                  ? "text-lg font-bold text-white"
+                  : "text-lg font-bold text-gray-900"
+              }
+            >
               Property Details
             </Text>
           </View>
@@ -392,6 +521,7 @@ export default function PropertyForm() {
             placeholder="Select listing type"
             value={formData.listingType}
             onPress={() => {}}
+            isDark={isDark}
           />
 
           {/* PROPERTY TYPE */}
@@ -401,6 +531,7 @@ export default function PropertyForm() {
             placeholder="Select property type"
             value={formData.propertyType}
             onPress={() => {}}
+            isDark={isDark}
           />
 
           {/* REGION */}
@@ -410,6 +541,7 @@ export default function PropertyForm() {
             placeholder="Select region"
             value={formData.region}
             onPress={() => {}}
+            isDark={isDark}
           />
 
           {/* DISTRICT */}
@@ -419,6 +551,7 @@ export default function PropertyForm() {
             placeholder="Select district"
             value={formData.district}
             onPress={() => {}}
+            isDark={isDark}
           />
 
           {/* AREA */}
@@ -428,6 +561,7 @@ export default function PropertyForm() {
             placeholder="Select area"
             value={formData.area}
             onPress={() => {}}
+            isDark={isDark}
           />
 
           {/* VISIBILITY */}
@@ -437,6 +571,7 @@ export default function PropertyForm() {
             placeholder="Select listing visibility"
             value={formData.visibility}
             onPress={() => {}}
+            isDark={isDark}
           />
 
           {/* ==================================================
@@ -451,15 +586,27 @@ export default function PropertyForm() {
             onChangeText={(value) =>
               handleChange("description", value)
             }
+            isDark={isDark}
           />
 
           {/* ==================================================
               PROPERTY VALUE / VALUATION QUESTION
-              NOW AFTER DESCRIPTION
           ================================================== */}
 
-          <View className="my-6 rounded-xl border border-[#292929] bg-[#171717] p-4">
-            <Text className="mb-4 text-sm font-semibold leading-5 text-gray-300">
+          <View
+            className={`my-6 rounded-xl border p-4 ${
+              isDark
+                ? "border-[#292929] bg-[#171717]"
+                : "border-gray-200 bg-white"
+            }`}
+          >
+            <Text
+              className={
+                isDark
+                  ? "mb-4 text-sm font-semibold leading-5 text-gray-300"
+                  : "mb-4 text-sm font-semibold leading-5 text-gray-700"
+              }
+            >
               I want to know how much my property is worth
             </Text>
 
@@ -472,6 +619,7 @@ export default function PropertyForm() {
                 onPress={() =>
                   handleChange("worthCheck", "yes")
                 }
+                isDark={isDark}
               />
 
               <RadioButton
@@ -482,6 +630,7 @@ export default function PropertyForm() {
                 onPress={() =>
                   handleChange("worthCheck", "no")
                 }
+                isDark={isDark}
               />
             </View>
           </View>
@@ -499,9 +648,19 @@ export default function PropertyForm() {
             }}
             accessibilityRole="button"
             accessibilityLabel="Sign in to submit property"
-            className="mt-2 w-full items-center justify-center rounded-xl bg-red-900/40 py-4 active:bg-red-900/60"
+            className={`mt-2 w-full items-center justify-center rounded-xl py-4 ${
+              isDark
+                ? "bg-red-900/40 active:bg-red-900/60"
+                : "bg-red-100 active:bg-red-200"
+            }`}
           >
-            <Text className="text-base font-bold text-gray-400">
+            <Text
+              className={
+                isDark
+                  ? "text-base font-bold text-gray-400"
+                  : "text-base font-bold text-red-600"
+              }
+            >
               Sign in to submit
             </Text>
           </Pressable>
@@ -510,3 +669,4 @@ export default function PropertyForm() {
     </SafeAreaView>
   );
 }
+
