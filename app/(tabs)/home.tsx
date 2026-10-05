@@ -860,13 +860,11 @@ export default function HomeScreen() {
 
 <View className="items-center justify-center border-b border-[#222] bg-[#0d0d0d] px-5 pb-4 pt-3">
   <View className="items-center justify-center">
-    <Text className="text-center text-xl font-bold text-white">
+    <Text className="text-center text-2xl font-bold text-red-500">
       Real Estate Africa
     </Text>
 
-    <Text className="mt-1 text-center text-sm text-gray-500">
-      Find your next property
-    </Text>
+    
   </View>
 </View>
       {/* ========================================================

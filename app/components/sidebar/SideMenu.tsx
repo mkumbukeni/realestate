@@ -1,3 +1,4 @@
+
 import React, {
   useEffect,
   useRef,
@@ -8,6 +9,7 @@ import {
   Dimensions,
   Easing,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from "react-native";
@@ -17,8 +19,7 @@ import { useRouter } from "expo-router";
 import RegisterModal from "@/app/components/auth/RegisterModal";
 import LoginModal from "@/app/components/auth/LoginModal";
 
-const SCREEN_WIDTH =
-  Dimensions.get("window").width;
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const MENU_WIDTH = SCREEN_WIDTH * 0.58;
 
@@ -112,18 +113,14 @@ const SideMenu = ({
         Animated.timing(slideAnim, {
           toValue: 0,
           duration: 280,
-          easing: Easing.out(
-            Easing.cubic,
-          ),
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
 
         Animated.timing(backdropAnim, {
           toValue: 1,
           duration: 280,
-          easing: Easing.out(
-            Easing.cubic,
-          ),
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start();
@@ -143,18 +140,14 @@ const SideMenu = ({
       Animated.timing(slideAnim, {
         toValue: -MENU_WIDTH,
         duration: 240,
-        easing: Easing.in(
-          Easing.cubic,
-        ),
+        easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }),
 
       Animated.timing(backdropAnim, {
         toValue: 0,
         duration: 240,
-        easing: Easing.in(
-          Easing.cubic,
-        ),
+        easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -289,19 +282,6 @@ const SideMenu = ({
 
       {/* ======================================================
           SLIDING DRAWER
-          
-          The drawer starts at:
-          
-              -MENU_WIDTH
-          
-          which places it completely outside the
-          LEFT side of the screen.
-          
-          It then animates to:
-          
-               0
-          
-          which brings it into view.
           ====================================================== */}
 
       {visible ? (
@@ -321,7 +301,9 @@ const SideMenu = ({
           className="bg-[#111111]"
         >
           {/* ==================================================
-              MENU HEADER
+              FIXED MENU HEADER
+
+              This section DOES NOT scroll.
               ================================================== */}
 
           <View className="border-b border-[#292929] px-5 pb-5 pt-12">
@@ -336,17 +318,15 @@ const SideMenu = ({
                 </Text>
               </View>
 
+              {/* FIXED CLOSE BUTTON */}
+
               <Pressable
                 onPress={closeMenu}
                 accessibilityRole="button"
                 accessibilityLabel="Close menu"
                 className="h-10 w-10 items-center justify-center rounded-full bg-[#222222]"
-                style={({
-                  pressed,
-                }) => ({
-                  opacity: pressed
-                    ? 0.6
-                    : 1,
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.6 : 1,
                 })}
               >
                 <Ionicons
@@ -359,32 +339,37 @@ const SideMenu = ({
           </View>
 
           {/* ==================================================
-              MENU ITEMS
+              SCROLLABLE MENU ITEMS
+
+              ONLY THIS SECTION SCROLLS.
+
+              The header and close button remain fixed.
               ================================================== */}
 
-          <View className="px-3 pt-5">
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{
+              paddingHorizontal: 12,
+              paddingTop: 20,
+              paddingBottom: 30,
+            }}
+            showsVerticalScrollIndicator={false}
+            bounces={true}
+            nestedScrollEnabled={true}
+          >
             {items.map((item) => (
               <Pressable
                 key={item.label}
                 onPress={() =>
-                  handleMenuPress(
-                    item,
-                  )
+                  handleMenuPress(item)
                 }
                 accessibilityRole="button"
-                accessibilityLabel={
-                  item.label
-                }
-                style={({
-                  pressed,
-                }) => ({
-                  opacity: pressed
-                    ? 0.75
-                    : 1,
-                  backgroundColor:
-                    pressed
-                      ? "#241616"
-                      : "transparent",
+                accessibilityLabel={item.label}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.75 : 1,
+                  backgroundColor: pressed
+                    ? "#241616"
+                    : "transparent",
                 })}
                 className="mb-1 flex-row items-center rounded-xl px-2 py-3.5"
               >
@@ -416,7 +401,7 @@ const SideMenu = ({
                 />
               </Pressable>
             ))}
-          </View>
+          </ScrollView>
         </Animated.View>
       ) : null}
 
@@ -460,3 +445,4 @@ const SideMenu = ({
 };
 
 export default SideMenu;
+

@@ -1,3 +1,4 @@
+
 import {
   DarkTheme,
   DefaultTheme,
@@ -6,12 +7,11 @@ import {
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import "react-native-reanimated";
 
 import "../global.css";
-
 
 import {
   AuthProvider,
@@ -25,74 +25,37 @@ import {
 
 import SideMenu from "@/app/components/sidebar/SideMenu";
 
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
-
-/* ============================================================
-   GLOBAL THEME TOGGLE BUTTON
-   ============================================================ */
-
 function ThemeToggleButton() {
-  const {
-    isDark,
-    toggleTheme,
-  } = useTheme();
+  const { isDark, toggleTheme } = useTheme();
 
   return (
     <Pressable
       onPress={toggleTheme}
       accessibilityRole="button"
       accessibilityLabel={
-        isDark
-          ? "Switch to light mode"
-          : "Switch to dark mode"
+        isDark ? "Switch to light mode" : "Switch to dark mode"
       }
       className="
-        absolute
-        left-[80%]
-        top-14
-        z-50
         h-8
         w-8
-        -translate-x-1/2
         items-center
         justify-center
-        rounded-full
-        border
-        border-neutral-700
-        bg-neutral-900
-        shadow-lg
-        dark:border-neutral-300
-        dark:bg-white
+       
+       
+        bg-transparent
+       
       "
     >
       <Ionicons
-        name={
-          isDark
-            ? "sunny"
-            : "moon"
-        }
+        name={isDark ? "sunny" : "moon"}
         size={22}
-        color={
-          isDark
-            ? "#facc15"
-            : "#171717"
-        }
+        color={isDark ? "white" : "black"}
       />
     </Pressable>
   );
 }
 
-/* ============================================================
-   GLOBAL MENU BUTTON
-   ============================================================ */
-
-function GlobalMenuButton({
-  onPress,
-}: {
-  onPress: () => void;
-}) {
+function GlobalMenuButton({ onPress }: { onPress: () => void }) {
   const { isDark } = useTheme();
 
   return (
@@ -101,45 +64,23 @@ function GlobalMenuButton({
       accessibilityRole="button"
       accessibilityLabel="Open menu"
       className="
-        absolute
-        left-5
-        top-14
-        z-50
         h-11
         w-11
         items-center
         justify-center
-        rounded-full
-        border
-        border-neutral-200
-        bg-white
-        shadow-lg
-        dark:border-[#292929]
-        dark:bg-[#171717]
+        bg-transparent
       "
     >
       <Ionicons
         name="menu-outline"
         size={24}
-        color={
-          isDark
-            ? "#ffffff"
-            : "#171717"
-        }
+        color={isDark ? "white" : "black"}
       />
     </Pressable>
   );
 }
 
-/* ============================================================
-   GLOBAL LOGIN / LOGOUT BUTTON
-   ============================================================ */
-
-function GlobalAuthButton({
-  onPress,
-}: {
-  onPress: () => void;
-}) {
+function GlobalAuthButton({ onPress }: { onPress: () => void }) {
   const { isDark } = useTheme();
   const { isLoggedIn } = useAuth();
 
@@ -147,69 +88,90 @@ function GlobalAuthButton({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={
-        isLoggedIn
-          ? "Logout"
-          : "Login"
-      }
+      accessibilityLabel={isLoggedIn ? "Logout" : "Login"}
       className="
-        absolute
-        right-5
-        top-14
-        z-50
         h-8
         w-8
         items-center
         justify-center
-        rounded-full
-        border
-        border-neutral-200
-        bg-white
+       
+       
         shadow-lg
         dark:border-[#292929]
         dark:bg-[#171717]
       "
     >
       <Ionicons
-        name={
-          isLoggedIn
-            ? "log-out-outline"
-            : "person-outline"
-        }
+        name={isLoggedIn ? "log-out-outline" : "person-outline"}
         size={26}
-        color={
-          isDark
-            ? "#ffffff"
-            : "#171717"
-        }
+        color={isDark ? "white" : "black"}
       />
     </Pressable>
   );
 }
 
-/* ============================================================
-   ROOT CONTENT
-   ============================================================ */
+function GlobalHeader({
+  onMenuPress,
+  onAuthPress,
+}: {
+  onMenuPress: () => void;
+  onAuthPress: () => void;
+}) {
+  const { isDark } = useTheme();
+
+  return (
+    <View
+      className="
+        absolute
+        left-0
+        right-0
+        top-0
+        z-50
+        h-[110px]
+        flex-row
+        items-center
+        border-b
+        border-[#222]
+        bg-[#0d0d0d]
+        px-5
+        pt-[38px]
+        dark:bg-[#0d0d0d]
+      "
+    >
+      {/* LEFT - MENU */}
+      <View className="w-[20%] items-start justify-center">
+        <GlobalMenuButton onPress={onMenuPress} />
+      </View>
+
+      {/* CENTER - TITLE */}
+      <View className="flex-1 items-center justify-center">
+        <Text
+          numberOfLines={1}
+          className="
+            text-center
+            text-2xl
+            font-bold
+            text-red-500
+          "
+        >
+          Real Estate Africa
+        </Text>
+      </View>
+
+      {/* RIGHT - THEME + AUTH */}
+      <View className="w-[25%] flex-row items-center justify-end gap-4">
+        <ThemeToggleButton />
+
+        <GlobalAuthButton onPress={onAuthPress} />
+      </View>
+    </View>
+  );
+}
 
 function RootContent() {
-  const {
-    isDark,
-    theme,
-  } = useTheme();
-
-  const {
-    isLoggedIn,
-    logout,
-  } = useAuth();
-
-  const [
-    menuVisible,
-    setMenuVisible,
-  ] = useState(false);
-
-  /* ==========================================================
-     LOGIN / LOGOUT HANDLER
-     ========================================================== */
+  const { isDark, theme } = useTheme();
+  const { isLoggedIn, logout } = useAuth();
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const handleAuthPress = () => {
     if (isLoggedIn) {
@@ -217,11 +179,6 @@ function RootContent() {
       return;
     }
 
-    /*
-     * When logged out, open the side menu.
-     * The Sign In option in the side menu
-     * handles the login flow.
-     */
     setMenuVisible(true);
   };
 
@@ -233,42 +190,34 @@ function RootContent() {
               ...DarkTheme,
               colors: {
                 ...DarkTheme.colors,
-                background:
-                  theme.background,
-                card:
-                  theme.card,
-                text:
-                  theme.text,
-                border:
-                  theme.border,
-                primary:
-                  theme.accent,
+                background: theme.background,
+                card: theme.card,
+                text: theme.text,
+                border: theme.border,
+                primary: theme.accent,
               },
             }
           : {
               ...DefaultTheme,
               colors: {
                 ...DefaultTheme.colors,
-                background:
-                  theme.background,
-                card:
-                  theme.card,
-                text:
-                  theme.text,
-                border:
-                  theme.border,
-                primary:
-                  theme.accent,
+                background: theme.background,
+                card: theme.card,
+                text: theme.text,
+                border: theme.border,
+                primary: theme.accent,
               },
             }
       }
     >
       <View className="flex-1 bg-white dark:bg-[#0d0d0d]">
+        {/* GLOBAL HEADER */}
+        <GlobalHeader
+          onMenuPress={() => setMenuVisible(true)}
+          onAuthPress={handleAuthPress}
+        />
 
-        {/* ====================================================
-            ALL APP SCREENS
-            ==================================================== */}
-
+        {/* APP SCREENS */}
         <Stack>
           <Stack.Screen
             name="(tabs)"
@@ -278,62 +227,17 @@ function RootContent() {
           />
         </Stack>
 
-        {/* ====================================================
-            GLOBAL THEME TOGGLE
-            ==================================================== */}
-
-        <ThemeToggleButton />
-
-        {/* ====================================================
-            GLOBAL MENU BUTTON
-            LEFT SIDE
-            ==================================================== */}
-
-        <GlobalMenuButton
-          onPress={() =>
-            setMenuVisible(true)
-          }
-        />
-
-        {/* ====================================================
-            GLOBAL LOGIN / LOGOUT BUTTON
-            RIGHT SIDE
-            ==================================================== */}
-
-        <GlobalAuthButton
-          onPress={handleAuthPress}
-        />
-
-        {/* ====================================================
-            GLOBAL SIDE MENU
-            ==================================================== */}
-
+        {/* SIDE MENU */}
         <SideMenu
           visible={menuVisible}
-          onClose={() =>
-            setMenuVisible(false)
-          }
+          onClose={() => setMenuVisible(false)}
         />
 
-        {/* ====================================================
-            STATUS BAR
-            ==================================================== */}
-
-        <StatusBar
-          style={
-            isDark
-              ? "light"
-              : "dark"
-          }
-        />
+        <StatusBar style={isDark ? "light" : "dark"} />
       </View>
     </ThemeProvider>
   );
 }
-
-/* ============================================================
-   ROOT LAYOUT
-   ============================================================ */
 
 export default function RootLayout() {
   return (
@@ -344,3 +248,4 @@ export default function RootLayout() {
     </AppThemeProvider>
   );
 }
+
