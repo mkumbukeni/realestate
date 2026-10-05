@@ -1,4 +1,3 @@
-// app/(tabs)/properties/index.tsx
 
 import React, {
   useCallback,
@@ -41,6 +40,16 @@ import type {
 import {
   useTheme,
 } from "@/app/components/theme/ThemeContext";
+
+import {
+  useAuth,
+} from "@/app/components/auth/AuthContext";
+
+import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
+
+import LoginModal from "@/app/components/auth/LoginModal";
+
+import RegisterModal from "@/app/components/auth/RegisterModal";
 
 // ============================================================
 // TYPES
@@ -202,13 +211,21 @@ export default function PropertiesScreen() {
    * ==========================================================
    * THEME
    * ==========================================================
-   *
-   * Use the application's ThemeContext as the source of truth.
-   * This means the global light/dark button controls this screen
-   * immediately.
    */
 
   const { isDark } = useTheme();
+
+  // ==========================================================
+  // AUTHENTICATION
+  // ==========================================================
+
+  const {
+    isLoggedIn,
+  } = useAuth();
+
+  // ==========================================================
+  // ROUTE PARAMETERS
+  // ==========================================================
 
   const params =
     useLocalSearchParams<{
@@ -282,6 +299,32 @@ export default function PropertiesScreen() {
     useState<ListingFilter | null>(
       null,
     );
+
+  // ==========================================================
+  // AUTH MODAL STATE
+  // ==========================================================
+
+  const [
+    pendingProperty,
+    setPendingProperty,
+  ] = useState<Property | null>(
+    null,
+  );
+
+  const [
+    authRequiredVisible,
+    setAuthRequiredVisible,
+  ] = useState(false);
+
+  const [
+    loginVisible,
+    setLoginVisible,
+  ] = useState(false);
+
+  const [
+    registerVisible,
+    setRegisterVisible,
+  ] = useState(false);
 
   // ==========================================================
   // NUMBER OF COLUMNS
@@ -459,10 +502,6 @@ export default function PropertiesScreen() {
               .trim()
               .toLowerCase();
 
-          // ----------------------------------------------
-          // SALE / RENT FILTER
-          // ----------------------------------------------
-
           const matchesListingFilter =
             listingFilter === "all" ||
             (
@@ -496,10 +535,6 @@ export default function PropertiesScreen() {
             return false;
           }
 
-          // ----------------------------------------------
-          // PROPERTY TYPE FILTER
-          // ----------------------------------------------
-
           if (
             propertyTypeFilter !==
             "all"
@@ -532,10 +567,6 @@ export default function PropertiesScreen() {
               return false;
             }
           }
-
-          // ----------------------------------------------
-          // SEARCH FILTER
-          // ----------------------------------------------
 
           if (
             searchText === ""
@@ -593,10 +624,10 @@ export default function PropertiesScreen() {
     }, []);
 
   // ==========================================================
-  // PROPERTY PRESS
+  // OPEN PROPERTY DETAILS
   // ==========================================================
 
-  const handlePropertyPress =
+  const openPropertyDetails =
     useCallback(
       (property: Property) => {
         router.push({
@@ -611,6 +642,146 @@ export default function PropertiesScreen() {
       },
       [router],
     );
+
+  // ==========================================================
+  // PROPERTY PRESS
+  // ==========================================================
+
+  const handlePropertyPress =
+    useCallback(
+      (property: Property) => {
+        if (isLoggedIn) {
+          openPropertyDetails(
+            property,
+          );
+
+          return;
+        }
+
+        setPendingProperty(
+          property,
+        );
+
+        setAuthRequiredVisible(
+          true,
+        );
+      },
+      [
+        isLoggedIn,
+        openPropertyDetails,
+      ],
+    );
+
+  // ==========================================================
+  // AUTH REQUIRED -> LOGIN
+  // ==========================================================
+
+  const handleAuthRequiredLogin =
+    useCallback(() => {
+      setAuthRequiredVisible(
+        false,
+      );
+
+      setLoginVisible(true);
+    }, []);
+
+  // ==========================================================
+  // AUTH REQUIRED -> REGISTER
+  // ==========================================================
+
+  const handleAuthRequiredRegister =
+    useCallback(() => {
+      setAuthRequiredVisible(
+        false,
+      );
+
+      setRegisterVisible(true);
+    }, []);
+
+  // ==========================================================
+  // LOGIN SUCCESS
+  // ==========================================================
+
+  const handleLoginSuccess =
+    useCallback(
+      (
+        _email: string,
+        _response: Record<
+          string,
+          unknown
+        >,
+      ) => {
+        setLoginVisible(false);
+
+        if (
+          pendingProperty
+        ) {
+          const propertyToOpen =
+            pendingProperty;
+
+          setPendingProperty(
+            null,
+          );
+
+          openPropertyDetails(
+            propertyToOpen,
+          );
+        }
+      },
+      [
+        pendingProperty,
+        openPropertyDetails,
+      ],
+    );
+
+  // ==========================================================
+  // REGISTRATION SUCCESS
+  // ==========================================================
+
+  const handleRegistrationComplete =
+    useCallback(() => {
+      /*
+       * Keep the pending property.
+       *
+       * Registration does not automatically authenticate
+       * the user, so send them to login next.
+       */
+      setRegisterVisible(false);
+      setLoginVisible(true);
+    }, []);
+
+  // ==========================================================
+  // CLOSE AUTH REQUIRED MODAL
+  // ==========================================================
+
+  const handleCloseAuthRequired =
+    useCallback(() => {
+      setAuthRequiredVisible(
+        false,
+      );
+
+      setPendingProperty(
+        null,
+      );
+    }, []);
+
+  // ==========================================================
+  // CLOSE LOGIN MODAL
+  // ==========================================================
+
+  const handleCloseLogin =
+    useCallback(() => {
+      setLoginVisible(false);
+    }, []);
+
+  // ==========================================================
+  // CLOSE REGISTER MODAL
+  // ==========================================================
+
+  const handleCloseRegister =
+    useCallback(() => {
+      setRegisterVisible(false);
+    }, []);
 
   // ==========================================================
   // SCREEN TITLE
@@ -787,10 +958,6 @@ export default function PropertiesScreen() {
             : "bg-white"
         }
       >
-        {/* ================================================
-            TITLE
-        ================================================= */}
-
         <View
           className={`border-b px-5 pb-3.5 pt-2.5 ${
             isDark
@@ -821,10 +988,6 @@ export default function PropertiesScreen() {
             </Text>
           )}
         </View>
-
-        {/* ================================================
-            SEARCH
-        ================================================= */}
 
         <View className="px-5 pt-4">
           <View
@@ -896,16 +1059,8 @@ export default function PropertiesScreen() {
           </View>
         </View>
 
-        {/* ================================================
-            FILTER BUTTONS
-        ================================================= */}
-
         <View className="px-5 pb-4 pt-3">
           <View className="flex-row gap-2">
-            {/* ============================================
-                ALL
-            ============================================= */}
-
             <View className="relative flex-1">
               <Pressable
                 onPress={() =>
@@ -962,10 +1117,6 @@ export default function PropertiesScreen() {
               )}
             </View>
 
-            {/* ============================================
-                FOR SALE
-            ============================================= */}
-
             <View className="relative flex-1">
               <Pressable
                 onPress={() =>
@@ -1021,10 +1172,6 @@ export default function PropertiesScreen() {
                 "sale",
               )}
             </View>
-
-            {/* ============================================
-                FOR RENT
-            ============================================= */}
 
             <View className="relative flex-1">
               <Pressable
@@ -1083,10 +1230,6 @@ export default function PropertiesScreen() {
             </View>
           </View>
 
-          {/* ==============================================
-              ACTIVE CATEGORY
-          =============================================== */}
-
           {propertyTypeFilter !==
             "all" && (
             <View className="mt-2 items-center">
@@ -1112,10 +1255,6 @@ export default function PropertiesScreen() {
               </Pressable>
             </View>
           )}
-
-          {/* ==============================================
-              COUNT
-          =============================================== */}
 
           <Text
             className={`mt-3 text-sm font-medium ${
@@ -1360,16 +1499,11 @@ export default function PropertiesScreen() {
         }
       />
 
-      {/* ====================================================
-          FIXED HEADER
-          This section does NOT scroll.
-      ===================================================== */}
+      {/* FIXED HEADER */}
 
       {renderHeader()}
 
-      {/* ====================================================
-          SCROLLING PROPERTY CARDS ONLY
-      ===================================================== */}
+      {/* PROPERTY CARDS */}
 
       <ScrollView
         className={
@@ -1530,6 +1664,66 @@ export default function PropertiesScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* ====================================================
+          AUTH REQUIRED MODAL
+      ===================================================== */}
+
+      <AuthRequiredModal
+        visible={
+          authRequiredVisible
+        }
+        onClose={
+          handleCloseAuthRequired
+        }
+        onLogin={
+          handleAuthRequiredLogin
+        }
+        onRegister={
+          handleAuthRequiredRegister
+        }
+      />
+
+      {/* ====================================================
+          LOGIN MODAL
+      ===================================================== */}
+
+      <LoginModal
+        visible={
+          loginVisible
+        }
+        onClose={
+          handleCloseLogin
+        }
+        onLogin={
+          handleLoginSuccess
+        }
+        onRegister={() => {
+          setLoginVisible(false);
+          setRegisterVisible(true);
+        }}
+      />
+
+      {/* ====================================================
+          REGISTER MODAL
+      ===================================================== */}
+
+      <RegisterModal
+        visible={
+          registerVisible
+        }
+        onClose={
+          handleCloseRegister
+        }
+        onRegister={
+          handleRegistrationComplete
+        }
+        onLogin={() => {
+          setRegisterVisible(false);
+          setLoginVisible(true);
+        }}
+      />
     </SafeAreaView>
   );
 }
+

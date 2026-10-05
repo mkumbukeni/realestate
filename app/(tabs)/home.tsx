@@ -1,3 +1,4 @@
+
 import React, {
   useEffect,
   useMemo,
@@ -19,6 +20,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 
+import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
+import LoginModal from "@/app/components/auth/LoginModal";
+import RegisterModal from "@/app/components/auth/RegisterModal";
+import { useAuth } from "@/app/components/auth/AuthContext";
+
 import PropertyCard from "@/app/components/properties/PropertyCard";
 import AgentCard from "@/app/components/agents/AgentCard";
 import AutoPropertySlider from "@/app/components/properties/AutoPropertySlider";
@@ -38,12 +44,6 @@ import {
 
 /* ============================================================
    PROPERTY SECTION COMPONENT
-
-   This component is responsible for detecting whether the
-   section is currently visible on the screen.
-
-   When visible, AutoPropertySlider automatically starts moving.
-   When the section leaves the screen, automatic movement stops.
    ============================================================ */
 
 interface PropertySectionProps {
@@ -69,12 +69,9 @@ function PropertySection({
   const isDark = colorScheme !== "light";
 
   const [sectionY, setSectionY] = useState(0);
-  const [sectionHeight, setSectionHeight] = useState(0);
+  const [sectionHeight, setSectionHeight] =
+    useState(0);
 
-  /*
-   * Determine whether this section is currently inside
-   * the visible area of the main vertical ScrollView.
-   */
   const isVisible = useMemo(() => {
     if (
       viewportHeight <= 0 ||
@@ -113,16 +110,18 @@ function PropertySection({
         setSectionHeight(height);
       }}
     >
-      {/* SECTION TITLE */}
+      {/* SECTION HEADER */}
 
       <View className="mb-4 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
           <Text
-            className={`text-lg font-bold ${
-              isDark ? "text-white" : "text-black"
-            }`}
+            className={
+              isDark
+                ? "text-lg font-bold text-white"
+                : "text-lg font-bold text-black"
+            }
           >
             {title}
           </Text>
@@ -134,7 +133,15 @@ function PropertySection({
           accessibilityLabel={`View all ${title}`}
           className="flex-row items-center"
         >
-          
+          <Text className="mr-1 text-sm font-semibold text-red-500">
+            View All
+          </Text>
+
+          <Ionicons
+            name="arrow-forward"
+            size={16}
+            color="#ef4444"
+          />
         </Pressable>
       </View>
 
@@ -142,24 +149,10 @@ function PropertySection({
 
       {loading ? (
         <View
-          className={`items-center rounded-2xl border py-10 ${
+          className={
             isDark
-              ? "border-[#292929] bg-[#171717]"
-              : "border-gray-200 bg-white"
-          }`}
-          style={
-            isDark
-              ? undefined
-              : {
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 0,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 5,
-                  elevation: 3,
-                }
+              ? "items-center rounded-2xl border border-[#292929] bg-[#171717] py-10"
+              : "items-center rounded-2xl border border-gray-200 bg-white py-10"
           }
         >
           <ActivityIndicator
@@ -168,11 +161,11 @@ function PropertySection({
           />
 
           <Text
-            className={`mt-3 text-sm ${
+            className={
               isDark
-                ? "text-gray-500"
-                : "text-gray-600"
-            }`}
+                ? "mt-3 text-sm text-gray-500"
+                : "mt-3 text-sm text-gray-600"
+            }
           >
             Loading {title.toLowerCase()}...
           </Text>
@@ -181,24 +174,10 @@ function PropertySection({
         /* EMPTY */
 
         <View
-          className={`items-center rounded-2xl border px-5 py-10 ${
+          className={
             isDark
-              ? "border-[#292929] bg-[#171717]"
-              : "border-gray-200 bg-white"
-          }`}
-          style={
-            isDark
-              ? undefined
-              : {
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 0,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 5,
-                  elevation: 3,
-                }
+              ? "items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10"
+              : "items-center rounded-2xl border border-gray-200 bg-white px-5 py-10"
           }
         >
           <Ionicons
@@ -212,41 +191,34 @@ function PropertySection({
           />
 
           <Text
-            className={`mt-4 text-base font-semibold ${
+            className={
               isDark
-                ? "text-gray-400"
-                : "text-gray-700"
-            }`}
+                ? "mt-4 text-base font-semibold text-gray-400"
+                : "mt-4 text-base font-semibold text-gray-700"
+            }
           >
             No {title.toLowerCase()} available
           </Text>
 
           <Text
-            className={`mt-1 text-center text-sm ${
+            className={
               isDark
-                ? "text-gray-600"
-                : "text-gray-500"
-            }`}
+                ? "mt-1 text-center text-sm text-gray-600"
+                : "mt-1 text-center text-sm text-gray-500"
+            }
           >
             Please check again later.
           </Text>
         </View>
       ) : (
         <>
-          {/* ========================================================
-             AUTOMATIC PROPERTY SLIDER
-
-             The slider only moves automatically while this section
-             is visible on the screen.
-             ======================================================== */}
-
           <AutoPropertySlider
             properties={sectionProperties}
-            onPropertyPress={onPropertyPress}
+            onPropertyPress={
+              onPropertyPress
+            }
             isVisible={isVisible}
           />
-
-          {/* VIEW ALL */}
 
           <Pressable
             onPress={() => onViewAll(title)}
@@ -272,9 +244,6 @@ function PropertySection({
 
 /* ============================================================
    NEARBY PROPERTY SECTION
-
-   This is kept separate because it has the "Use My Location"
-   functionality in addition to the automatic slider.
    ============================================================ */
 
 interface NearbyPropertySectionProps {
@@ -301,8 +270,11 @@ function NearbyPropertySection({
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
 
-  const [sectionY, setSectionY] = useState(0);
-  const [sectionHeight, setSectionHeight] = useState(0);
+  const [sectionY, setSectionY] =
+    useState(0);
+
+  const [sectionHeight, setSectionHeight] =
+    useState(0);
 
   const isVisible = useMemo(() => {
     if (
@@ -342,35 +314,35 @@ function NearbyPropertySection({
         setSectionHeight(height);
       }}
     >
-      {/* SECTION TITLE */}
+      {/* SECTION HEADER */}
 
       <View className="mb-4 flex-row items-center">
         <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
         <View>
           <Text
-            className={`text-lg font-bold ${
+            className={
               isDark
-                ? "text-white"
-                : "text-black"
-            }`}
+                ? "text-lg font-bold text-white"
+                : "text-lg font-bold text-black"
+            }
           >
             Properties in My Location
           </Text>
 
           <Text
-            className={`mt-1 text-xs ${
+            className={
               isDark
-                ? "text-gray-500"
-                : "text-gray-600"
-            }`}
+                ? "mt-1 text-xs text-gray-500"
+                : "mt-1 text-xs text-gray-600"
+            }
           >
             Find properties near your current location
           </Text>
         </View>
       </View>
 
-      {/* USE MY LOCATION */}
+      {/* LOCATION BUTTON */}
 
       <Pressable
         onPress={onUseMyLocation}
@@ -409,29 +381,15 @@ function NearbyPropertySection({
         )}
       </Pressable>
 
-      {/* BEFORE LOCATION SEARCH */}
+      {/* INITIAL STATE */}
 
       {!nearbyRequested &&
         !loadingNearby && (
           <View
-            className={`items-center rounded-2xl border px-5 py-8 ${
+            className={
               isDark
-                ? "border-[#292929] bg-[#171717]"
-                : "border-gray-200 bg-white"
-            }`}
-            style={
-              isDark
-                ? undefined
-                : {
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 0,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 5,
-                    elevation: 3,
-                  }
+                ? "items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-8"
+                : "items-center rounded-2xl border border-gray-200 bg-white px-5 py-8"
             }
           >
             <Ionicons
@@ -445,21 +403,21 @@ function NearbyPropertySection({
             />
 
             <Text
-              className={`mt-4 text-base font-semibold ${
+              className={
                 isDark
-                  ? "text-gray-400"
-                  : "text-gray-700"
-              }`}
+                  ? "mt-4 text-base font-semibold text-gray-400"
+                  : "mt-4 text-base font-semibold text-gray-700"
+              }
             >
               Find properties near you
             </Text>
 
             <Text
-              className={`mt-1 text-center text-sm leading-5 ${
+              className={
                 isDark
-                  ? "text-gray-600"
-                  : "text-gray-500"
-              }`}
+                  ? "mt-1 text-center text-sm leading-5 text-gray-600"
+                  : "mt-1 text-center text-sm leading-5 text-gray-500"
+              }
             >
               Press "Use My Location" to discover
               properties close to your current location.
@@ -471,24 +429,10 @@ function NearbyPropertySection({
 
       {loadingNearby && (
         <View
-          className={`items-center rounded-2xl border py-10 ${
+          className={
             isDark
-              ? "border-[#292929] bg-[#171717]"
-              : "border-gray-200 bg-white"
-          }`}
-          style={
-            isDark
-              ? undefined
-              : {
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 0,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.08,
-                  shadowRadius: 5,
-                  elevation: 3,
-                }
+              ? "items-center rounded-2xl border border-[#292929] bg-[#171717] py-10"
+              : "items-center rounded-2xl border border-gray-200 bg-white py-10"
           }
         >
           <ActivityIndicator
@@ -497,11 +441,11 @@ function NearbyPropertySection({
           />
 
           <Text
-            className={`mt-3 text-sm ${
+            className={
               isDark
-                ? "text-gray-500"
-                : "text-gray-600"
-            }`}
+                ? "mt-3 text-sm text-gray-500"
+                : "mt-3 text-sm text-gray-600"
+            }
           >
             Searching near your location...
           </Text>
@@ -514,24 +458,10 @@ function NearbyPropertySection({
         !loadingNearby &&
         nearbyProperties.length === 0 && (
           <View
-            className={`items-center rounded-2xl border px-5 py-10 ${
+            className={
               isDark
-                ? "border-[#292929] bg-[#171717]"
-                : "border-gray-200 bg-white"
-            }`}
-            style={
-              isDark
-                ? undefined
-                : {
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 0,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 5,
-                    elevation: 3,
-                  }
+                ? "items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10"
+                : "items-center rounded-2xl border border-gray-200 bg-white px-5 py-10"
             }
           >
             <Ionicons
@@ -545,21 +475,21 @@ function NearbyPropertySection({
             />
 
             <Text
-              className={`mt-4 text-base font-semibold ${
+              className={
                 isDark
-                  ? "text-gray-400"
-                  : "text-gray-700"
-              }`}
+                  ? "mt-4 text-base font-semibold text-gray-400"
+                  : "mt-4 text-base font-semibold text-gray-700"
+              }
             >
               No nearby properties found
             </Text>
 
             <Text
-              className={`mt-1 text-center text-sm leading-5 ${
+              className={
                 isDark
-                  ? "text-gray-600"
-                  : "text-gray-500"
-              }`}
+                  ? "mt-1 text-center text-sm leading-5 text-gray-600"
+                  : "mt-1 text-center text-sm leading-5 text-gray-500"
+              }
             >
               There are currently no properties
               available within the nearby search radius.
@@ -567,18 +497,18 @@ function NearbyPropertySection({
           </View>
         )}
 
-      {/* NEARBY PROPERTIES */}
+      {/* RESULTS */}
 
       {!loadingNearby &&
         nearbyProperties.length > 0 && (
           <>
             <AutoPropertySlider
               properties={nearbyProperties}
-              onPropertyPress={onPropertyPress}
+              onPropertyPress={
+                onPropertyPress
+              }
               isVisible={isVisible}
             />
-
-            {/* VIEW ALL NEARBY PROPERTIES */}
 
             <Pressable
               onPress={onViewAll}
@@ -609,12 +539,38 @@ function NearbyPropertySection({
 export default function HomeScreen() {
   const router = useRouter();
 
-  // ============================================================
-  // THEME
-  // ============================================================
-
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
+
+  const {
+    isLoggedIn,
+  } = useAuth();
+
+  // ============================================================
+  // AUTHENTICATION STATE
+  // ============================================================
+
+  const [
+    authModalVisible,
+    setAuthModalVisible,
+  ] = useState(false);
+
+  const [
+    loginVisible,
+    setLoginVisible,
+  ] = useState(false);
+
+  const [
+    registerVisible,
+    setRegisterVisible,
+  ] = useState(false);
+
+  const [
+    pendingProperty,
+    setPendingProperty,
+  ] = useState<Property | null>(
+    null,
+  );
 
   // ============================================================
   // GENERAL STATE
@@ -626,11 +582,6 @@ export default function HomeScreen() {
   // ============================================================
   // MAIN SCROLL POSITION
   // ============================================================
-
-  /*
-   * These values are used by the property sections to know
-   * whether they are currently visible on the screen.
-   */
 
   const [parentScrollY, setParentScrollY] =
     useState(0);
@@ -645,39 +596,59 @@ export default function HomeScreen() {
   const [properties, setProperties] =
     useState<Property[]>([]);
 
-  const [featuredProperties, setFeaturedProperties] =
-    useState<Property[]>([]);
+  const [
+    featuredProperties,
+    setFeaturedProperties,
+  ] = useState<Property[]>([]);
 
-  const [openHouseProperties, setOpenHouseProperties] =
-    useState<Property[]>([]);
+  const [
+    openHouseProperties,
+    setOpenHouseProperties,
+  ] = useState<Property[]>([]);
 
-  const [mostViewedProperties, setMostViewedProperties] =
-    useState<Property[]>([]);
+  const [
+    mostViewedProperties,
+    setMostViewedProperties,
+  ] = useState<Property[]>([]);
 
-  const [nearbyProperties, setNearbyProperties] =
-    useState<Property[]>([]);
+  const [
+    nearbyProperties,
+    setNearbyProperties,
+  ] = useState<Property[]>([]);
 
   // ============================================================
   // LOADING STATE
   // ============================================================
 
-  const [loadingProperties, setLoadingProperties] =
-    useState(true);
+  const [
+    loadingProperties,
+    setLoadingProperties,
+  ] = useState(true);
 
-  const [loadingFeatured, setLoadingFeatured] =
-    useState(true);
+  const [
+    loadingFeatured,
+    setLoadingFeatured,
+  ] = useState(true);
 
-  const [loadingOpenHouses, setLoadingOpenHouses] =
-    useState(true);
+  const [
+    loadingOpenHouses,
+    setLoadingOpenHouses,
+  ] = useState(true);
 
-  const [loadingMostViewed, setLoadingMostViewed] =
-    useState(true);
+  const [
+    loadingMostViewed,
+    setLoadingMostViewed,
+  ] = useState(true);
 
-  const [loadingNearby, setLoadingNearby] =
-    useState(false);
+  const [
+    loadingNearby,
+    setLoadingNearby,
+  ] = useState(false);
 
-  const [nearbyRequested, setNearbyRequested] =
-    useState(false);
+  const [
+    nearbyRequested,
+    setNearbyRequested,
+  ] = useState(false);
 
   // ============================================================
   // AGENT STATE
@@ -698,7 +669,8 @@ export default function HomeScreen() {
       setShowWelcome(false);
     }, 3000);
 
-    return () => clearTimeout(timer);
+    return () =>
+      clearTimeout(timer);
   }, []);
 
   // ============================================================
@@ -706,21 +678,22 @@ export default function HomeScreen() {
   // ============================================================
 
   useEffect(() => {
-    const loadProperties = async () => {
-      try {
-        const result =
-          await fetchProperties();
+    const loadProperties =
+      async () => {
+        try {
+          const result =
+            await fetchProperties();
 
-        setProperties(result);
-      } catch (error) {
-        console.error(
-          "Failed to load new-to-market properties:",
-          error,
-        );
-      } finally {
-        setLoadingProperties(false);
-      }
-    };
+          setProperties(result);
+        } catch (error) {
+          console.error(
+            "Failed to load new-to-market properties:",
+            error,
+          );
+        } finally {
+          setLoadingProperties(false);
+        }
+      };
 
     void loadProperties();
   }, []);
@@ -736,7 +709,9 @@ export default function HomeScreen() {
           const result =
             await fetchFeaturedProperties();
 
-          setFeaturedProperties(result);
+          setFeaturedProperties(
+            result,
+          );
         } catch (error) {
           console.error(
             "Failed to load featured properties:",
@@ -755,29 +730,31 @@ export default function HomeScreen() {
   // ============================================================
 
   useEffect(() => {
-    const loadOpenHouses = async () => {
-      try {
-        const result =
-          await fetchProperties();
+    const loadOpenHouses =
+      async () => {
+        try {
+          const result =
+            await fetchProperties();
 
-        const openHouses =
-          result.filter(
-            (property) =>
-              property.isOpenHouse === true,
+          const openHouses =
+            result.filter(
+              (property) =>
+                property.isOpenHouse ===
+                true,
+            );
+
+          setOpenHouseProperties(
+            openHouses,
           );
-
-        setOpenHouseProperties(
-          openHouses,
-        );
-      } catch (error) {
-        console.error(
-          "Failed to load open houses:",
-          error,
-        );
-      } finally {
-        setLoadingOpenHouses(false);
-      }
-    };
+        } catch (error) {
+          console.error(
+            "Failed to load open houses:",
+            error,
+          );
+        } finally {
+          setLoadingOpenHouses(false);
+        }
+      };
 
     void loadOpenHouses();
   }, []);
@@ -793,7 +770,9 @@ export default function HomeScreen() {
           const result =
             await fetchMostViewedProperties();
 
-          setMostViewedProperties(result);
+          setMostViewedProperties(
+            result,
+          );
         } catch (error) {
           console.error(
             "Failed to load most viewed properties:",
@@ -812,21 +791,22 @@ export default function HomeScreen() {
   // ============================================================
 
   useEffect(() => {
-    const loadAgents = async () => {
-      try {
-        const result =
-          await fetchAgents();
+    const loadAgents =
+      async () => {
+        try {
+          const result =
+            await fetchAgents();
 
-        setAgents(result);
-      } catch (error) {
-        console.error(
-          "Failed to load home agents:",
-          error,
-        );
-      } finally {
-        setLoadingAgents(false);
-      }
-    };
+          setAgents(result);
+        } catch (error) {
+          console.error(
+            "Failed to load home agents:",
+            error,
+          );
+        } finally {
+          setLoadingAgents(false);
+        }
+      };
 
     void loadAgents();
   }, []);
@@ -845,10 +825,6 @@ export default function HomeScreen() {
         setLoadingNearby(true);
         setNearbyRequested(true);
 
-        // --------------------------------------------------------
-        // CHECK LOCATION SERVICES
-        // --------------------------------------------------------
-
         const servicesEnabled =
           await Location.hasServicesEnabledAsync();
 
@@ -862,10 +838,6 @@ export default function HomeScreen() {
 
           return;
         }
-
-        // --------------------------------------------------------
-        // REQUEST LOCATION PERMISSION
-        // --------------------------------------------------------
 
         const permission =
           await Location.requestForegroundPermissionsAsync();
@@ -884,15 +856,13 @@ export default function HomeScreen() {
           return;
         }
 
-        // --------------------------------------------------------
-        // GET CURRENT LOCATION
-        // --------------------------------------------------------
-
         const currentLocation =
-          await Location.getCurrentPositionAsync({
-            accuracy:
-              Location.Accuracy.Balanced,
-          });
+          await Location.getCurrentPositionAsync(
+            {
+              accuracy:
+                Location.Accuracy.Balanced,
+            },
+          );
 
         const {
           latitude,
@@ -908,10 +878,6 @@ export default function HomeScreen() {
           "Current longitude:",
           longitude,
         );
-
-        // --------------------------------------------------------
-        // FIND NEARBY PROPERTIES
-        // --------------------------------------------------------
 
         const result =
           await fetchNearbyProperties(
@@ -943,14 +909,126 @@ export default function HomeScreen() {
 
   const handlePropertyPress =
     (property: Property) => {
-      router.push({
-        pathname:
-          "/(tabs)/properties/[id]",
-        params: {
-          id: property.id,
-        },
-      });
+      /*
+       * Logged-in users can open the property
+       * immediately.
+       */
+      if (isLoggedIn) {
+        router.push({
+          pathname:
+            "/(tabs)/properties/[id]",
+          params: {
+            id: property.id,
+          },
+        });
+
+        return;
+      }
+
+      /*
+       * Logged-out users must authenticate first.
+       */
+      setPendingProperty(property);
+      setAuthModalVisible(true);
     };
+
+  // ============================================================
+  // AUTH REQUIRED -> LOGIN
+  // ============================================================
+
+  const handleAuthRequiredLogin =
+    () => {
+      setAuthModalVisible(false);
+      setLoginVisible(true);
+    };
+
+  // ============================================================
+  // AUTH REQUIRED -> REGISTER
+  // ============================================================
+
+  const handleAuthRequiredRegister =
+    () => {
+      setAuthModalVisible(false);
+      setRegisterVisible(true);
+    };
+
+  // ============================================================
+  // LOGIN SUCCESS
+  // ============================================================
+
+  const handleLoginSuccess =
+    (
+      _email: string,
+      _response: Record<
+        string,
+        unknown
+      >,
+    ) => {
+      setLoginVisible(false);
+
+      /*
+       * AuthContext has already set isLoggedIn = true.
+       *
+       * Continue to the property the user originally
+       * selected.
+       */
+      if (pendingProperty) {
+        const propertyToOpen =
+          pendingProperty;
+
+        setPendingProperty(null);
+
+        router.push({
+          pathname:
+            "/(tabs)/properties/[id]",
+          params: {
+            id: propertyToOpen.id,
+          },
+        });
+      }
+    };
+
+  // ============================================================
+  // REGISTRATION SUCCESS
+  // ============================================================
+
+  const handleRegistrationComplete =
+    () => {
+      /*
+       * Keep pendingProperty.
+       *
+       * Registration itself does not necessarily log the
+       * user in, so we now allow the user to sign in.
+       */
+      setRegisterVisible(false);
+      setLoginVisible(true);
+    };
+
+  // ============================================================
+  // CLOSE AUTH REQUIRED
+  // ============================================================
+
+  const handleCloseAuthRequired =
+    () => {
+      setAuthModalVisible(false);
+      setPendingProperty(null);
+    };
+
+  // ============================================================
+  // CLOSE LOGIN
+  // ============================================================
+
+  const handleCloseLogin = () => {
+    setLoginVisible(false);
+  };
+
+  // ============================================================
+  // CLOSE REGISTER
+  // ============================================================
+
+  const handleCloseRegister = () => {
+    setRegisterVisible(false);
+  };
 
   // ============================================================
   // AGENT PRESS
@@ -989,11 +1067,11 @@ export default function HomeScreen() {
   if (showWelcome) {
     return (
       <SafeAreaView
-        className={`flex-1 ${
+        className={
           isDark
-            ? "bg-[#0d0d0d]"
-            : "bg-white"
-        }`}
+            ? "flex-1 bg-[#0d0d0d]"
+            : "flex-1 bg-white"
+        }
       >
         <StatusBar
           barStyle={
@@ -1023,22 +1101,22 @@ export default function HomeScreen() {
             </Text>
 
             <Text
-              className={`mt-3 text-center text-3xl font-bold leading-10 ${
+              className={
                 isDark
-                  ? "text-white"
-                  : "text-black"
-              }`}
+                  ? "mt-3 text-center text-3xl font-bold leading-10 text-white"
+                  : "mt-3 text-center text-3xl font-bold leading-10 text-black"
+              }
             >
               Your next property{"\n"}
               starts here.
             </Text>
 
             <Text
-              className={`mt-4 max-w-sm text-center text-base leading-6 ${
+              className={
                 isDark
-                  ? "text-gray-400"
-                  : "text-gray-600"
-              }`}
+                  ? "mt-4 max-w-sm text-center text-base leading-6 text-gray-400"
+                  : "mt-4 max-w-sm text-center text-base leading-6 text-gray-600"
+              }
             >
               Discover homes, commercial properties,
               rentals, and investment opportunities
@@ -1056,11 +1134,11 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView
-      className={`flex-1 ${
+      className={
         isDark
-          ? "bg-[#0d0d0d]"
-          : "bg-white"
-      }`}
+          ? "flex-1 bg-[#0d0d0d]"
+          : "flex-1 bg-gray-50"
+      }
     >
       <StatusBar
         barStyle={
@@ -1071,36 +1149,43 @@ export default function HomeScreen() {
         backgroundColor={
           isDark
             ? "#0d0d0d"
-            : "#ffffff"
+            : "#f9fafb"
         }
       />
-{/* ========================================================
-    HEADER
-    ======================================================== */}
 
-<View
-  className={`items-center justify-center border-b px-5 pb-4 pt-3 ${
-    isDark
-      ? "border-[#222] bg-[#0d0d0d]"
-      : "border-gray-200 bg-white"
-  }`}
->
-  <View className="items-center justify-center">
-    <Text
-      className={`text-center text-2xl font-bold ${
-        isDark
-          ? "text-red-500"
-          : "text-red-600"
-      }`}
-    >
-      Real Estate Africa
-    </Text>
-  </View>
-</View>
+      {/* HEADER */}
 
-      {/* ========================================================
-          CONTENT
-          ======================================================== */}
+      <View
+        className={
+          isDark
+            ? "flex-row items-center border-b border-[#222] bg-[#0d0d0d] px-5 pb-3.5 pt-2.5"
+            : "flex-row items-center border-b border-gray-200 bg-white px-5 pb-3.5 pt-2.5"
+        }
+      >
+        <View>
+          <Text
+            className={
+              isDark
+                ? "text-xl font-bold text-white"
+                : "text-xl font-bold text-black"
+            }
+          >
+            Real Estate Africa
+          </Text>
+
+          <Text
+            className={
+              isDark
+                ? "mt-1 text-sm text-gray-500"
+                : "mt-1 text-sm text-gray-600"
+            }
+          >
+            Find your next property
+          </Text>
+        </View>
+      </View>
+
+      {/* CONTENT */}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -1120,35 +1205,31 @@ export default function HomeScreen() {
           paddingBottom: 40,
         }}
       >
-        {/* ======================================================
-            INTRO
-            ====================================================== */}
+        {/* INTRO */}
 
         <View className="mb-6">
           <Text
-            className={`text-2xl font-bold ${
+            className={
               isDark
-                ? "text-white"
-                : "text-black"
-            }`}
+                ? "text-2xl font-bold text-white"
+                : "text-2xl font-bold text-black"
+            }
           >
             Discover Properties
           </Text>
 
           <Text
-            className={`mt-1 text-sm leading-5 ${
+            className={
               isDark
-                ? "text-gray-500"
-                : "text-gray-600"
-            }`}
+                ? "mt-1 text-sm leading-5 text-gray-500"
+                : "mt-1 text-sm leading-5 text-gray-600"
+            }
           >
             Explore properties available for sale and rent.
           </Text>
         </View>
 
-        {/* ======================================================
-            FEATURED PROPERTIES
-            ====================================================== */}
+        {/* FEATURED */}
 
         <PropertySection
           title="Featured Properties"
@@ -1156,8 +1237,12 @@ export default function HomeScreen() {
             featuredProperties
           }
           loading={loadingFeatured}
-          parentScrollY={parentScrollY}
-          viewportHeight={viewportHeight}
+          parentScrollY={
+            parentScrollY
+          }
+          viewportHeight={
+            viewportHeight
+          }
           onPropertyPress={
             handlePropertyPress
           }
@@ -1166,16 +1251,18 @@ export default function HomeScreen() {
           }
         />
 
-        {/* ======================================================
-            NEW TO MARKET
-            ====================================================== */}
+        {/* NEW TO MARKET */}
 
         <PropertySection
           title="New to Market"
           sectionProperties={properties}
           loading={loadingProperties}
-          parentScrollY={parentScrollY}
-          viewportHeight={viewportHeight}
+          parentScrollY={
+            parentScrollY
+          }
+          viewportHeight={
+            viewportHeight
+          }
           onPropertyPress={
             handlePropertyPress
           }
@@ -1184,9 +1271,7 @@ export default function HomeScreen() {
           }
         />
 
-        {/* ======================================================
-            OPEN HOUSES
-            ====================================================== */}
+        {/* OPEN HOUSES */}
 
         <PropertySection
           title="Open Houses"
@@ -1194,8 +1279,12 @@ export default function HomeScreen() {
             openHouseProperties
           }
           loading={loadingOpenHouses}
-          parentScrollY={parentScrollY}
-          viewportHeight={viewportHeight}
+          parentScrollY={
+            parentScrollY
+          }
+          viewportHeight={
+            viewportHeight
+          }
           onPropertyPress={
             handlePropertyPress
           }
@@ -1204,9 +1293,7 @@ export default function HomeScreen() {
           }
         />
 
-        {/* ======================================================
-            MOST VIEWED
-            ====================================================== */}
+        {/* MOST VIEWED */}
 
         <PropertySection
           title="Most Viewed"
@@ -1214,8 +1301,12 @@ export default function HomeScreen() {
             mostViewedProperties
           }
           loading={loadingMostViewed}
-          parentScrollY={parentScrollY}
-          viewportHeight={viewportHeight}
+          parentScrollY={
+            parentScrollY
+          }
+          viewportHeight={
+            viewportHeight
+          }
           onPropertyPress={
             handlePropertyPress
           }
@@ -1224,20 +1315,24 @@ export default function HomeScreen() {
           }
         />
 
-        {/* ======================================================
-            PROPERTIES IN MY LOCATION
-            ====================================================== */}
+        {/* NEARBY */}
 
         <NearbyPropertySection
           nearbyProperties={
             nearbyProperties
           }
-          loadingNearby={loadingNearby}
+          loadingNearby={
+            loadingNearby
+          }
           nearbyRequested={
             nearbyRequested
           }
-          parentScrollY={parentScrollY}
-          viewportHeight={viewportHeight}
+          parentScrollY={
+            parentScrollY
+          }
+          viewportHeight={
+            viewportHeight
+          }
           onPropertyPress={
             handlePropertyPress
           }
@@ -1251,20 +1346,18 @@ export default function HomeScreen() {
           }
         />
 
-        {/* ======================================================
-            AGENTS
-            ====================================================== */}
+        {/* AGENTS */}
 
         <View className="mt-2">
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
             <Text
-              className={`text-lg font-bold ${
+              className={
                 isDark
-                  ? "text-white"
-                  : "text-black"
-              }`}
+                  ? "text-lg font-bold text-white"
+                  : "text-lg font-bold text-black"
+              }
             >
               Our Agents
             </Text>
@@ -1278,35 +1371,21 @@ export default function HomeScreen() {
               />
 
               <Text
-                className={`mt-3 text-sm ${
+                className={
                   isDark
-                    ? "text-gray-500"
-                    : "text-gray-600"
-                }`}
+                    ? "mt-3 text-sm text-gray-500"
+                    : "mt-3 text-sm text-gray-600"
+                }
               >
                 Loading agents...
               </Text>
             </View>
           ) : agents.length === 0 ? (
             <View
-              className={`items-center rounded-2xl border px-5 py-10 ${
+              className={
                 isDark
-                  ? "border-[#292929] bg-[#171717]"
-                  : "border-gray-200 bg-white"
-              }`}
-              style={
-                isDark
-                  ? undefined
-                  : {
-                      shadowColor: "#000",
-                      shadowOffset: {
-                        width: 0,
-                        height: 2,
-                      },
-                      shadowOpacity: 0.08,
-                      shadowRadius: 5,
-                      elevation: 3,
-                    }
+                  ? "items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10"
+                  : "items-center rounded-2xl border border-gray-200 bg-white px-5 py-10"
               }
             >
               <Ionicons
@@ -1320,21 +1399,21 @@ export default function HomeScreen() {
               />
 
               <Text
-                className={`mt-4 text-base font-semibold ${
+                className={
                   isDark
-                    ? "text-gray-400"
-                    : "text-gray-700"
-                }`}
+                    ? "mt-4 text-base font-semibold text-gray-400"
+                    : "mt-4 text-base font-semibold text-gray-700"
+                }
               >
                 No agents available
               </Text>
 
               <Text
-                className={`mt-1 text-center text-sm ${
+                className={
                   isDark
-                    ? "text-gray-600"
-                    : "text-gray-500"
-                }`}
+                    ? "mt-1 text-center text-sm text-gray-600"
+                    : "mt-1 text-center text-sm text-gray-500"
+                }
               >
                 Please check again later.
               </Text>
@@ -1342,7 +1421,7 @@ export default function HomeScreen() {
           ) : (
             <View>
               {agents
-                .slice(0, 1)
+                .slice(0, 2)
                 .map((agent) => (
                   <AgentCard
                     key={agent.id}
@@ -1380,20 +1459,18 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* ======================================================
-            QUICK ACTIONS
-            ====================================================== */}
+        {/* QUICK ACTIONS */}
 
         <View className="mt-10">
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
             <Text
-              className={`text-lg font-bold ${
+              className={
                 isDark
-                  ? "text-white"
-                  : "text-black"
-              }`}
+                  ? "text-lg font-bold text-white"
+                  : "text-lg font-bold text-black"
+              }
             >
               Quick Actions
             </Text>
@@ -1404,29 +1481,15 @@ export default function HomeScreen() {
           <Pressable
             onPress={() =>
               router.push(
-                "/properties/list-property",
+                "/appcomponents/listProperty/list-property",
               )
             }
             accessibilityRole="button"
             accessibilityLabel="List your property"
-            className={`mb-3 w-full flex-row items-center rounded-2xl border px-4 py-4 ${
+            className={
               isDark
-                ? "border-[#292929] bg-[#171717] active:bg-[#222]"
-                : "border-gray-200 bg-white active:bg-gray-50"
-            }`}
-            style={
-              isDark
-                ? undefined
-                : {
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 0,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 5,
-                    elevation: 3,
-                  }
+                ? "mb-3 w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"
+                : "mb-3 w-full flex-row items-center rounded-2xl border border-gray-200 bg-white px-4 py-4 active:bg-gray-100"
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
@@ -1439,21 +1502,21 @@ export default function HomeScreen() {
 
             <View className="flex-1">
               <Text
-                className={`text-base font-bold ${
+                className={
                   isDark
-                    ? "text-white"
-                    : "text-black"
-                }`}
+                    ? "text-base font-bold text-white"
+                    : "text-base font-bold text-black"
+                }
               >
-                List Property 
+                List Property
               </Text>
 
               <Text
-                className={`mt-1 text-sm ${
+                className={
                   isDark
-                    ? "text-gray-500"
-                    : "text-gray-600"
-                }`}
+                    ? "mt-1 text-sm text-gray-500"
+                    : "mt-1 text-sm text-gray-600"
+                }
               >
                 List your property for sale or rent
               </Text>
@@ -1476,24 +1539,10 @@ export default function HomeScreen() {
             }
             accessibilityRole="button"
             accessibilityLabel="Special property request"
-            className={`mb-3 w-full flex-row items-center rounded-2xl border px-4 py-4 ${
+            className={
               isDark
-                ? "border-[#292929] bg-[#171717] active:bg-[#222]"
-                : "border-gray-200 bg-white active:bg-gray-50"
-            }`}
-            style={
-              isDark
-                ? undefined
-                : {
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 0,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 5,
-                    elevation: 3,
-                  }
+                ? "mb-3 w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"
+                : "mb-3 w-full flex-row items-center rounded-2xl border border-gray-200 bg-white px-4 py-4 active:bg-gray-100"
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
@@ -1506,21 +1555,21 @@ export default function HomeScreen() {
 
             <View className="flex-1">
               <Text
-                className={`text-base font-bold ${
+                className={
                   isDark
-                    ? "text-white"
-                    : "text-black"
-                }`}
+                    ? "text-base font-bold text-white"
+                    : "text-base font-bold text-black"
+                }
               >
                 Special Property Request
               </Text>
 
               <Text
-                className={`mt-1 text-sm ${
+                className={
                   isDark
-                    ? "text-gray-500"
-                    : "text-gray-600"
-                }`}
+                    ? "mt-1 text-sm text-gray-500"
+                    : "mt-1 text-sm text-gray-600"
+                }
               >
                 Tell us what property you are looking for
               </Text>
@@ -1541,24 +1590,10 @@ export default function HomeScreen() {
             }
             accessibilityRole="button"
             accessibilityLabel="Open blogs"
-            className={`w-full flex-row items-center rounded-2xl border px-4 py-4 ${
+            className={
               isDark
-                ? "border-[#292929] bg-[#171717] active:bg-[#222]"
-                : "border-gray-200 bg-white active:bg-gray-50"
-            }`}
-            style={
-              isDark
-                ? undefined
-                : {
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 0,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 5,
-                    elevation: 3,
-                  }
+                ? "w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"
+                : "w-full flex-row items-center rounded-2xl border border-gray-200 bg-white px-4 py-4 active:bg-gray-100"
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
@@ -1571,21 +1606,21 @@ export default function HomeScreen() {
 
             <View className="flex-1">
               <Text
-                className={`text-base font-bold ${
+                className={
                   isDark
-                    ? "text-white"
-                    : "text-black"
-                }`}
+                    ? "text-base font-bold text-white"
+                    : "text-base font-bold text-black"
+                }
               >
                 Subscribe to our newsletter
               </Text>
 
               <Text
-                className={`mt-1 text-sm ${
+                className={
                   isDark
-                    ? "text-gray-500"
-                    : "text-gray-600"
-                }`}
+                    ? "mt-1 text-sm text-gray-500"
+                    : "mt-1 text-sm text-gray-600"
+                }
               >
                 Get the latest property news and updates
               </Text>
@@ -1599,6 +1634,60 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {/* ========================================================
+          AUTH REQUIRED MODAL
+          ======================================================== */}
+
+      <AuthRequiredModal
+        visible={authModalVisible}
+        onClose={
+          handleCloseAuthRequired
+        }
+        onLogin={
+          handleAuthRequiredLogin
+        }
+        onRegister={
+          handleAuthRequiredRegister
+        }
+      />
+
+      {/* ========================================================
+          LOGIN MODAL
+          ======================================================== */}
+
+      <LoginModal
+        visible={loginVisible}
+        onClose={
+          handleCloseLogin
+        }
+        onLogin={
+          handleLoginSuccess
+        }
+        onRegister={() => {
+          setLoginVisible(false);
+          setRegisterVisible(true);
+        }}
+      />
+
+      {/* ========================================================
+          REGISTER MODAL
+          ======================================================== */}
+
+      <RegisterModal
+        visible={registerVisible}
+        onClose={
+          handleCloseRegister
+        }
+        onRegister={
+          handleRegistrationComplete
+        }
+        onLogin={() => {
+          setRegisterVisible(false);
+          setLoginVisible(true);
+        }}
+      />
     </SafeAreaView>
   );
 }
+

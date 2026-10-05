@@ -1,7 +1,14 @@
 // app/(tabs)/more.tsx
 
 import React from "react";
-import { Pressable, ScrollView, StatusBar, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StatusBar,
+  Text,
+  View,
+  useColorScheme,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
@@ -61,15 +68,22 @@ const MENU_ITEMS: MenuItem[] = [
 export default function MoreScreen() {
   const router = useRouter();
 
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
   const handlePress = (item: MenuItem) => {
     router.push(item.route as never);
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+    <SafeAreaView
+      className={`flex-1 ${
+        isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+      }`}
+    >
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#0d0d0d" : "#f9fafb"}
       />
 
       <ScrollView
@@ -80,11 +94,19 @@ export default function MoreScreen() {
         {/* Header */}
 
         <View className="mb-6 pt-4">
-          <Text className="text-3xl font-bold text-white">
+          <Text
+            className={`text-3xl font-bold ${
+              isDark ? "text-white" : "text-black"
+            }`}
+          >
             More
           </Text>
 
-          <Text className="mt-2 text-[15px] leading-6 text-gray-400">
+          <Text
+            className={`mt-2 text-[15px] leading-6 ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
             Explore our resources, services and information.
           </Text>
         </View>
@@ -96,7 +118,11 @@ export default function MoreScreen() {
             <Pressable
               key={item.title}
               onPress={() => handlePress(item)}
-              className="mb-4 flex-row items-center rounded-2xl border border-[#383838] bg-[#202020] p-5 active:bg-[#292929]"
+              className={`mb-4 flex-row items-center rounded-2xl border p-5 ${
+                isDark
+                  ? "border-[#383838] bg-[#202020] active:bg-[#292929]"
+                  : "border-gray-200 bg-white active:bg-gray-100"
+              }`}
             >
               {/* Icon */}
 
@@ -111,13 +137,19 @@ export default function MoreScreen() {
               {/* Text */}
 
               <View className="ml-4 flex-1">
-                <Text className="text-[18px] font-bold text-white">
+                <Text
+                  className={`text-[18px] font-bold ${
+                    isDark ? "text-white" : "text-black"
+                  }`}
+                >
                   {item.title}
                 </Text>
 
                 <Text
                   numberOfLines={2}
-                  className="mt-1 text-[13px] leading-5 text-gray-400"
+                  className={`mt-1 text-[13px] leading-5 ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
                 >
                   {item.description}
                 </Text>
@@ -129,7 +161,7 @@ export default function MoreScreen() {
                 <Ionicons
                   name="chevron-forward"
                   size={22}
-                  color="#888888"
+                  color={isDark ? "#888888" : "#666666"}
                 />
               </View>
             </Pressable>

@@ -52,7 +52,7 @@ const DEFAULT_MENU_ITEMS: SideMenuItem[] = [
   {
     label: "Registered Estate Agents",
     icon: "people-outline",
-    route: "/estate-agents",
+    route: "/(tabs)/agents",
   },
   {
     label: "List Properties",
@@ -67,7 +67,7 @@ const DEFAULT_MENU_ITEMS: SideMenuItem[] = [
   {
     label: "Blogs",
     icon: "newspaper-outline",
-    route: "/blogs",
+    route: "others/blogs/blog",
   },
 ];
 

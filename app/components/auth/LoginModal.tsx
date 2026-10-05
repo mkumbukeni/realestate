@@ -1,9 +1,5 @@
 
-import Ionicons from "@expo/vector-icons/Ionicons";
-import React, {
-  useEffect,
-  useState,
-} from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,203 +10,106 @@ import {
   Text,
   TextInput,
   View,
+  useColorScheme,
 } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
-import { loginUser } from "@/app/services/auth/authApi";
+import { useAuth } from "./AuthContext";
 
 interface LoginModalProps {
   visible: boolean;
-  onClose: () => void;
-
-  /**
-   * Called after a successful login.
-   */
   onLogin?: (
     email: string,
     response: Record<string, unknown>,
   ) => void;
-
-  /**
-   * Called when the user presses Register.
-   */
   onRegister?: () => void;
-
-  /**
-   * Called when the user presses Forgot Password.
-   */
   onForgotPassword?: () => void;
+  onClose: () => void;
 }
 
 export default function LoginModal({
   visible,
-  onClose,
   onLogin,
   onRegister,
   onForgotPassword,
+  onClose,
 }: LoginModalProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
-  const [password, setPassword] =
-    useState("");
+  const [password, setPassword] = useState("");
 
-  const [showPassword, setShowPassword] =
-    useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [loading, setLoading] =
-    useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [loginSuccessful, setLoginSuccessful] = useState(false);
 
-  const [error, setError] =
-    useState("");
-
-  const [successMessage, setSuccessMessage] =
-    useState("");
-
-  const [loginSuccessful, setLoginSuccessful] =
-    useState(false);
-
-  useEffect(() => {
-    if (!visible) {
-      setEmail("");
-      setPassword("");
-      setShowPassword(false);
-      setLoading(false);
-      setError("");
-      setSuccessMessage("");
-      setLoginSuccessful(false);
-    }
-  }, [visible]);
-
-  const isEmailValid = (
-    value: string,
-  ): boolean => {
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    return emailRegex.test(
-      value.trim(),
-    );
-  };
-
-  const loginFormValid =
-    email.trim().length > 0 &&
-    isEmailValid(email) &&
-    password.length > 0;
-
-  const clearMessages = () => {
+  const resetMessages = () => {
     setError("");
     setSuccessMessage("");
-  };
-
-  const handleEmailChange = (
-    value: string,
-  ) => {
-    setEmail(value);
-    clearMessages();
-  };
-
-  const handlePasswordChange = (
-    value: string,
-  ) => {
-    setPassword(value);
-    clearMessages();
+    setLoginSuccessful(false);
   };
 
   const handleLogin = async () => {
-    clearMessages();
+    resetMessages();
 
-    const trimmedEmail =
-      email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedEmail) {
-      setError(
-        "Please enter your email address.",
-      );
-      return;
-    }
-
-    if (!isEmailValid(trimmedEmail)) {
-      setError(
-        "Please enter a valid email address.",
-      );
+      setError("Please enter your email address.");
       return;
     }
 
     if (!password) {
-      setError(
-        "Please enter your password.",
-      );
+      setError("Please enter your password.");
       return;
     }
 
+    setLoading(true);
+
     try {
-      setLoading(true);
+      const result = await login(trimmedEmail, password);
 
-      const response =
-        await loginUser({
-          email: trimmedEmail,
-          password,
-        });
-
-      console.log(
-        "Login successful:",
-        response,
-      );
+      if (!result.success) {
+        setLoginSuccessful(false);
+        setError(result.message || "Unable to sign in. Please try again.");
+        return;
+      }
 
       setLoginSuccessful(true);
-
       setSuccessMessage(
-        "You have logged in successfully.",
+        result.message || "You have logged in successfully.",
       );
 
-      onLogin?.(
-        trimmedEmail,
-        response as Record<
-          string,
-          unknown
-        >,
-      );
-    } catch (err) {
-      console.error(
-        "Login failed:",
-        err,
-      );
+      /*
+       * AuthContext has now:
+       * 1. Saved the JWT securely.
+       * 2. Updated isLoggedIn globally.
+       * 3. Stored the authenticated user.
+       *
+       * The optional callback allows the parent screen to perform
+       * additional actions after successful authentication.
+       */
+      onLogin?.(trimmedEmail, {
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      console.error("Login modal error:", error);
 
       setLoginSuccessful(false);
-
       setError(
-        err instanceof Error
-          ? err.message
-          : "Login failed. Please check your email and password.",
+        error instanceof Error
+          ? error.message
+          : "Unable to sign in. Please try again.",
       );
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleRegister = () => {
-    if (loading) {
-      return;
-    }
-
-    clearMessages();
-
-    onClose();
-
-    if (onRegister) {
-      setTimeout(() => {
-        onRegister();
-      }, 250);
-    }
-  };
-
-  const handleForgotPassword = () => {
-    if (loading) {
-      return;
-    }
-
-    clearMessages();
-
-    if (onForgotPassword) {
-      onForgotPassword();
     }
   };
 
@@ -219,371 +118,321 @@ export default function LoginModal({
       return;
     }
 
+    resetMessages();
+    setEmail("");
+    setPassword("");
+    setShowPassword(false);
+
     onClose();
+  };
+
+  const handleRegister = () => {
+    if (loading) {
+      return;
+    }
+
+    resetMessages();
+    onRegister?.();
+  };
+
+  const handleForgotPassword = () => {
+    if (loading) {
+      return;
+    }
+
+    resetMessages();
+    onForgotPassword?.();
   };
 
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
-      onRequestClose={
-        handleClose
-      }
+      animationType="fade"
+      onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        className="flex-1 justify-end"
-        behavior={
-          Platform.OS === "ios"
-            ? "padding"
-            : "height"
-        }
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <Pressable
-          className="absolute inset-0 bg-black/70"
-          onPress={handleClose}
-        />
-
-        <View className="max-h-[92%] w-full rounded-t-3xl border-t border-[#292929] bg-[#111111]">
-          {/* Drag indicator */}
-          <View className="items-center pb-2 pt-3">
-            <View className="h-1.5 w-12 rounded-full bg-[#3a3a3a]" />
-          </View>
-
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode={
-              Platform.OS === "ios"
-                ? "interactive"
-                : "on-drag"
-            }
-            showsVerticalScrollIndicator={
-              false
-            }
-            contentContainerStyle={{
-              paddingBottom: 30,
-            }}
+        <View
+          className={`flex-1 justify-center px-5 ${
+            isDark ? "bg-black/70" : "bg-black/50"
+          }`}
+        >
+          <View
+            className={`max-h-[90%] overflow-hidden rounded-2xl border ${
+              isDark
+                ? "border-[#2a2a2a] bg-[#111111]"
+                : "border-gray-200 bg-white"
+            }`}
           >
-            <View className="px-6 pb-2 pt-3">
-              {/* Header */}
-              <View className="mb-7 flex-row items-center justify-between">
-                <View className="flex-1">
-                  <Text className="text-2xl font-bold text-white">
-                    Welcome Back
-                  </Text>
-
-                  <Text className="mt-1 text-sm text-gray-400">
-                    Sign in to your account.
-                  </Text>
-                </View>
-
-                <Pressable
-                  onPress={handleClose}
-                  disabled={loading}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close login"
-                  className="ml-4 h-10 w-10 items-center justify-center rounded-full bg-[#222222]"
-                  style={({
-                    pressed,
-                  }) => ({
-                    opacity: loading
-                      ? 0.4
-                      : pressed
-                        ? 0.7
-                        : 1,
-                  })}
+            {/* Header */}
+            <View
+              className={`flex-row items-center justify-between border-b px-5 py-4 ${
+                isDark ? "border-[#2a2a2a]" : "border-gray-200"
+              }`}
+            >
+              <View className="flex-1">
+                <Text
+                  className={`text-xl font-bold ${
+                    isDark ? "text-white" : "text-gray-900"
+                  }`}
                 >
-                  <Ionicons
-                    name="close"
-                    size={22}
-                    color="#ffffff"
-                  />
-                </Pressable>
-              </View>
-
-              {/* Login Icon */}
-              <View className="mb-7 items-center">
-                <View className="h-20 w-20 items-center justify-center rounded-full bg-red-950/50">
-                  <Ionicons
-                    name="person-outline"
-                    size={36}
-                    color="#ef4444"
-                  />
-                </View>
-
-                <Text className="mt-4 text-center text-xl font-bold text-white">
-                  Sign In
+                  Welcome Back
                 </Text>
 
-                <Text className="mt-2 text-center text-sm leading-5 text-neutral-400">
-                  Enter your email and password
-                  to continue.
+                <Text
+                  className={`mt-1 text-sm ${
+                    isDark ? "text-gray-400" : "text-gray-600"
+                  }`}
+                >
+                  Sign in to continue
                 </Text>
               </View>
 
-              {/* Error */}
-              {error ? (
-                <View className="mb-5 flex-row items-center rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3">
-                  <Ionicons
-                    name="alert-circle-outline"
-                    size={20}
-                    color="#ef4444"
-                  />
+              <Pressable
+                onPress={handleClose}
+                disabled={loading}
+                className={`h-9 w-9 items-center justify-center rounded-full ${
+                  isDark ? "bg-[#1d1d1d]" : "bg-gray-100"
+                }`}
+              >
+                <Ionicons
+                  name="close"
+                  size={22}
+                  color={isDark ? "#d1d5db" : "#4b5563"}
+                />
+              </Pressable>
+            </View>
 
-                  <Text className="ml-2 flex-1 text-sm text-red-400">
-                    {error}
-                  </Text>
-                </View>
-              ) : null}
-
-              {/* Success */}
-              {successMessage ? (
-                <View className="mb-5 flex-row items-center rounded-xl border border-green-900/60 bg-green-950/30 px-4 py-3">
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={20}
-                    color="#22c55e"
-                  />
-
-                  <Text className="ml-2 flex-1 text-sm text-green-400">
-                    {successMessage}
-                  </Text>
-                </View>
-              ) : null}
-
-              {!loginSuccessful ? (
-                <>
-                  {/* Email */}
-                  <View className="mb-5">
-                    <Text className="mb-2 text-sm font-semibold text-gray-300">
-                      Email Address
-                    </Text>
-
-                    <View className="flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingBottom: 24,
+              }}
+            >
+              <View className="px-5 pt-5">
+                {/* Success message */}
+                {loginSuccessful && successMessage ? (
+                  <View
+                    className={`mb-4 rounded-xl border px-4 py-3 ${
+                      isDark
+                        ? "border-green-900 bg-green-950/40"
+                        : "border-green-200 bg-green-50"
+                    }`}
+                  >
+                    <View className="flex-row items-start">
                       <Ionicons
-                        name="mail-outline"
+                        name="checkmark-circle"
                         size={20}
-                        color="#9ca3af"
+                        color="#22c55e"
                       />
 
-                      <TextInput
-                        value={email}
-                        onChangeText={
-                          handleEmailChange
-                        }
-                        placeholder="Enter your email"
-                        placeholderTextColor="#6b7280"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        editable={!loading}
-                        returnKeyType="next"
-                        className="ml-3 flex-1 py-4 text-[15px] text-white"
-                      />
-                    </View>
-                  </View>
-
-                  {/* Password */}
-                  <View className="mb-3">
-                    <Text className="mb-2 text-sm font-semibold text-gray-300">
-                      Password
-                    </Text>
-
-                    <View className="flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
-                      <Ionicons
-                        name="lock-closed-outline"
-                        size={20}
-                        color="#9ca3af"
-                      />
-
-                      <TextInput
-                        value={password}
-                        onChangeText={
-                          handlePasswordChange
-                        }
-                        placeholder="Enter your password"
-                        placeholderTextColor="#6b7280"
-                        secureTextEntry={
-                          !showPassword
-                        }
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        editable={!loading}
-                        returnKeyType="done"
-                        onSubmitEditing={
-                          handleLogin
-                        }
-                        className="ml-3 flex-1 py-4 text-[15px] text-white"
-                      />
-
-                      <Pressable
-                        onPress={() =>
-                          setShowPassword(
-                            (current) =>
-                              !current,
-                          )
-                        }
-                        disabled={loading}
-                        className="ml-2 h-10 w-10 items-center justify-center"
-                        accessibilityRole="button"
-                        accessibilityLabel={
-                          showPassword
-                            ? "Hide password"
-                            : "Show password"
-                        }
+                      <Text
+                        className={`ml-2 flex-1 text-sm ${
+                          isDark ? "text-green-400" : "text-green-700"
+                        }`}
                       >
-                        <Ionicons
-                          name={
-                            showPassword
-                              ? "eye-off-outline"
-                              : "eye-outline"
-                          }
-                          size={21}
-                          color="#9ca3af"
-                        />
-                      </Pressable>
+                        {successMessage}
+                      </Text>
                     </View>
                   </View>
+                ) : null}
 
-                  {/* Forgot Password */}
-                  <View className="mb-5 items-end">
-                    <Pressable
-                      onPress={
-                        handleForgotPassword
-                      }
-                      disabled={loading}
-                      style={({
-                        pressed,
-                      }) => ({
-                        opacity: pressed
-                          ? 0.7
-                          : 1,
-                      })}
-                    >
-                      <Text className="text-sm font-semibold text-red-500">
-                        Forgot Password?
+                {/* Error message */}
+                {error ? (
+                  <View
+                    className={`mb-4 rounded-xl border px-4 py-3 ${
+                      isDark
+                        ? "border-red-900 bg-red-950/40"
+                        : "border-red-200 bg-red-50"
+                    }`}
+                  >
+                    <View className="flex-row items-start">
+                      <Ionicons
+                        name="alert-circle"
+                        size={20}
+                        color="#ef4444"
+                      />
+
+                      <Text
+                        className={`ml-2 flex-1 text-sm ${
+                          isDark ? "text-red-400" : "text-red-600"
+                        }`}
+                      >
+                        {error}
                       </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                {/* Email */}
+                <View className="mb-4">
+                  <Text
+                    className={`mb-2 text-sm font-medium ${
+                      isDark ? "text-gray-200" : "text-gray-800"
+                    }`}
+                  >
+                    Email Address
+                  </Text>
+
+                  <View
+                    className={`flex-row items-center rounded-xl border px-4 ${
+                      isDark
+                        ? "border-[#303030] bg-[#1b1b1b]"
+                        : "border-gray-300 bg-gray-50"
+                    }`}
+                  >
+                    <Ionicons
+                      name="mail-outline"
+                      size={20}
+                      color={isDark ? "#9ca3af" : "#6b7280"}
+                    />
+
+                    <TextInput
+                      value={email}
+                      onChangeText={(value) => {
+                        setEmail(value);
+                        if (error) setError("");
+                      }}
+                      placeholder="Enter your email"
+                      placeholderTextColor={
+                        isDark ? "#6b7280" : "#9ca3af"
+                      }
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      editable={!loading}
+                      className={`ml-3 flex-1 py-3.5 text-base ${
+                        isDark ? "text-white" : "text-gray-900"
+                      }`}
+                    />
+                  </View>
+                </View>
+
+                {/* Password */}
+                <View className="mb-3">
+                  <Text
+                    className={`mb-2 text-sm font-medium ${
+                      isDark ? "text-gray-200" : "text-gray-800"
+                    }`}
+                  >
+                    Password
+                  </Text>
+
+                  <View
+                    className={`flex-row items-center rounded-xl border px-4 ${
+                      isDark
+                        ? "border-[#303030] bg-[#1b1b1b]"
+                        : "border-gray-300 bg-gray-50"
+                    }`}
+                  >
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={20}
+                      color={isDark ? "#9ca3af" : "#6b7280"}
+                    />
+
+                    <TextInput
+                      value={password}
+                      onChangeText={(value) => {
+                        setPassword(value);
+                        if (error) setError("");
+                      }}
+                      placeholder="Enter your password"
+                      placeholderTextColor={
+                        isDark ? "#6b7280" : "#9ca3af"
+                      }
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      editable={!loading}
+                      className={`ml-3 flex-1 py-3.5 text-base ${
+                        isDark ? "text-white" : "text-gray-900"
+                      }`}
+                    />
+
+                    <Pressable
+                      onPress={() => setShowPassword((previous) => !previous)}
+                      disabled={loading}
+                      className="ml-2 p-1"
+                    >
+                      <Ionicons
+                        name={
+                          showPassword
+                            ? "eye-off-outline"
+                            : "eye-outline"
+                        }
+                        size={21}
+                        color={isDark ? "#9ca3af" : "#6b7280"}
+                      />
                     </Pressable>
                   </View>
+                </View>
 
-                  {/* Login Button */}
+                {/* Forgot password */}
+                <View className="mb-5 items-end">
                   <Pressable
-                    onPress={handleLogin}
-                    disabled={
-                      !loginFormValid ||
-                      loading
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel="Login"
-                    className={`h-13 items-center justify-center rounded-xl bg-red-600 ${
-                      !loginFormValid ||
-                      loading
-                        ? "opacity-50"
-                        : ""
-                    }`}
-                    style={({
-                      pressed,
-                    }) => ({
-                      opacity:
-                        !loginFormValid ||
-                        loading
-                          ? 0.5
-                          : pressed
-                            ? 0.7
-                            : 1,
-                    })}
+                    onPress={handleForgotPassword}
+                    disabled={loading}
                   >
-                    {loading ? (
+                    <Text className="text-sm font-semibold text-red-500">
+                      Forgot Password?
+                    </Text>
+                  </Pressable>
+                </View>
+
+                {/* Login button */}
+                <Pressable
+                  onPress={handleLogin}
+                  disabled={loading}
+                  className={`items-center justify-center rounded-xl py-3.5 ${
+                    loading ? "bg-red-800" : "bg-red-600"
+                  }`}
+                >
+                  {loading ? (
+                    <View className="flex-row items-center">
                       <ActivityIndicator
                         size="small"
                         color="#ffffff"
                       />
-                    ) : (
-                      <View className="flex-row items-center">
-                        <Ionicons
-                          name="log-in-outline"
-                          size={20}
-                          color="#ffffff"
-                        />
 
-                        <Text className="ml-2 text-[15px] font-bold text-white">
-                          Sign In
-                        </Text>
-                      </View>
-                    )}
-                  </Pressable>
-                </>
-              ) : (
-                /* Successful login */
-                <View className="items-center rounded-2xl border border-green-900/60 bg-green-950/20 p-6">
-                  <View className="h-20 w-20 items-center justify-center rounded-full bg-green-950/50">
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={50}
-                      color="#22c55e"
-                    />
-                  </View>
-
-                  <Text className="mt-5 text-center text-xl font-bold text-white">
-                    Login Successful
-                  </Text>
-
-                  <Text className="mt-2 text-center text-sm leading-5 text-neutral-400">
-                    Welcome back. You are now
-                    signed in.
-                  </Text>
-
-                  <Text className="mt-2 text-center text-sm font-semibold text-green-400">
-                    {email.trim()}
-                  </Text>
-
-                  <Pressable
-                    onPress={onClose}
-                    className="mt-5 w-full h-13 items-center justify-center rounded-xl bg-red-600"
-                    style={({
-                      pressed,
-                    }) => ({
-                      opacity: pressed
-                        ? 0.7
-                        : 1,
-                    })}
-                  >
-                    <Text className="text-[15px] font-bold text-white">
-                      Continue
+                      <Text className="ml-2 text-base font-bold text-white">
+                        Signing In...
+                      </Text>
+                    </View>
+                  ) : (
+                    <Text className="text-base font-bold text-white">
+                      Sign In
                     </Text>
-                  </Pressable>
-                </View>
-              )}
+                  )}
+                </Pressable>
 
-              {/* Register */}
-              {!loginSuccessful ? (
-                <View className="mt-7 flex-row items-center justify-center">
-                  <Text className="text-sm text-gray-400">
+                {/* Register */}
+                <View className="mt-5 flex-row items-center justify-center">
+                  <Text
+                    className={`text-sm ${
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    }`}
+                  >
                     Don't have an account?
                   </Text>
 
                   <Pressable
-                    onPress={
-                      handleRegister
-                    }
+                    onPress={handleRegister}
                     disabled={loading}
-                    className="ml-1.5"
-                    style={({
-                      pressed,
-                    }) => ({
-                      opacity: pressed
-                        ? 0.7
-                        : 1,
-                    })}
+                    className="ml-1"
                   >
                     <Text className="text-sm font-bold text-red-500">
                       Register
                     </Text>
                   </Pressable>
                 </View>
-              ) : null}
-            </View>
-          </ScrollView>
+              </View>
+            </ScrollView>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>

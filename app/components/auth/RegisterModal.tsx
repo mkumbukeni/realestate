@@ -1,4 +1,8 @@
-
+import {
+  generateOtp,
+  registerUser,
+  verifyOtp,
+} from "@/app/components/auth/authApi";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React, { useEffect, useState } from "react";
 import {
@@ -11,17 +15,11 @@ import {
   Text,
   TextInput,
   View,
+  useColorScheme,
 } from "react-native";
-
-import {
-  generateOtp,
-  registerUser,
-  verifyOtp,
-} from "@/app/services/auth/authApi";
 
 interface RegisterModalProps {
   visible: boolean;
-  onClose: () => void;
 
   /**
    * Called after the backend registration succeeds.
@@ -39,6 +37,8 @@ interface RegisterModalProps {
   ) => void;
 
   onSignIn?: () => void;
+
+  onClose: () => void;
 }
 
 /**
@@ -49,11 +49,7 @@ interface RegisterModalProps {
  * Stage 3: Registration Details
  * Stage 4: Registration Success
  */
-type RegistrationStep =
-  | "generateOtp"
-  | "verifyOtp"
-  | "details"
-  | "success";
+type RegistrationStep = "generateOtp" | "verifyOtp" | "details" | "success";
 
 export default function RegisterModal({
   visible,
@@ -61,6 +57,9 @@ export default function RegisterModal({
   onRegister,
   onSignIn,
 }: RegisterModalProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
   // ----------------------------------------------------------
   // REGISTRATION DETAILS
   // ----------------------------------------------------------
@@ -75,14 +74,9 @@ export default function RegisterModal({
   // ----------------------------------------------------------
 
   const [otp, setOtp] = useState("");
-
-  const [step, setStep] =
-    useState<RegistrationStep>("generateOtp");
-
+  const [step, setStep] = useState<RegistrationStep>("generateOtp");
   const [otpSent, setOtpSent] = useState(false);
-
-  const [emailVerified, setEmailVerified] =
-    useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
 
   /**
    * Exact email that was successfully verified.
@@ -90,22 +84,16 @@ export default function RegisterModal({
    * Registration will only be allowed if the email
    * entered during registration matches this email.
    */
-  const [verifiedEmail, setVerifiedEmail] =
-    useState("");
+  const [verifiedEmail, setVerifiedEmail] = useState("");
 
   // ----------------------------------------------------------
   // UI STATE
   // ----------------------------------------------------------
 
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState("");
-
-  const [successMessage, setSuccessMessage] =
-    useState("");
-
-  const [resendLoading, setResendLoading] =
-    useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
 
   // ----------------------------------------------------------
   // RESET
@@ -117,7 +105,6 @@ export default function RegisterModal({
       setEmail("");
       setPhoneNumber("");
       setAddress("");
-
       setOtp("");
 
       /**
@@ -129,10 +116,8 @@ export default function RegisterModal({
       setOtpSent(false);
       setEmailVerified(false);
       setVerifiedEmail("");
-
       setLoading(false);
       setResendLoading(false);
-
       setError("");
       setSuccessMessage("");
     }
@@ -143,18 +128,13 @@ export default function RegisterModal({
   // ----------------------------------------------------------
 
   const isEmailValid = (value: string): boolean => {
-    const emailRegex =
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(value.trim());
   };
 
-  const emailFormValid =
-    email.trim().length > 0 &&
-    isEmailValid(email);
+  const emailFormValid = email.trim().length > 0 && isEmailValid(email);
 
-  const otpFormValid =
-    otp.trim().length > 0;
+  const otpFormValid = otp.trim().length > 0;
 
   const detailsFormValid =
     fullName.trim().length > 0 &&
@@ -183,10 +163,8 @@ export default function RegisterModal({
      */
     setEmailVerified(false);
     setVerifiedEmail("");
-
     setOtpSent(false);
     setOtp("");
-
     clearMessages();
   };
 
@@ -216,10 +194,8 @@ export default function RegisterModal({
       await generateOtp(trimmedEmail);
 
       setEmail(trimmedEmail);
-
       setOtp("");
       setOtpSent(true);
-
       setEmailVerified(false);
       setVerifiedEmail("");
 
@@ -233,10 +209,7 @@ export default function RegisterModal({
         `A verification code has been sent to ${trimmedEmail}.`,
       );
     } catch (err) {
-      console.error(
-        "Failed to generate OTP:",
-        err,
-      );
+      console.error("Failed to generate OTP:", err);
 
       setError(
         err instanceof Error
@@ -266,19 +239,14 @@ export default function RegisterModal({
     }
 
     if (!trimmedOtp) {
-      setError(
-        "Please enter the verification code.",
-      );
+      setError("Please enter the verification code.");
       return;
     }
 
     try {
       setLoading(true);
 
-      await verifyOtp(
-        trimmedEmail,
-        trimmedOtp,
-      );
+      await verifyOtp(trimmedEmail, trimmedOtp);
 
       /**
        * OTP verification succeeded.
@@ -286,9 +254,7 @@ export default function RegisterModal({
       setEmailVerified(true);
       setVerifiedEmail(trimmedEmail);
 
-      setSuccessMessage(
-        "Your email has been verified successfully.",
-      );
+      setSuccessMessage("Your email has been verified successfully.");
 
       /**
        * Move directly to the registration details.
@@ -298,10 +264,7 @@ export default function RegisterModal({
         setSuccessMessage("");
       }, 500);
     } catch (err) {
-      console.error(
-        "Failed to verify OTP:",
-        err,
-      );
+      console.error("Failed to verify OTP:", err);
 
       setEmailVerified(false);
       setVerifiedEmail("");
@@ -350,17 +313,13 @@ export default function RegisterModal({
       setEmailVerified(false);
       setVerifiedEmail("");
       setOtpSent(true);
-
       setStep("verifyOtp");
 
       setSuccessMessage(
         `A new verification code has been sent to ${trimmedEmail}.`,
       );
     } catch (err) {
-      console.error(
-        "Failed to resend OTP:",
-        err,
-      );
+      console.error("Failed to resend OTP:", err);
 
       setError(
         err instanceof Error
@@ -381,7 +340,6 @@ export default function RegisterModal({
 
     setEmail("");
     setOtp("");
-
     setOtpSent(false);
     setEmailVerified(false);
     setVerifiedEmail("");
@@ -406,12 +364,8 @@ export default function RegisterModal({
      * Registration is only allowed after OTP verification.
      */
     if (!emailVerified) {
-      setError(
-        "Please verify your email address before registering.",
-      );
-
+      setError("Please verify your email address before registering.");
       setStep("generateOtp");
-
       return;
     }
 
@@ -421,14 +375,12 @@ export default function RegisterModal({
      */
     if (
       !verifiedEmail ||
-      trimmedEmail.toLowerCase() !==
-        verifiedEmail.toLowerCase()
+      trimmedEmail.toLowerCase() !== verifiedEmail.toLowerCase()
     ) {
       setEmailVerified(false);
       setVerifiedEmail("");
       setOtp("");
       setOtpSent(false);
-
       setStep("generateOtp");
 
       setError(
@@ -439,37 +391,27 @@ export default function RegisterModal({
     }
 
     if (!fullName.trim()) {
-      setError(
-        "Please enter your full name.",
-      );
+      setError("Please enter your full name.");
       return;
     }
 
     if (!trimmedEmail) {
-      setError(
-        "Please enter your email address.",
-      );
+      setError("Please enter your email address.");
       return;
     }
 
     if (!isEmailValid(trimmedEmail)) {
-      setError(
-        "Please enter a valid email address.",
-      );
+      setError("Please enter a valid email address.");
       return;
     }
 
     if (!phoneNumber.trim()) {
-      setError(
-        "Please enter your phone number.",
-      );
+      setError("Please enter your phone number.");
       return;
     }
 
     if (!address.trim()) {
-      setError(
-        "Please enter your address.",
-      );
+      setError("Please enter your address.");
       return;
     }
 
@@ -487,9 +429,7 @@ export default function RegisterModal({
       /**
        * Backend registration succeeded.
        */
-      setSuccessMessage(
-        "Your account has been created successfully.",
-      );
+      setSuccessMessage("Your account has been created successfully.");
 
       /**
        * Preserve the existing callback signature.
@@ -497,23 +437,14 @@ export default function RegisterModal({
        * The supplied registration API does not accept
        * passwords, so empty strings are passed.
        */
-      onRegister?.(
-        fullName.trim(),
-        verifiedEmail,
-        phoneNumber.trim(),
-        "",
-        "",
-      );
+      onRegister?.(fullName.trim(), verifiedEmail, phoneNumber.trim(), "", "");
 
       /**
        * Move to the final success stage.
        */
       setStep("success");
     } catch (err) {
-      console.error(
-        "Registration failed:",
-        err,
-      );
+      console.error("Registration failed:", err);
 
       setError(
         err instanceof Error
@@ -593,24 +524,38 @@ export default function RegisterModal({
     switch (step) {
       case "generateOtp":
         return "Enter your email to receive an OTP.";
-
       case "verifyOtp":
         return "Enter the code sent to your email.";
-
       case "details":
         return "Complete your registration.";
-
       case "success":
         return "Your account has been created.";
-
       default:
         return "";
     }
   };
 
   // ----------------------------------------------------------
-  // RENDER
+  // THEME COLORS
   // ----------------------------------------------------------
+
+  const modalBackground = isDark ? "bg-[#111111]" : "bg-white";
+
+  const modalBorder = isDark ? "border-[#292929]" : "border-gray-200";
+
+  const primaryText = isDark ? "text-white" : "text-black";
+
+  const secondaryText = isDark ? "text-gray-400" : "text-gray-600";
+
+  const labelText = isDark ? "text-gray-300" : "text-gray-700";
+
+  const inputBackground = isDark ? "bg-[#1b1b1b]" : "bg-gray-50";
+
+  const inputBorder = isDark ? "border-[#303030]" : "border-gray-300";
+
+  const inputText = isDark ? "text-white" : "text-black";
+
+  const inputIconColor = isDark ? "#9ca3af" : "#6b7280";
 
   return (
     <Modal
@@ -621,31 +566,34 @@ export default function RegisterModal({
     >
       <KeyboardAvoidingView
         className="flex-1 justify-end"
-        behavior={
-          Platform.OS === "ios"
-            ? "padding"
-            : "height"
-        }
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         {/* BACKDROP */}
+
         <Pressable
           className="absolute inset-0 bg-black/70"
           onPress={handleClose}
         />
 
         {/* BOTTOM SHEET */}
-        <View className="max-h-[92%] w-full rounded-t-3xl border-t border-[#292929] bg-[#111111]">
+
+        <View
+          className={`max-h-[92%] w-full rounded-t-3xl border-t ${modalBorder} ${modalBackground}`}
+        >
           {/* DRAG HANDLE */}
+
           <View className="items-center pb-2 pt-3">
-            <View className="h-1.5 w-12 rounded-full bg-[#3a3a3a]" />
+            <View
+              className={`h-1.5 w-12 rounded-full ${
+                isDark ? "bg-[#3a3a3a]" : "bg-gray-300"
+              }`}
+            />
           </View>
 
           <ScrollView
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={
-              Platform.OS === "ios"
-                ? "interactive"
-                : "on-drag"
+              Platform.OS === "ios" ? "interactive" : "on-drag"
             }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
@@ -654,143 +602,161 @@ export default function RegisterModal({
           >
             <View className="px-6 pb-2 pt-3">
               {/* HEADER */}
+
               <View className="mb-5 flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className="text-2xl font-bold text-white">
+                  <Text className={`text-2xl font-bold ${primaryText}`}>
                     Create Account
                   </Text>
 
-                  <Text className="mt-1 text-sm text-gray-400">
+                  <Text className={`mt-1 text-sm ${secondaryText}`}>
                     {getHeaderSubtitle()}
                   </Text>
                 </View>
 
                 <Pressable
                   onPress={handleClose}
-                  disabled={
-                    loading || resendLoading
-                  }
+                  disabled={loading || resendLoading}
                   accessibilityRole="button"
                   accessibilityLabel="Close register"
-                  className="ml-4 h-10 w-10 items-center justify-center rounded-full bg-[#222222]"
+                  className={`ml-4 h-10 w-10 items-center justify-center rounded-full ${
+                    isDark ? "bg-[#222222]" : "bg-gray-100"
+                  }`}
                   style={({ pressed }) => ({
-                    opacity:
-                      loading ||
-                      resendLoading
-                        ? 0.4
-                        : pressed
-                          ? 0.7
-                          : 1,
+                    opacity: loading || resendLoading ? 0.4 : pressed ? 0.7 : 1,
                   })}
                 >
                   <Ionicons
                     name="close"
                     size={22}
-                    color="#ffffff"
+                    color={isDark ? "#ffffff" : "#111111"}
                   />
                 </Pressable>
               </View>
 
               {/* FOUR-STAGE INDICATOR */}
+
               <View className="mb-6 flex-row items-center">
-                {stages.map(
-                  (stageItem, index) => {
-                    const completed =
-                      stageItem.number <
-                      currentStage;
+                {stages.map((stageItem, index) => {
+                  const completed = stageItem.number < currentStage;
 
-                    const active =
-                      stageItem.number ===
-                      currentStage;
+                  const active = stageItem.number === currentStage;
 
-                    return (
-                      <React.Fragment
-                        key={stageItem.number}
-                      >
-                        <View className="items-center">
-                          <View
-                            className="h-8 w-8 items-center justify-center rounded-full"
-                            style={{
-                              backgroundColor:
-                                completed ||
-                                active
-                                  ? "#dc2626"
-                                  : "#292929",
-                            }}
-                          >
-                            {completed ? (
-                              <Ionicons
-                                name="checkmark"
-                                size={16}
-                                color="#ffffff"
-                              />
-                            ) : (
-                              <Text className="text-xs font-bold text-white">
-                                {
-                                  stageItem.number
-                                }
-                              </Text>
-                            )}
-                          </View>
-
-                          <Text
-                            className="mt-1 text-[8px]"
-                            style={{
-                              color:
-                                completed ||
-                                active
-                                  ? "#f87171"
-                                  : "#666666",
-                            }}
-                          >
-                            {stageItem.label}
-                          </Text>
+                  return (
+                    <React.Fragment key={stageItem.number}>
+                      <View className="items-center">
+                        <View
+                          className="h-8 w-8 items-center justify-center rounded-full"
+                          style={{
+                            backgroundColor:
+                              completed || active
+                                ? "#dc2626"
+                                : isDark
+                                  ? "#292929"
+                                  : "#e5e7eb",
+                          }}
+                        >
+                          {completed ? (
+                            <Ionicons
+                              name="checkmark"
+                              size={16}
+                              color="#ffffff"
+                            />
+                          ) : (
+                            <Text
+                              className={`text-xs font-bold ${
+                                completed || active
+                                  ? "text-white"
+                                  : isDark
+                                    ? "text-gray-400"
+                                    : "text-gray-600"
+                              }`}
+                            >
+                              {stageItem.number}
+                            </Text>
+                          )}
                         </View>
 
-                        {index <
-                        stages.length - 1 ? (
-                          <View
-                            className="mx-1 h-[1px] flex-1"
-                            style={{
-                              backgroundColor:
-                                stageItem.number <
-                                currentStage
-                                  ? "#dc2626"
-                                  : "#292929",
-                            }}
-                          />
-                        ) : null}
-                      </React.Fragment>
-                    );
-                  },
-                )}
+                        <Text
+                          className="mt-1 text-[8px]"
+                          style={{
+                            color:
+                              completed || active
+                                ? "#f87171"
+                                : isDark
+                                  ? "#666666"
+                                  : "#9ca3af",
+                          }}
+                        >
+                          {stageItem.label}
+                        </Text>
+                      </View>
+
+                      {index < stages.length - 1 ? (
+                        <View
+                          className="mx-1 h-[1px] flex-1"
+                          style={{
+                            backgroundColor:
+                              stageItem.number < currentStage
+                                ? "#dc2626"
+                                : isDark
+                                  ? "#292929"
+                                  : "#d1d5db",
+                          }}
+                        />
+                      ) : null}
+                    </React.Fragment>
+                  );
+                })}
               </View>
 
               {/* ERROR */}
+
               {error ? (
-                <View className="mb-5 flex-row items-center rounded-xl border border-red-900/60 bg-red-950/40 px-4 py-3">
+                <View
+                  className={`mb-5 flex-row items-center rounded-xl border px-4 py-3 ${
+                    isDark
+                      ? "border-red-900/60 bg-red-950/40"
+                      : "border-red-200 bg-red-50"
+                  }`}
+                >
                   <Ionicons
                     name="alert-circle-outline"
                     size={20}
                     color="#ef4444"
                   />
 
-                  <Text className="ml-2 flex-1 text-sm text-red-400">
+                  <Text
+                    className={`ml-2 flex-1 text-sm ${
+                      isDark ? "text-red-400" : "text-red-600"
+                    }`}
+                  >
                     {error}
                   </Text>
                 </View>
               ) : null}
 
               {/* SUCCESS */}
+
               {successMessage ? (
-                <View className="mb-5 flex-row items-center rounded-xl border border-green-900/60 bg-green-950/30 px-4 py-3">
+                <View
+                  className={`mb-5 flex-row items-center rounded-xl border px-4 py-3 ${
+                    isDark
+                      ? "border-green-900/60 bg-green-950/30"
+                      : "border-green-200 bg-green-50"
+                  }`}
+                >
                   <Ionicons
                     name="checkmark-circle-outline"
                     size={20}
                     color="#22c55e"
                   />
 
-                  <Text className="ml-2 flex-1 text-sm text-green-400">
+                  <Text
+                    className={`ml-2 flex-1 text-sm ${
+                      isDark ? "text-green-400" : "text-green-600"
+                    }`}
+                  >
                     {successMessage}
                   </Text>
                 </View>
@@ -803,87 +769,74 @@ export default function RegisterModal({
               {step === "generateOtp" ? (
                 <>
                   <View className="mb-6 items-center">
-                    <View className="h-16 w-16 items-center justify-center rounded-full bg-red-950/50">
-                      <Ionicons
-                        name="mail-outline"
-                        size={30}
-                        color="#ef4444"
-                      />
+                    <View className="h-16 w-16 items-center justify-center rounded-full bg-red-600/10">
+                      <Ionicons name="mail-outline" size={30} color="#ef4444" />
                     </View>
 
-                    <Text className="mt-4 text-center text-xl font-bold text-white">
+                    <Text
+                      className={`mt-4 text-center text-xl font-bold ${primaryText}`}
+                    >
                       Generate OTP
                     </Text>
 
-                    <Text className="mt-2 text-center text-sm leading-5 text-neutral-400">
-                      Enter your email address and
-                      we will send you a one-time
+                    <Text
+                      className={`mt-2 text-center text-sm leading-5 ${
+                        isDark ? "text-neutral-400" : "text-gray-600"
+                      }`}
+                    >
+                      Enter your email address and we will send you a one-time
                       verification code.
                     </Text>
                   </View>
 
                   {/* EMAIL */}
+
                   <View className="mb-5">
-                    <Text className="mb-2 text-sm font-semibold text-gray-300">
+                    <Text className={`mb-2 text-sm font-semibold ${labelText}`}>
                       Email Address
                     </Text>
 
-                    <View className="flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
+                    <View
+                      className={`flex-row items-center rounded-xl border px-4 ${inputBorder} ${inputBackground}`}
+                    >
                       <Ionicons
                         name="mail-outline"
                         size={20}
-                        color="#9ca3af"
+                        color={inputIconColor}
                       />
 
                       <TextInput
                         value={email}
-                        onChangeText={
-                          handleEmailChange
-                        }
+                        onChangeText={handleEmailChange}
                         placeholder="Enter your email"
-                        placeholderTextColor="#6b7280"
+                        placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
                         keyboardType="email-address"
                         autoCapitalize="none"
                         autoCorrect={false}
                         returnKeyType="done"
-                        onSubmitEditing={
-                          handleGenerateOtp
-                        }
-                        className="ml-3 flex-1 py-4 text-[15px] text-white"
+                        onSubmitEditing={handleGenerateOtp}
+                        className={`ml-3 flex-1 py-4 text-[15px] ${inputText}`}
                       />
                     </View>
                   </View>
 
                   {/* GENERATE OTP BUTTON */}
+
                   <Pressable
                     onPress={handleGenerateOtp}
-                    disabled={
-                      !emailFormValid ||
-                      loading
-                    }
+                    disabled={!emailFormValid || loading}
                     accessibilityRole="button"
                     accessibilityLabel="Generate OTP"
                     className={`mt-2 h-13 items-center justify-center rounded-xl bg-red-600 ${
-                      !emailFormValid ||
-                      loading
-                        ? "opacity-50"
-                        : ""
+                      !emailFormValid || loading ? "opacity-50" : ""
                     }`}
                     style={({ pressed }) => ({
                       opacity:
-                        !emailFormValid ||
-                        loading
-                          ? 0.5
-                          : pressed
-                            ? 0.7
-                            : 1,
+                        !emailFormValid || loading ? 0.5 : pressed ? 0.7 : 1,
                     })}
                   >
                     {loading ? (
-                      <ActivityIndicator
-                        size="small"
-                        color="#ffffff"
-                      />
+                      <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
                       <View className="flex-row items-center">
                         <Ionicons
@@ -908,9 +861,16 @@ export default function RegisterModal({
               {step === "verifyOtp" ? (
                 <>
                   {/* EMAIL CARD */}
-                  <View className="mb-5 rounded-2xl border border-neutral-800 bg-[#171717] p-5">
+
+                  <View
+                    className={`mb-5 rounded-2xl border p-5 ${
+                      isDark
+                        ? "border-neutral-800 bg-[#171717]"
+                        : "border-gray-200 bg-gray-50"
+                    }`}
+                  >
                     <View className="items-center">
-                      <View className="h-14 w-14 items-center justify-center rounded-full bg-red-950/50">
+                      <View className="h-14 w-14 items-center justify-center rounded-full bg-red-600/10">
                         <Ionicons
                           name="mail-open-outline"
                           size={28}
@@ -918,91 +878,82 @@ export default function RegisterModal({
                         />
                       </View>
 
-                      <Text className="mt-4 text-center text-base font-semibold text-white">
+                      <Text
+                        className={`mt-4 text-center text-base font-semibold ${primaryText}`}
+                      >
                         Check Your Email
                       </Text>
 
-                      <Text className="mt-2 text-center text-sm leading-5 text-neutral-400">
-                        We sent a verification
-                        code to:
+                      <Text
+                        className={`mt-2 text-center text-sm leading-5 ${
+                          isDark ? "text-neutral-400" : "text-gray-600"
+                        }`}
+                      >
+                        We sent a verification code to:
                       </Text>
 
-                      <Text className="mt-1 text-center text-sm font-semibold text-white">
+                      <Text
+                        className={`mt-1 text-center text-sm font-semibold ${primaryText}`}
+                      >
                         {email.trim()}
                       </Text>
                     </View>
                   </View>
 
                   {/* OTP */}
+
                   <View className="mb-4">
-                    <Text className="mb-2 text-sm font-semibold text-gray-300">
+                    <Text className={`mb-2 text-sm font-semibold ${labelText}`}>
                       Verification Code
                     </Text>
 
-                    <View className="flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
+                    <View
+                      className={`flex-row items-center rounded-xl border px-4 ${inputBorder} ${inputBackground}`}
+                    >
                       <Ionicons
                         name="keypad-outline"
                         size={20}
-                        color="#9ca3af"
+                        color={inputIconColor}
                       />
 
                       <TextInput
                         value={otp}
                         onChangeText={(value) => {
-                          const cleaned =
-                            value.replace(
-                              /[^0-9]/g,
-                              "",
-                            );
+                          const cleaned = value.replace(/[^0-9]/g, "");
 
                           setOtp(cleaned);
                           clearMessages();
                         }}
                         placeholder="Enter OTP"
-                        placeholderTextColor="#6b7280"
+                        placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
                         keyboardType="number-pad"
                         autoCapitalize="none"
                         autoCorrect={false}
                         maxLength={8}
                         returnKeyType="done"
-                        onSubmitEditing={
-                          handleVerifyOtp
-                        }
-                        className="ml-3 flex-1 py-4 text-center text-[18px] font-bold tracking-[4px] text-white"
+                        onSubmitEditing={handleVerifyOtp}
+                        className={`ml-3 flex-1 py-4 text-center text-[18px] font-bold tracking-[4px] ${inputText}`}
                       />
                     </View>
                   </View>
 
                   {/* VERIFY BUTTON */}
+
                   <Pressable
                     onPress={handleVerifyOtp}
-                    disabled={
-                      !otpFormValid ||
-                      loading
-                    }
+                    disabled={!otpFormValid || loading}
                     accessibilityRole="button"
                     accessibilityLabel="Verify OTP"
                     className={`mt-2 h-13 items-center justify-center rounded-xl bg-red-600 ${
-                      !otpFormValid ||
-                      loading
-                        ? "opacity-50"
-                        : ""
+                      !otpFormValid || loading ? "opacity-50" : ""
                     }`}
                     style={({ pressed }) => ({
                       opacity:
-                        !otpFormValid ||
-                        loading
-                          ? 0.5
-                          : pressed
-                            ? 0.7
-                            : 1,
+                        !otpFormValid || loading ? 0.5 : pressed ? 0.7 : 1,
                     })}
                   >
                     {loading ? (
-                      <ActivityIndicator
-                        size="small"
-                        color="#ffffff"
-                      />
+                      <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
                       <View className="flex-row items-center">
                         <Ionicons
@@ -1019,31 +970,22 @@ export default function RegisterModal({
                   </Pressable>
 
                   {/* RESEND */}
+
                   <View className="mt-5 items-center">
-                    <Text className="text-sm text-gray-400">
+                    <Text className={`text-sm ${secondaryText}`}>
                       Didn't receive the code?
                     </Text>
 
                     <Pressable
-                      onPress={
-                        handleResendOtp
-                      }
+                      onPress={handleResendOtp}
                       disabled={resendLoading}
                       className="mt-2"
                       style={({ pressed }) => ({
-                        opacity:
-                          resendLoading
-                            ? 0.5
-                            : pressed
-                              ? 0.7
-                              : 1,
+                        opacity: resendLoading ? 0.5 : pressed ? 0.7 : 1,
                       })}
                     >
                       {resendLoading ? (
-                        <ActivityIndicator
-                          size="small"
-                          color="#ef4444"
-                        />
+                        <ActivityIndicator size="small" color="#ef4444" />
                       ) : (
                         <Text className="text-sm font-bold text-red-500">
                           Resend Code
@@ -1052,14 +994,17 @@ export default function RegisterModal({
                     </Pressable>
 
                     {/* CHANGE EMAIL */}
+
                     <Pressable
-                      onPress={
-                        handleChangeEmail
-                      }
+                      onPress={handleChangeEmail}
                       disabled={loading}
                       className="mt-4"
                     >
-                      <Text className="text-sm text-neutral-400">
+                      <Text
+                        className={`text-sm ${
+                          isDark ? "text-neutral-400" : "text-gray-600"
+                        }`}
+                      >
                         Use a different email
                       </Text>
                     </Pressable>
@@ -1074,24 +1019,37 @@ export default function RegisterModal({
               {step === "details" ? (
                 <>
                   {/* VERIFIED EMAIL */}
-                  <View className="mb-5 rounded-2xl border border-green-900/60 bg-green-950/20 p-4">
+
+                  <View
+                    className={`mb-5 rounded-2xl border p-4 ${
+                      isDark
+                        ? "border-green-900/60 bg-green-950/20"
+                        : "border-green-200 bg-green-50"
+                    }`}
+                  >
                     <View className="flex-row items-center">
-                      <View className="h-10 w-10 items-center justify-center rounded-full bg-green-950/50">
-                        <Ionicons
-                          name="checkmark"
-                          size={22}
-                          color="#22c55e"
-                        />
+                      <View
+                        className={`h-10 w-10 items-center justify-center rounded-full ${
+                          isDark ? "bg-green-950/50" : "bg-green-100"
+                        }`}
+                      >
+                        <Ionicons name="checkmark" size={22} color="#22c55e" />
                       </View>
 
                       <View className="ml-3 flex-1">
-                        <Text className="text-sm font-semibold text-green-400">
+                        <Text
+                          className={`text-sm font-semibold ${
+                            isDark ? "text-green-400" : "text-green-600"
+                          }`}
+                        >
                           Email Verified
                         </Text>
 
                         <Text
                           numberOfLines={1}
-                          className="mt-1 text-xs text-neutral-400"
+                          className={`mt-1 text-xs ${
+                            isDark ? "text-neutral-400" : "text-gray-600"
+                          }`}
                         >
                           {verifiedEmail}
                         </Text>
@@ -1100,16 +1058,19 @@ export default function RegisterModal({
                   </View>
 
                   {/* FULL NAME */}
+
                   <View className="mb-4">
-                    <Text className="mb-2 text-sm font-semibold text-gray-300">
+                    <Text className={`mb-2 text-sm font-semibold ${labelText}`}>
                       Full Name
                     </Text>
 
-                    <View className="flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
+                    <View
+                      className={`flex-row items-center rounded-xl border px-4 ${inputBorder} ${inputBackground}`}
+                    >
                       <Ionicons
                         name="person-outline"
                         size={20}
-                        color="#9ca3af"
+                        color={inputIconColor}
                       />
 
                       <TextInput
@@ -1119,22 +1080,29 @@ export default function RegisterModal({
                           clearMessages();
                         }}
                         placeholder="Enter your full name"
-                        placeholderTextColor="#6b7280"
+                        placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
                         autoCapitalize="words"
                         autoCorrect={false}
                         returnKeyType="next"
-                        className="ml-3 flex-1 py-4 text-[15px] text-white"
+                        className={`ml-3 flex-1 py-4 text-[15px] ${inputText}`}
                       />
                     </View>
                   </View>
 
                   {/* VERIFIED EMAIL */}
+
                   <View className="mb-4">
-                    <Text className="mb-2 text-sm font-semibold text-gray-300">
+                    <Text className={`mb-2 text-sm font-semibold ${labelText}`}>
                       Verified Email
                     </Text>
 
-                    <View className="flex-row items-center rounded-xl border border-green-700 bg-[#111b14] px-4">
+                    <View
+                      className={`flex-row items-center rounded-xl border px-4 ${
+                        isDark
+                          ? "border-green-700 bg-[#111b14]"
+                          : "border-green-300 bg-green-50"
+                      }`}
+                    >
                       <Ionicons
                         name="checkmark-circle-outline"
                         size={20}
@@ -1143,7 +1111,9 @@ export default function RegisterModal({
 
                       <Text
                         numberOfLines={1}
-                        className="ml-3 flex-1 py-4 text-[15px] text-gray-300"
+                        className={`ml-3 flex-1 py-4 text-[15px] ${
+                          isDark ? "text-gray-300" : "text-gray-700"
+                        }`}
                       >
                         {verifiedEmail}
                       </Text>
@@ -1157,16 +1127,19 @@ export default function RegisterModal({
                   </View>
 
                   {/* PHONE */}
+
                   <View className="mb-4">
-                    <Text className="mb-2 text-sm font-semibold text-gray-300">
+                    <Text className={`mb-2 text-sm font-semibold ${labelText}`}>
                       Phone Number
                     </Text>
 
-                    <View className="flex-row items-center rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
+                    <View
+                      className={`flex-row items-center rounded-xl border px-4 ${inputBorder} ${inputBackground}`}
+                    >
                       <Ionicons
                         name="call-outline"
                         size={20}
-                        color="#9ca3af"
+                        color={inputIconColor}
                       />
 
                       <TextInput
@@ -1176,27 +1149,30 @@ export default function RegisterModal({
                           clearMessages();
                         }}
                         placeholder="Enter your phone number"
-                        placeholderTextColor="#6b7280"
+                        placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
                         keyboardType="phone-pad"
                         autoCapitalize="none"
                         autoCorrect={false}
                         returnKeyType="next"
-                        className="ml-3 flex-1 py-4 text-[15px] text-white"
+                        className={`ml-3 flex-1 py-4 text-[15px] ${inputText}`}
                       />
                     </View>
                   </View>
 
                   {/* ADDRESS */}
+
                   <View className="mb-4">
-                    <Text className="mb-2 text-sm font-semibold text-gray-300">
+                    <Text className={`mb-2 text-sm font-semibold ${labelText}`}>
                       Address
                     </Text>
 
-                    <View className="flex-row items-start rounded-xl border border-[#303030] bg-[#1b1b1b] px-4">
+                    <View
+                      className={`flex-row items-start rounded-xl border px-4 ${inputBorder} ${inputBackground}`}
+                    >
                       <Ionicons
                         name="location-outline"
                         size={20}
-                        color="#9ca3af"
+                        color={inputIconColor}
                         style={{
                           marginTop: 15,
                         }}
@@ -1209,46 +1185,33 @@ export default function RegisterModal({
                           clearMessages();
                         }}
                         placeholder="Enter your address"
-                        placeholderTextColor="#6b7280"
+                        placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
                         autoCapitalize="sentences"
                         autoCorrect={false}
                         multiline
                         textAlignVertical="top"
-                        className="ml-3 min-h-[90px] flex-1 py-4 text-[15px] text-white"
+                        className={`ml-3 min-h-[90px] flex-1 py-4 text-[15px] ${inputText}`}
                       />
                     </View>
                   </View>
 
                   {/* CREATE ACCOUNT */}
+
                   <Pressable
                     onPress={handleRegister}
-                    disabled={
-                      !detailsFormValid ||
-                      loading
-                    }
+                    disabled={!detailsFormValid || loading}
                     accessibilityRole="button"
                     accessibilityLabel="Create account"
                     className={`mt-2 h-13 items-center justify-center rounded-xl bg-red-600 ${
-                      !detailsFormValid ||
-                      loading
-                        ? "opacity-50"
-                        : ""
+                      !detailsFormValid || loading ? "opacity-50" : ""
                     }`}
                     style={({ pressed }) => ({
                       opacity:
-                        !detailsFormValid ||
-                        loading
-                          ? 0.5
-                          : pressed
-                            ? 0.7
-                            : 1,
+                        !detailsFormValid || loading ? 0.5 : pressed ? 0.7 : 1,
                     })}
                   >
                     {loading ? (
-                      <ActivityIndicator
-                        size="small"
-                        color="#ffffff"
-                      />
+                      <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
                       <View className="flex-row items-center">
                         <Ionicons
@@ -1265,12 +1228,17 @@ export default function RegisterModal({
                   </Pressable>
 
                   {/* CHANGE EMAIL */}
+
                   <Pressable
                     onPress={handleChangeEmail}
                     disabled={loading}
                     className="mt-4 items-center"
                   >
-                    <Text className="text-sm font-medium text-neutral-400">
+                    <Text
+                      className={`text-sm font-medium ${
+                        isDark ? "text-neutral-400" : "text-gray-600"
+                      }`}
+                    >
                       Use a different email
                     </Text>
                   </Pressable>
@@ -1283,8 +1251,18 @@ export default function RegisterModal({
 
               {step === "success" ? (
                 <>
-                  <View className="items-center rounded-2xl border border-green-900/60 bg-green-950/20 p-6">
-                    <View className="h-20 w-20 items-center justify-center rounded-full bg-green-950/50">
+                  <View
+                    className={`items-center rounded-2xl border p-6 ${
+                      isDark
+                        ? "border-green-900/60 bg-green-950/20"
+                        : "border-green-200 bg-green-50"
+                    }`}
+                  >
+                    <View
+                      className={`h-20 w-20 items-center justify-center rounded-full ${
+                        isDark ? "bg-green-950/50" : "bg-green-100"
+                      }`}
+                    >
                       <Ionicons
                         name="checkmark-circle"
                         size={50}
@@ -1292,16 +1270,21 @@ export default function RegisterModal({
                       />
                     </View>
 
-                    <Text className="mt-5 text-center text-xl font-bold text-white">
+                    <Text
+                      className={`mt-5 text-center text-xl font-bold ${primaryText}`}
+                    >
                       Registration Complete
                     </Text>
 
-                    <Text className="mt-2 text-center text-sm leading-5 text-neutral-400">
-                      Your account has been created
-                      successfully.
+                    <Text
+                      className={`mt-2 text-center text-sm leading-5 ${
+                        isDark ? "text-neutral-400" : "text-gray-600"
+                      }`}
+                    >
+                      Your account has been created successfully.
                     </Text>
 
-                    <Text className="mt-2 text-center text-sm font-semibold text-green-400">
+                    <Text className="mt-2 text-center text-sm font-semibold text-green-500">
                       {verifiedEmail}
                     </Text>
                   </View>
@@ -1310,9 +1293,7 @@ export default function RegisterModal({
                     onPress={onClose}
                     className="mt-5 h-13 items-center justify-center rounded-xl bg-red-600"
                     style={({ pressed }) => ({
-                      opacity: pressed
-                        ? 0.7
-                        : 1,
+                      opacity: pressed ? 0.7 : 1,
                     })}
                   >
                     <Text className="text-[15px] font-bold text-white">
@@ -1323,9 +1304,10 @@ export default function RegisterModal({
               ) : null}
 
               {/* SIGN IN */}
+
               {step !== "success" ? (
                 <View className="mt-6 flex-row items-center justify-center">
-                  <Text className="text-sm text-gray-400">
+                  <Text className={`text-sm ${secondaryText}`}>
                     Already have an account?
                   </Text>
 
@@ -1333,9 +1315,7 @@ export default function RegisterModal({
                     onPress={handleSignIn}
                     className="ml-1.5"
                     style={({ pressed }) => ({
-                      opacity: pressed
-                        ? 0.7
-                        : 1,
+                      opacity: pressed ? 0.7 : 1,
                     })}
                   >
                     <Text className="text-sm font-bold text-red-500">
@@ -1351,4 +1331,3 @@ export default function RegisterModal({
     </Modal>
   );
 }
-

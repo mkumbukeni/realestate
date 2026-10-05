@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -9,6 +8,7 @@ import {
   Text,
   TextInput,
   View,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -26,11 +26,26 @@ type EmptyStateProps = {
 };
 
 function EmptyState({ icon, text }: EmptyStateProps) {
-  return (
-    <View className="min-h-[110px] items-center justify-center bg-[#292929] px-5 py-5">
-      <Ionicons name={icon} size={32} color="#666666" />
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
 
-      <Text className="mt-2 text-center text-sm text-gray-400">
+  return (
+    <View
+      className={`min-h-[110px] items-center justify-center px-5 py-5 ${
+        isDark ? "bg-[#292929]" : "bg-gray-100"
+      }`}
+    >
+      <Ionicons
+        name={icon}
+        size={32}
+        color={isDark ? "#666666" : "#9ca3af"}
+      />
+
+      <Text
+        className={`mt-2 text-center text-sm ${
+          isDark ? "text-gray-400" : "text-gray-600"
+        }`}
+      >
         {text}
       </Text>
     </View>
@@ -38,6 +53,9 @@ function EmptyState({ icon, text }: EmptyStateProps) {
 }
 
 export default function ProfileScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
   const [activeTab, setActiveTab] = useState("Payment History");
 
   const [newPassword, setNewPassword] = useState("");
@@ -47,10 +65,14 @@ export default function ProfileScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+    <SafeAreaView
+      className={`flex-1 ${
+        isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+      }`}
+    >
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#0d0d0d" : "#f9fafb"}
       />
 
       <KeyboardAvoidingView
@@ -67,16 +89,20 @@ export default function ProfileScreen() {
             around top-14, so we reserve this space for them.
         ====================================================== */}
 
-        <View className="absolute left-0 right-0 top-0 z-10 h-[110px] bg-[#0d0d0d]" />
+        <View
+          className={`absolute left-0 right-0 top-0 z-10 h-[110px] ${
+            isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+          }`}
+        />
 
         {/* =====================================================
             SCROLLABLE CONTENT
-
-            The content begins below the fixed header area.
         ====================================================== */}
 
         <ScrollView
-          className="flex-1 bg-[#0d0d0d]"
+          className={`flex-1 ${
+            isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+          }`}
           contentContainerClassName="px-4 pt-[110px] pb-[350px]"
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -87,7 +113,13 @@ export default function ProfileScreen() {
               PROFILE
           ====================================================== */}
 
-          <View className="mb-4 items-center rounded-xl border border-[#3d3d3d] bg-[#242424] p-6">
+          <View
+            className={`mb-4 items-center rounded-xl border p-6 ${
+              isDark
+                ? "border-[#3d3d3d] bg-[#242424]"
+                : "border-gray-200 bg-white"
+            }`}
+          >
             <View className="mb-5 h-[190px] w-[190px] items-center justify-center overflow-hidden rounded-full bg-[#dedede]">
               <Ionicons
                 name="person"
@@ -96,7 +128,11 @@ export default function ProfileScreen() {
               />
             </View>
 
-            <Text className="mb-2 text-center text-[25px] font-bold text-gray-100">
+            <Text
+              className={`mb-2 text-center text-[25px] font-bold ${
+                isDark ? "text-gray-100" : "text-black"
+              }`}
+            >
               Mhone Mhone
             </Text>
 
@@ -104,7 +140,11 @@ export default function ProfileScreen() {
               +265888016923
             </Text>
 
-            <Text className="mb-5 text-center text-[15px] text-gray-400">
+            <Text
+              className={`mb-5 text-center text-[15px] ${
+                isDark ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
               mkumbukenimhone@gmail.com
             </Text>
 
@@ -119,16 +159,34 @@ export default function ProfileScreen() {
               SUBSCRIPTION
           ====================================================== */}
 
-          <View className="mb-4 rounded-xl border border-[#3d3d3d] bg-[#242424] p-5">
-            <Text className="mb-2 text-center text-base text-gray-200">
+          <View
+            className={`mb-4 rounded-xl border p-5 ${
+              isDark
+                ? "border-[#3d3d3d] bg-[#242424]"
+                : "border-gray-200 bg-white"
+            }`}
+          >
+            <Text
+              className={`mb-2 text-center text-base ${
+                isDark ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
               Active Subscription Plan
             </Text>
 
-            <Text className="mb-2 text-center text-3xl font-bold text-gray-100">
+            <Text
+              className={`mb-2 text-center text-3xl font-bold ${
+                isDark ? "text-gray-100" : "text-black"
+              }`}
+            >
               Free
             </Text>
 
-            <Text className="mb-3 text-center text-base text-gray-200">
+            <Text
+              className={`mb-3 text-center text-base ${
+                isDark ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
               No active subscription
             </Text>
 
@@ -139,11 +197,19 @@ export default function ProfileScreen() {
             </Pressable>
 
             <View className="items-center">
-              <Text className="mb-1 text-center text-base text-gray-200">
+              <Text
+                className={`mb-1 text-center text-base ${
+                  isDark ? "text-gray-200" : "text-gray-700"
+                }`}
+              >
                 Three Subscriptions Available
               </Text>
 
-              <Text className="text-center text-base font-bold text-gray-100">
+              <Text
+                className={`text-center text-base font-bold ${
+                  isDark ? "text-gray-100" : "text-black"
+                }`}
+              >
                 Rent a Property & Buy a Property
               </Text>
             </View>
@@ -153,16 +219,36 @@ export default function ProfileScreen() {
               UPDATE PASSWORD
           ====================================================== */}
 
-          <View className="mb-4 rounded-xl border border-[#3d3d3d] bg-[#242424] p-5">
-            <Text className="mb-5 text-center text-[21px] font-bold text-gray-100">
+          <View
+            className={`mb-4 rounded-xl border p-5 ${
+              isDark
+                ? "border-[#3d3d3d] bg-[#242424]"
+                : "border-gray-200 bg-white"
+            }`}
+          >
+            <Text
+              className={`mb-5 text-center text-[21px] font-bold ${
+                isDark ? "text-gray-100" : "text-black"
+              }`}
+            >
               Update Password
             </Text>
 
-            <Text className="mb-1.5 text-sm text-gray-200">
+            <Text
+              className={`mb-1.5 text-sm ${
+                isDark ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
               New Password
             </Text>
 
-            <View className="mb-4 h-12 flex-row items-center rounded-md border border-[#526071]">
+            <View
+              className={`mb-4 h-12 flex-row items-center rounded-md border ${
+                isDark
+                  ? "border-[#526071] bg-[#242424]"
+                  : "border-gray-300 bg-white"
+              }`}
+            >
               <TextInput
                 value={newPassword}
                 onChangeText={setNewPassword}
@@ -170,7 +256,12 @@ export default function ProfileScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="next"
-                className="h-full flex-1 px-3 text-[15px] text-white"
+                placeholderTextColor={
+                  isDark ? "#7c8797" : "#9ca3af"
+                }
+                className={`h-full flex-1 px-3 text-[15px] ${
+                  isDark ? "text-white" : "text-black"
+                }`}
               />
 
               <Pressable
@@ -186,16 +277,26 @@ export default function ProfileScreen() {
                       : "eye-off-outline"
                   }
                   size={20}
-                  color="#7c8797"
+                  color={isDark ? "#7c8797" : "#6b7280"}
                 />
               </Pressable>
             </View>
 
-            <Text className="mb-1.5 text-sm text-gray-200">
+            <Text
+              className={`mb-1.5 text-sm ${
+                isDark ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
               Confirm Password
             </Text>
 
-            <View className="mb-4 h-12 flex-row items-center rounded-md border border-[#526071]">
+            <View
+              className={`mb-4 h-12 flex-row items-center rounded-md border ${
+                isDark
+                  ? "border-[#526071] bg-[#242424]"
+                  : "border-gray-300 bg-white"
+              }`}
+            >
               <TextInput
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
@@ -203,7 +304,12 @@ export default function ProfileScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="done"
-                className="h-full flex-1 px-3 text-[15px] text-white"
+                placeholderTextColor={
+                  isDark ? "#7c8797" : "#9ca3af"
+                }
+                className={`h-full flex-1 px-3 text-[15px] ${
+                  isDark ? "text-white" : "text-black"
+                }`}
               />
 
               <Pressable
@@ -221,7 +327,7 @@ export default function ProfileScreen() {
                       : "eye-off-outline"
                   }
                   size={20}
-                  color="#7c8797"
+                  color={isDark ? "#7c8797" : "#6b7280"}
                 />
               </Pressable>
             </View>
@@ -243,7 +349,13 @@ export default function ProfileScreen() {
               HISTORY
           ====================================================== */}
 
-          <View className="mb-4 overflow-hidden rounded-xl border border-[#3d3d3d] bg-[#242424]">
+          <View
+            className={`mb-4 overflow-hidden rounded-xl border ${
+              isDark
+                ? "border-[#3d3d3d] bg-[#242424]"
+                : "border-gray-200 bg-white"
+            }`}
+          >
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -267,7 +379,9 @@ export default function ProfileScreen() {
                       className={`text-center text-sm ${
                         active
                           ? "text-red-500"
-                          : "text-gray-400"
+                          : isDark
+                            ? "text-gray-400"
+                            : "text-gray-600"
                       }`}
                     >
                       {tab}
@@ -286,30 +400,76 @@ export default function ProfileScreen() {
                 keyboardShouldPersistTaps="handled"
               >
                 <View className="min-w-[650px]">
-                  <View className="h-[46px] flex-row items-center border-t border-gray-700 bg-[#151519]">
-                    <Text className="w-[50px] pl-4 text-[13px] font-bold text-gray-300">
+                  <View
+                    className={`h-[46px] flex-row items-center border-t ${
+                      isDark
+                        ? "border-gray-700 bg-[#151519]"
+                        : "border-gray-200 bg-gray-100"
+                    }`}
+                  >
+                    <Text
+                      className={`w-[50px] pl-4 text-[13px] font-bold ${
+                        isDark
+                          ? "text-gray-300"
+                          : "text-gray-700"
+                      }`}
+                    >
                       No
                     </Text>
 
-                    <Text className="w-[145px] text-[13px] font-bold text-gray-300">
+                    <Text
+                      className={`w-[145px] text-[13px] font-bold ${
+                        isDark
+                          ? "text-gray-300"
+                          : "text-gray-700"
+                      }`}
+                    >
                       Transaction ID
                     </Text>
 
-                    <Text className="w-[160px] text-[13px] font-bold text-gray-300">
+                    <Text
+                      className={`w-[160px] text-[13px] font-bold ${
+                        isDark
+                          ? "text-gray-300"
+                          : "text-gray-700"
+                      }`}
+                    >
                       Subscription Name
                     </Text>
 
-                    <Text className="w-[120px] text-[13px] font-bold text-gray-300">
+                    <Text
+                      className={`w-[120px] text-[13px] font-bold ${
+                        isDark
+                          ? "text-gray-300"
+                          : "text-gray-700"
+                      }`}
+                    >
                       Amount (MK)
                     </Text>
 
-                    <Text className="w-[150px] text-[13px] font-bold text-gray-300">
+                    <Text
+                      className={`w-[150px] text-[13px] font-bold ${
+                        isDark
+                          ? "text-gray-300"
+                          : "text-gray-700"
+                      }`}
+                    >
                       Date of Payment
                     </Text>
                   </View>
 
-                  <View className="min-h-[110px] items-center justify-center bg-[#292929] px-5 py-5">
-                    <Text className="text-center text-sm text-gray-400">
+                  <View
+                    className={`min-h-[110px] items-center justify-center px-5 py-5 ${
+                      isDark ? "bg-[#292929]" : "bg-gray-50"
+                    }`}
+                  >
+                    <Text
+                      className={`text-center text-sm ${
+                        isDark
+                          ? "text-gray-400"
+                          : "text-gray-600"
+                      }`}
+                    >
                       No payment history available.
                     </Text>
                   </View>

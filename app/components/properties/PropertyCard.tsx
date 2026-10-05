@@ -25,12 +25,22 @@ const PropertyCard = ({
   onPress,
 }: PropertyCardProps) => {
   const colorScheme = useColorScheme();
-
   const isDark = colorScheme !== "light";
+
+  /**
+   * Always send the property press to the parent.
+   *
+   * Authentication is handled by the parent screen
+   * so that logged-out users can see the authentication
+   * popup instead of having the press silently ignored.
+   */
+  const handlePress = () => {
+    onPress(property);
+  };
 
   return (
     <Pressable
-      onPress={() => onPress(property)}
+      onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={`View ${property.type} property in ${property.location}`}
       style={({ pressed }) => ({
@@ -253,6 +263,28 @@ const PropertyCard = ({
               <View className="mr-2 flex-1 flex-row items-center" />
             </View>
           )}
+
+          {/* ================================================= */}
+          {/* LOGIN REQUIRED INDICATOR */}
+          {/* ================================================= */}
+
+          <View className="mt-3 flex-row items-center">
+            <Ionicons
+              name="lock-closed-outline"
+              size={14}
+              color={isDark ? "#9ca3af" : "#6b7280"}
+            />
+
+            <Text
+              className={
+                isDark
+                  ? "ml-1 text-xs text-gray-400"
+                  : "ml-1 text-xs text-gray-600"
+              }
+            >
+              Sign in to view full details
+            </Text>
+          </View>
         </View>
       </View>
     </Pressable>
