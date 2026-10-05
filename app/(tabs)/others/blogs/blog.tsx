@@ -1,4 +1,3 @@
-
 import React, {
   useCallback,
   useEffect,
@@ -13,6 +12,7 @@ import {
   StatusBar,
   Text,
   View,
+  useColorScheme,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,6 +28,9 @@ import {
 
 export default function BlogsScreen() {
   const router = useRouter();
+
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
 
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,16 +101,44 @@ export default function BlogsScreen() {
 
   /*
   |--------------------------------------------------------------------------
+  | Theme Colors
+  |--------------------------------------------------------------------------
+  */
+
+  const screenBackground = isDark
+    ? "#0d0d0d"
+    : "#f8f9fa";
+
+  const primaryText = isDark
+    ? "text-white"
+    : "text-black";
+
+  const secondaryText = isDark
+    ? "text-gray-400"
+    : "text-gray-600";
+
+  const iconSecondaryColor = isDark
+    ? "#777777"
+    : "#6b7280";
+
+  /*
+  |--------------------------------------------------------------------------
   | Loading
   |--------------------------------------------------------------------------
   */
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+      <SafeAreaView
+        className={`flex-1 ${
+          isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+        }`}
+      >
         <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
+          barStyle={
+            isDark ? "light-content" : "dark-content"
+          }
+          backgroundColor={screenBackground}
         />
 
         <View className="flex-1 items-center justify-center">
@@ -116,7 +147,11 @@ export default function BlogsScreen() {
             color="#ef4444"
           />
 
-          <Text className="mt-4 text-sm text-gray-400">
+          <Text
+            className={`mt-4 text-sm ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
             Loading blogs...
           </Text>
         </View>
@@ -131,10 +166,16 @@ export default function BlogsScreen() {
   */
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+    <SafeAreaView
+      className={`flex-1 ${
+        isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+      }`}
+    >
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
+        barStyle={
+          isDark ? "light-content" : "dark-content"
+        }
+        backgroundColor={screenBackground}
       />
 
       {/* =====================================================
@@ -142,11 +183,15 @@ export default function BlogsScreen() {
       ====================================================== */}
 
       <View className="px-5 pt-5">
-        <Text className="text-2xl font-bold text-white">
+        <Text
+          className={`text-2xl font-bold ${primaryText}`}
+        >
           iMORRCS Blogs
         </Text>
 
-        <Text className="mt-1.5 text-[13px] leading-5 text-gray-400">
+        <Text
+          className={`mt-1.5 text-[13px] leading-5 ${secondaryText}`}
+        >
           Real estate news, property insights, investment
           advice and useful information.
         </Text>
@@ -157,7 +202,13 @@ export default function BlogsScreen() {
       ====================================================== */}
 
       {error ? (
-        <View className="mx-5 mt-5 rounded-xl border border-red-900 bg-[#291515] p-5">
+        <View
+          className={`mx-5 mt-5 rounded-xl border p-5 ${
+            isDark
+              ? "border-red-900 bg-[#291515]"
+              : "border-red-200 bg-red-50"
+          }`}
+        >
           <View className="items-center">
             <Ionicons
               name="cloud-offline-outline"
@@ -165,7 +216,13 @@ export default function BlogsScreen() {
               color="#ef4444"
             />
 
-            <Text className="mt-3 text-center text-sm leading-5 text-gray-300">
+            <Text
+              className={`mt-3 text-center text-sm leading-5 ${
+                isDark
+                  ? "text-gray-300"
+                  : "text-gray-700"
+              }`}
+            >
               {error}
             </Text>
 
@@ -193,7 +250,9 @@ export default function BlogsScreen() {
             color="#ef4444"
           />
 
-          <Text className="ml-2 text-xs text-gray-400">
+          <Text
+            className={`ml-2 text-xs ${secondaryText}`}
+          >
             {blogs.length}{" "}
             {blogs.length === 1 ? "blog" : "blogs"} available
           </Text>
@@ -202,7 +261,7 @@ export default function BlogsScreen() {
 
       {/* =====================================================
           BLOG LIST
-          
+
           ONLY THIS SECTION SCROLLS
       ====================================================== */}
 
@@ -238,18 +297,36 @@ export default function BlogsScreen() {
       ====================================================== */}
 
       {!error && blogs.length === 0 && (
-        <View className="mx-5 mt-4 items-center rounded-xl border border-[#383838] bg-[#202020] px-5 py-10">
+        <View
+          className={`mx-5 mt-4 items-center rounded-xl border px-5 py-10 ${
+            isDark
+              ? "border-[#383838] bg-[#202020]"
+              : "border-gray-200 bg-white"
+          }`}
+        >
           <Ionicons
             name="newspaper-outline"
             size={45}
-            color="#666666"
+            color={iconSecondaryColor}
           />
 
-          <Text className="mt-3 text-base font-semibold text-gray-300">
+          <Text
+            className={`mt-3 text-base font-semibold ${
+              isDark
+                ? "text-gray-300"
+                : "text-gray-800"
+            }`}
+          >
             No iMORRCS Blogs Available
           </Text>
 
-          <Text className="mt-2 text-center text-xs leading-5 text-gray-500">
+          <Text
+            className={`mt-2 text-center text-xs leading-5 ${
+              isDark
+                ? "text-gray-500"
+                : "text-gray-500"
+            }`}
+          >
             There are currently no published iMORRCS blogs
             available.
           </Text>
@@ -258,4 +335,3 @@ export default function BlogsScreen() {
     </SafeAreaView>
   );
 }
-

@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useState } from "react";
 
 import {
@@ -9,10 +8,13 @@ import {
   StatusBar,
   Text,
   View,
+  useColorScheme,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import Ionicons from "@expo/vector-icons/Ionicons";
+
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import {
@@ -120,6 +122,15 @@ function cleanBlogContent(content: string): string {
 export default function BlogDetailsScreen() {
   const router = useRouter();
 
+  /*
+  |--------------------------------------------------------------------------
+  | Theme
+  |--------------------------------------------------------------------------
+  */
+
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
   const params = useLocalSearchParams<{
     id?: string;
     slug?: string;
@@ -130,6 +141,48 @@ export default function BlogDetailsScreen() {
   const [blog, setBlog] = useState<Blog | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  /*
+  |--------------------------------------------------------------------------
+  | Theme Colors
+  |--------------------------------------------------------------------------
+  */
+
+  const screenBackground = isDark
+    ? "#0d0d0d"
+    : "#f8f9fa";
+
+  const headerBackground = isDark
+    ? "#0d0d0d"
+    : "#ffffff";
+
+  const headerButtonBackground = isDark
+    ? "#202020"
+    : "#f3f4f6";
+
+  const borderColor = isDark
+    ? "border-[#292929]"
+    : "border-gray-200";
+
+  const sectionBorderColor = isDark
+    ? "border-[#303030]"
+    : "border-gray-200";
+
+  const primaryText = isDark
+    ? "text-white"
+    : "text-black";
+
+  const authorText = isDark
+    ? "text-gray-200"
+    : "text-gray-800";
+
+  const bodyText = isDark
+    ? "text-gray-300"
+    : "text-gray-700";
+
+  const mutedText = isDark
+    ? "text-gray-500"
+    : "text-gray-500";
 
   /*
   |--------------------------------------------------------------------------
@@ -180,27 +233,42 @@ export default function BlogDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+      <SafeAreaView
+        className={`flex-1 ${
+          isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+        }`}
+      >
         <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
+          barStyle={
+            isDark ? "light-content" : "dark-content"
+          }
+          backgroundColor={screenBackground}
         />
 
         {/* Header */}
 
-        <View className="flex-row items-center border-b border-[#292929] px-4 py-3">
+        <View
+          className={`flex-row items-center border-b px-4 py-3 ${borderColor}`}
+          style={{
+            backgroundColor: headerBackground,
+          }}
+        >
           <Pressable
             onPress={() => router.back()}
-            className="h-10 w-10 items-center justify-center rounded-full bg-[#202020]"
+            className={`h-10 w-10 items-center justify-center rounded-full ${
+              isDark ? "bg-[#202020]" : "bg-gray-100"
+            }`}
           >
             <Ionicons
               name="arrow-back"
               size={21}
-              color="#ffffff"
+              color={isDark ? "#ffffff" : "#111827"}
             />
           </Pressable>
 
-          <Text className="ml-3 text-base font-semibold text-white">
+          <Text
+            className={`ml-3 text-base font-semibold ${primaryText}`}
+          >
             Blog
           </Text>
         </View>
@@ -213,7 +281,11 @@ export default function BlogDetailsScreen() {
             color="#ef4444"
           />
 
-          <Text className="mt-4 text-sm text-gray-400">
+          <Text
+            className={`mt-4 text-sm ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
             Loading blog...
           </Text>
         </View>
@@ -229,27 +301,42 @@ export default function BlogDetailsScreen() {
 
   if (error || !blog) {
     return (
-      <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+      <SafeAreaView
+        className={`flex-1 ${
+          isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+        }`}
+      >
         <StatusBar
-          barStyle="light-content"
-          backgroundColor="#0d0d0d"
+          barStyle={
+            isDark ? "light-content" : "dark-content"
+          }
+          backgroundColor={screenBackground}
         />
 
         {/* Header */}
 
-        <View className="flex-row items-center border-b border-[#292929] px-4 py-3">
+        <View
+          className={`flex-row items-center border-b px-4 py-3 ${borderColor}`}
+          style={{
+            backgroundColor: headerBackground,
+          }}
+        >
           <Pressable
             onPress={() => router.back()}
-            className="h-10 w-10 items-center justify-center rounded-full bg-[#202020]"
+            className={`h-10 w-10 items-center justify-center rounded-full ${
+              isDark ? "bg-[#202020]" : "bg-gray-100"
+            }`}
           >
             <Ionicons
               name="arrow-back"
               size={21}
-              color="#ffffff"
+              color={isDark ? "#ffffff" : "#111827"}
             />
           </Pressable>
 
-          <Text className="ml-3 text-base font-semibold text-white">
+          <Text
+            className={`ml-3 text-base font-semibold ${primaryText}`}
+          >
             Blog
           </Text>
         </View>
@@ -257,7 +344,13 @@ export default function BlogDetailsScreen() {
         {/* Error */}
 
         <View className="flex-1 items-center justify-center px-6">
-          <View className="h-16 w-16 items-center justify-center rounded-full bg-[#291515]">
+          <View
+            className={`h-16 w-16 items-center justify-center rounded-full ${
+              isDark
+                ? "bg-[#291515]"
+                : "bg-red-50"
+            }`}
+          >
             <Ionicons
               name="newspaper-outline"
               size={32}
@@ -265,12 +358,21 @@ export default function BlogDetailsScreen() {
             />
           </View>
 
-          <Text className="mt-4 text-center text-lg font-semibold text-white">
+          <Text
+            className={`mt-4 text-center text-lg font-semibold ${primaryText}`}
+          >
             Unable to Load Blog
           </Text>
 
-          <Text className="mt-2 text-center text-sm leading-5 text-gray-400">
-            {error || "The requested blog could not be found."}
+          <Text
+            className={`mt-2 text-center text-sm leading-5 ${
+              isDark
+                ? "text-gray-400"
+                : "text-gray-600"
+            }`}
+          >
+            {error ||
+              "The requested blog could not be found."}
           </Text>
 
           <Pressable
@@ -299,29 +401,46 @@ export default function BlogDetailsScreen() {
   */
 
   return (
-    <SafeAreaView className="flex-1 bg-[#0d0d0d]">
+    <SafeAreaView
+      className={`flex-1 ${
+        isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+      }`}
+    >
       <StatusBar
-        barStyle="light-content"
-        backgroundColor="#0d0d0d"
+        barStyle={
+          isDark ? "light-content" : "dark-content"
+        }
+        backgroundColor={screenBackground}
       />
 
       {/* =====================================================
           HEADER
       ====================================================== */}
 
-      <View className="flex-row items-center border-b border-[#292929] bg-[#0d0d0d] px-4 py-3">
+      <View
+        className={`flex-row items-center border-b px-4 py-3 ${borderColor}`}
+        style={{
+          backgroundColor: headerBackground,
+        }}
+      >
         <Pressable
           onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-[#202020] active:bg-[#303030]"
+          className={`h-10 w-10 items-center justify-center rounded-full ${
+            isDark
+              ? "bg-[#202020] active:bg-[#303030]"
+              : "bg-gray-100 active:bg-gray-200"
+          }`}
         >
           <Ionicons
             name="arrow-back"
             size={21}
-            color="#ffffff"
+            color={isDark ? "#ffffff" : "#111827"}
           />
         </Pressable>
 
-        <Text className="ml-3 text-base font-semibold text-white">
+        <Text
+          className={`ml-3 text-base font-semibold ${primaryText}`}
+        >
           Blog Details
         </Text>
       </View>
@@ -350,14 +469,22 @@ export default function BlogDetailsScreen() {
             resizeMode="cover"
           />
         ) : (
-          <View className="h-[230px] w-full items-center justify-center bg-[#202020]">
+          <View
+            className={`h-[230px] w-full items-center justify-center ${
+              isDark
+                ? "bg-[#202020]"
+                : "bg-gray-100"
+            }`}
+          >
             <Ionicons
               name="newspaper-outline"
               size={55}
-              color="#666666"
+              color={isDark ? "#666666" : "#9ca3af"}
             />
 
-            <Text className="mt-2 text-sm text-gray-500">
+            <Text
+              className={`mt-2 text-sm ${mutedText}`}
+            >
               No image available
             </Text>
           </View>
@@ -378,7 +505,9 @@ export default function BlogDetailsScreen() {
 
           {/* Title */}
 
-          <Text className="mt-3 text-[25px] font-bold leading-8 text-white">
+          <Text
+            className={`mt-3 text-[25px] font-bold leading-8 ${primaryText}`}
+          >
             {blog.title}
           </Text>
 
@@ -386,25 +515,37 @@ export default function BlogDetailsScreen() {
               AUTHOR / DATE / VIEWS
           ================================================== */}
 
-          <View className="mt-5 flex-row items-center border-b border-[#303030] pb-4">
+          <View
+            className={`mt-5 flex-row items-center border-b pb-4 ${sectionBorderColor}`}
+          >
             {/* Author Icon */}
 
-            <View className="h-10 w-10 items-center justify-center rounded-full bg-[#292929]">
+            <View
+              className={`h-10 w-10 items-center justify-center rounded-full ${
+                isDark
+                  ? "bg-[#292929]"
+                  : "bg-gray-100"
+              }`}
+            >
               <Ionicons
                 name="person-outline"
                 size={19}
-                color="#aaaaaa"
+                color={isDark ? "#aaaaaa" : "#6b7280"}
               />
             </View>
 
             {/* Author */}
 
             <View className="ml-3 flex-1">
-              <Text className="text-sm font-semibold text-gray-200">
+              <Text
+                className={`text-sm font-semibold ${authorText}`}
+              >
                 {blog.author_name || "iMORRCS"}
               </Text>
 
-              <Text className="mt-0.5 text-xs text-gray-500">
+              <Text
+                className={`mt-0.5 text-xs ${mutedText}`}
+              >
                 {formatDate(blog.created_at)}
               </Text>
             </View>
@@ -415,10 +556,12 @@ export default function BlogDetailsScreen() {
               <Ionicons
                 name="eye-outline"
                 size={17}
-                color="#777777"
+                color={isDark ? "#777777" : "#6b7280"}
               />
 
-              <Text className="ml-1.5 text-xs text-gray-500">
+              <Text
+                className={`ml-1.5 text-xs ${mutedText}`}
+              >
                 {blog.view_count}
               </Text>
             </View>
@@ -441,7 +584,7 @@ export default function BlogDetailsScreen() {
                 return (
                   <Text
                     key={`${blog.id}-paragraph-${index}`}
-                    className="mb-5 text-[15px] leading-7 text-gray-300"
+                    className={`mb-5 text-[15px] leading-7 ${bodyText}`}
                   >
                     {trimmedParagraph}
                   </Text>
@@ -454,7 +597,9 @@ export default function BlogDetailsScreen() {
               FOOTER
           ================================================== */}
 
-          <View className="mt-3 border-t border-[#303030] pt-5">
+          <View
+            className={`mt-3 border-t pt-5 ${sectionBorderColor}`}
+          >
             <View className="flex-row items-center">
               <Ionicons
                 name="newspaper-outline"
@@ -462,7 +607,9 @@ export default function BlogDetailsScreen() {
                 color="#ef4444"
               />
 
-              <Text className="ml-2 text-xs text-gray-500">
+              <Text
+                className={`ml-2 text-xs ${mutedText}`}
+              >
                 Published by iMORRCS
               </Text>
             </View>
@@ -472,4 +619,3 @@ export default function BlogDetailsScreen() {
     </SafeAreaView>
   );
 }
-

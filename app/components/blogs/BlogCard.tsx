@@ -1,10 +1,10 @@
-
 import React from "react";
 import {
   Image,
   Pressable,
   Text,
   View,
+  useColorScheme,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import type { Blog } from "@/app/services/blogs/blogApi";
@@ -93,6 +93,9 @@ export default function BlogCard({
   blog,
   onPress,
 }: BlogCardProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
   const imageUrl = normalizeImageUrl(
     blog.featured_image_url
   );
@@ -104,7 +107,11 @@ export default function BlogCard({
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 overflow-hidden rounded-xl border border-[#383838] bg-[#202020] active:opacity-90"
+      className={`mb-3 overflow-hidden rounded-xl border active:opacity-90 ${
+        isDark
+          ? "border-[#383838] bg-[#202020]"
+          : "border-gray-200 bg-white"
+      }`}
     >
       {/* =====================================================
           IMAGE
@@ -119,14 +126,22 @@ export default function BlogCard({
           resizeMode="cover"
         />
       ) : (
-        <View className="h-[125px] w-full items-center justify-center bg-[#292929]">
+        <View
+          className={`h-[125px] w-full items-center justify-center ${
+            isDark ? "bg-[#292929]" : "bg-gray-100"
+          }`}
+        >
           <Ionicons
             name="newspaper-outline"
             size={38}
-            color="#666666"
+            color={isDark ? "#666666" : "#9ca3af"}
           />
 
-          <Text className="mt-1 text-xs text-gray-500">
+          <Text
+            className={`mt-1 text-xs ${
+              isDark ? "text-gray-500" : "text-gray-500"
+            }`}
+          >
             No image available
           </Text>
         </View>
@@ -149,7 +164,9 @@ export default function BlogCard({
 
         <Text
           numberOfLines={2}
-          className="text-[16px] font-bold leading-5 text-white"
+          className={`text-[16px] font-bold leading-5 ${
+            isDark ? "text-white" : "text-black"
+          }`}
         >
           {blog.title}
         </Text>
@@ -158,7 +175,9 @@ export default function BlogCard({
 
         <Text
           numberOfLines={2}
-          className="mt-1.5 text-[12px] leading-5 text-gray-400"
+          className={`mt-1.5 text-[12px] leading-5 ${
+            isDark ? "text-gray-400" : "text-gray-600"
+          }`}
         >
           {description}
         </Text>
@@ -167,26 +186,42 @@ export default function BlogCard({
             AUTHOR / DATE / VIEWS
         ================================================== */}
 
-        <View className="mt-3 flex-row items-center border-t border-[#363636] pt-2.5">
+        <View
+          className={`mt-3 flex-row items-center border-t pt-2.5 ${
+            isDark
+              ? "border-[#363636]"
+              : "border-gray-200"
+          }`}
+        >
           {/* Author */}
 
-          <View className="h-7 w-7 items-center justify-center rounded-full bg-[#303030]">
+          <View
+            className={`h-7 w-7 items-center justify-center rounded-full ${
+              isDark ? "bg-[#303030]" : "bg-gray-100"
+            }`}
+          >
             <Ionicons
               name="person-outline"
               size={14}
-              color="#aaaaaa"
+              color={isDark ? "#aaaaaa" : "#6b7280"}
             />
           </View>
 
           <View className="ml-2 flex-1">
             <Text
               numberOfLines={1}
-              className="text-xs font-medium text-gray-200"
+              className={`text-xs font-medium ${
+                isDark ? "text-gray-200" : "text-gray-800"
+              }`}
             >
               {blog.author_name || "iMORRCS"}
             </Text>
 
-            <Text className="mt-0.5 text-[10px] text-gray-500">
+            <Text
+              className={`mt-0.5 text-[10px] ${
+                isDark ? "text-gray-500" : "text-gray-500"
+              }`}
+            >
               {formatDate(blog.created_at)}
             </Text>
           </View>
@@ -197,10 +232,14 @@ export default function BlogCard({
             <Ionicons
               name="eye-outline"
               size={14}
-              color="#777777"
+              color={isDark ? "#777777" : "#6b7280"}
             />
 
-            <Text className="ml-1 text-[10px] text-gray-500">
+            <Text
+              className={`ml-1 text-[10px] ${
+                isDark ? "text-gray-500" : "text-gray-500"
+              }`}
+            >
               {blog.view_count}
             </Text>
           </View>
@@ -225,4 +264,3 @@ export default function BlogCard({
     </Pressable>
   );
 }
-
