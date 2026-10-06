@@ -1221,7 +1221,7 @@ export default function HomeScreen() {
 
           <View className="mt-8 items-center">
             <Text className="text-center text-sm font-semibold uppercase tracking-[3px] text-red-500">
-              Welcome to iMORRCS
+              Welcome to Real Estate Africa
             </Text>
 
             <Text
