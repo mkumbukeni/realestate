@@ -1,3 +1,4 @@
+
 import {
   DarkTheme,
   DefaultTheme,
@@ -121,15 +122,13 @@ function GlobalMenuButton({
 
 function GlobalAuthButton({
   onPress,
+  isLoggedIn,
 }: {
   onPress: () => void;
+  isLoggedIn: boolean;
 }) {
   const { isDark } =
     useTheme();
-
-  const {
-    isLoggedIn,
-  } = useAuth();
 
   return (
     <Pressable
@@ -137,7 +136,7 @@ function GlobalAuthButton({
       accessibilityRole="button"
       accessibilityLabel={
         isLoggedIn
-          ? "Logout"
+          ? "Open account menu"
           : "Login"
       }
       className={`
@@ -156,7 +155,7 @@ function GlobalAuthButton({
       <Ionicons
         name={
           isLoggedIn
-            ? "log-out-outline"
+            ? "person-circle-outline"
             : "person-outline"
         }
         size={26}
@@ -177,9 +176,11 @@ function GlobalAuthButton({
 function GlobalHeader({
   onMenuPress,
   onAuthPress,
+  isLoggedIn,
 }: {
   onMenuPress: () => void;
   onAuthPress: () => void;
+  isLoggedIn: boolean;
 }) {
   const { isDark } =
     useTheme();
@@ -242,9 +243,174 @@ function GlobalHeader({
 
         <GlobalAuthButton
           onPress={onAuthPress}
+          isLoggedIn={isLoggedIn}
         />
       </View>
     </View>
+  );
+}
+
+/* ============================================================
+   ACCOUNT DROPDOWN
+   ============================================================ */
+
+function AccountDropdown({
+  visible,
+  onProfile,
+  onLogout,
+  onClose,
+}: {
+  visible: boolean;
+  onProfile: () => void;
+  onLogout: () => void;
+  onClose: () => void;
+}) {
+  const { isDark } =
+    useTheme();
+
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* Invisible area to close the dropdown when
+          the user taps somewhere else */}
+      <Pressable
+        onPress={onClose}
+        className="absolute inset-0 z-40"
+      />
+
+      <View
+        className={`
+          absolute
+          right-5
+          top-[88px]
+          z-[60]
+          w-[190px]
+          overflow-hidden
+          rounded-xl
+          border
+          shadow-xl
+          ${
+            isDark
+              ? "border-[#292929] bg-[#171717]"
+              : "border-gray-200 bg-white"
+          }
+        `}
+      >
+        {/* ==================================================
+            PROFILE
+            ================================================== */}
+
+        <Pressable
+          onPress={onProfile}
+          className={`
+            flex-row
+            items-center
+            px-4
+            py-4
+            ${
+              isDark
+                ? "active:bg-[#242424]"
+                : "active:bg-gray-100"
+            }
+          `}
+        >
+          <View
+            className={`
+              h-9
+              w-9
+              items-center
+              justify-center
+              rounded-full
+              ${
+                isDark
+                  ? "bg-[#292929]"
+                  : "bg-gray-100"
+              }
+            `}
+          >
+            <Ionicons
+              name="person-outline"
+              size={19}
+              color="#ef4444"
+            />
+          </View>
+
+          <Text
+            className={`
+              ml-3
+              text-sm
+              font-semibold
+              ${
+                isDark
+                  ? "text-white"
+                  : "text-gray-900"
+              }
+            `}
+          >
+            Profile
+          </Text>
+        </Pressable>
+
+        {/* ==================================================
+            DIVIDER
+            ================================================== */}
+
+        <View
+          className={
+            isDark
+              ? "h-px bg-[#292929]"
+              : "h-px bg-gray-200"
+          }
+        />
+
+        {/* ==================================================
+            LOGOUT
+            ================================================== */}
+
+        <Pressable
+          onPress={onLogout}
+          className={`
+            flex-row
+            items-center
+            px-4
+            py-4
+            ${
+              isDark
+                ? "active:bg-[#242424]"
+                : "active:bg-gray-100"
+            }
+          `}
+        >
+          <View
+            className={`
+              h-9
+              w-9
+              items-center
+              justify-center
+              rounded-full
+              ${
+                isDark
+                  ? "bg-red-950/40"
+                  : "bg-red-50"
+              }
+            `}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={19}
+              color="#ef4444"
+            />
+          </View>
+
+          <Text className="ml-3 text-sm font-semibold text-red-500">
+            Logout
+          </Text>
+        </Pressable>
+      </View>
+    </>
   );
 }
 
@@ -276,6 +442,11 @@ function RootContent() {
     setLoginVisible,
   ] = useState(false);
 
+  const [
+    accountMenuVisible,
+    setAccountMenuVisible,
+  ] = useState(false);
+
   /* ==========================================================
      AUTH BUTTON
 
@@ -283,13 +454,15 @@ function RootContent() {
      Open LoginModal directly.
 
      LOGGED IN:
-     Logout and return to Home.
+     Open account dropdown.
      ========================================================== */
 
   const handleAuthPress =
     () => {
       if (isLoggedIn) {
-        void handleLogout();
+        setAccountMenuVisible(
+          (visible) => !visible,
+        );
         return;
       }
 
@@ -299,17 +472,37 @@ function RootContent() {
     };
 
   /* ==========================================================
+     PROFILE
+
+     Close dropdown and navigate to profile.
+     ========================================================== */
+
+  const handleProfile =
+    () => {
+      setAccountMenuVisible(
+        false,
+      );
+
+      router.push("/others/profile/profile");
+    };
+
+  /* ==========================================================
      LOGOUT
 
      After logout:
-     1. Close side menu
-     2. Close login modal if necessary
-     3. Navigate to Home
+     1. Close account dropdown
+     2. Close side menu
+     3. Close login modal if necessary
+     4. Navigate to Home
      ========================================================== */
 
   const handleLogout =
     async () => {
       try {
+        setAccountMenuVisible(
+          false,
+        );
+
         setMenuVisible(false);
         setLoginVisible(false);
 
@@ -331,10 +524,10 @@ function RootContent() {
           error,
         );
 
-        /*
-         * Even if something goes wrong during navigation,
-         * make sure the menu is closed.
-         */
+        setAccountMenuVisible(
+          false,
+        );
+
         setMenuVisible(false);
       }
     };
@@ -355,11 +548,6 @@ function RootContent() {
        * AuthContext has already updated isLoggedIn.
        */
       setLoginVisible(false);
-
-      /*
-       * Keep the user on the current screen after login.
-       * The authentication state will update automatically.
-       */
     };
 
   return (
@@ -416,12 +604,17 @@ function RootContent() {
             ==================================================== */}
 
         <GlobalHeader
-          onMenuPress={() =>
-            setMenuVisible(true)
-          }
+          onMenuPress={() => {
+            setAccountMenuVisible(
+              false,
+            );
+
+            setMenuVisible(true);
+          }}
           onAuthPress={
             handleAuthPress
           }
+          isLoggedIn={isLoggedIn}
         />
 
         {/* ====================================================
@@ -436,6 +629,30 @@ function RootContent() {
             }}
           />
         </Stack>
+
+        {/* ====================================================
+            ACCOUNT DROPDOWN
+
+            Only available when logged in.
+            ==================================================== */}
+
+        <AccountDropdown
+          visible={
+            isLoggedIn &&
+            accountMenuVisible
+          }
+          onProfile={
+            handleProfile
+          }
+          onLogout={
+            handleLogout
+          }
+          onClose={() =>
+            setAccountMenuVisible(
+              false,
+            )
+          }
+        />
 
         {/* ====================================================
             SIDE MENU
@@ -467,11 +684,6 @@ function RootContent() {
             handleLoginSuccess
           }
           onRegister={() => {
-            /*
-             * If your LoginModal already handles the
-             * Register button internally, this can remain
-             * as the callback supplied to it.
-             */
             setLoginVisible(false);
           }}
         />
@@ -505,3 +717,4 @@ export default function RootLayout() {
     </AppThemeProvider>
   );
 }
+

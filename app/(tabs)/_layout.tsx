@@ -127,20 +127,20 @@ export default function TabLayout() {
       />
 
       {/* ==========================================
-          PROFILE TAB
+          PAYMENTS TAB
       ========================================== */}
 
       <Tabs.Screen
-        name="profile"
+        name="payments"
         options={{
-          title: "Profile",
+          title: "Payments",
 
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={
                 focused
-                  ? "person-circle"
-                  : "person-circle-outline"
+                  ? "card"
+                  : "card-outline"
               }
               size={24}
               color={color}
