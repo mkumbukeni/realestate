@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useMemo,
@@ -38,6 +37,8 @@ import MapView, {
 } from "react-native-maps";
 
 import SideMenu from "@/app/components/sidebar/SideMenu";
+
+import { useAuth } from "@/app/components/auth/AuthContext";
 
 import {
   fetchProperties,
@@ -137,6 +138,15 @@ export default function PropertyDetailsScreen() {
 
   const isDark =
     colorScheme !== "light";
+
+  // ============================================================
+  // AUTHENTICATED USER
+  // ============================================================
+
+  const { user } = useAuth();
+
+  const loggedInUserId =
+    user?.id;
 
   const params =
     useLocalSearchParams<{
@@ -469,8 +479,35 @@ export default function PropertyDetailsScreen() {
       return;
     }
 
+    if (
+      loggedInUserId ===
+        undefined ||
+      loggedInUserId === null
+    ) {
+      console.error(
+        "Cannot make offer: logged-in user ID is missing.",
+      );
+
+      return;
+    }
+
     const makeOfferUrl =
-      `https://dev.valuationsafrica.mw/property/makeoffer/19/${propertyId}`;
+      `https://dev.valuationsafrica.mw/property/makeoffer/${loggedInUserId}/${propertyId}`;
+
+    console.log(
+      "Opening Make Offer URL:",
+      makeOfferUrl,
+    );
+
+    console.log(
+      "Logged-in user ID:",
+      loggedInUserId,
+    );
+
+    console.log(
+      "Property ID:",
+      propertyId,
+    );
 
     try {
       const supported =
@@ -483,6 +520,7 @@ export default function PropertyDetailsScreen() {
           "Cannot open Make Offer URL:",
           makeOfferUrl,
         );
+
         return;
       }
 
@@ -1158,9 +1196,7 @@ export default function PropertyDetailsScreen() {
               {masterBedroom ? (
                 <Highlight
                   icon="bed-outline"
-                  value={
-                    masterBedroom
-                  }
+                  value={masterBedroom}
                   label=""
                   wide
                   isDark={isDark}

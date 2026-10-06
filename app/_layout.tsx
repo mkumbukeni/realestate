@@ -1,4 +1,3 @@
-
 import {
   DarkTheme,
   DefaultTheme,
@@ -124,9 +123,11 @@ function GlobalMenuButton({
 function GlobalAuthButton({
   onPress,
   isLoggedIn,
+  firstLetter,
 }: {
   onPress: () => void;
   isLoggedIn: boolean;
+  firstLetter?: string;
 }) {
   const { isDark } =
     useTheme();
@@ -145,6 +146,8 @@ function GlobalAuthButton({
         w-8
         items-center
         justify-center
+        rounded-full
+        border
         shadow-lg
         ${
           isDark
@@ -153,19 +156,36 @@ function GlobalAuthButton({
         }
       `}
     >
-      <Ionicons
-        name={
-          isLoggedIn
-            ? "person-circle-outline"
-            : "person-outline"
-        }
-        size={26}
-        color={
-          isDark
-            ? "white"
-            : "black"
-        }
-      />
+      {isLoggedIn &&
+      firstLetter ? (
+        <Text
+          className={`
+            text-sm
+            font-bold
+            ${
+              isDark
+                ? "text-white"
+                : "text-black"
+            }
+          `}
+        >
+          {firstLetter}
+        </Text>
+      ) : (
+        <Ionicons
+          name={
+            isLoggedIn
+              ? "person-circle-outline"
+              : "person-outline"
+          }
+          size={26}
+          color={
+            isDark
+              ? "white"
+              : "black"
+          }
+        />
+      )}
     </Pressable>
   );
 }
@@ -178,10 +198,12 @@ function GlobalHeader({
   onMenuPress,
   onAuthPress,
   isLoggedIn,
+  firstLetter,
 }: {
   onMenuPress: () => void;
   onAuthPress: () => void;
   isLoggedIn: boolean;
+  firstLetter?: string;
 }) {
   const { isDark } =
     useTheme();
@@ -245,6 +267,7 @@ function GlobalHeader({
         <GlobalAuthButton
           onPress={onAuthPress}
           isLoggedIn={isLoggedIn}
+          firstLetter={firstLetter}
         />
       </View>
     </View>
@@ -276,6 +299,7 @@ function AccountDropdown({
   return (
     <>
       {/* Invisible area to close the dropdown */}
+
       <Pressable
         onPress={onClose}
         className="absolute inset-0 z-40"
@@ -433,6 +457,7 @@ function AuthDropdown({
   return (
     <>
       {/* Invisible area to close the dropdown */}
+
       <Pressable
         onPress={onClose}
         className="absolute inset-0 z-40"
@@ -618,6 +643,7 @@ function RootContent() {
 
   const {
     isLoggedIn,
+    user,
     logout,
   } = useAuth();
 
@@ -648,6 +674,19 @@ function RootContent() {
     authDropdownVisible,
     setAuthDropdownVisible,
   ] = useState(false);
+
+  /* ==========================================================
+     GET FIRST LETTER OF LOGGED-IN USER'S NAME
+     ========================================================== */
+
+  const firstLetter =
+    isLoggedIn &&
+    user?.name
+      ? String(user.name)
+          .trim()
+          .charAt(0)
+          .toUpperCase()
+      : "";
 
   /* ==========================================================
      AUTH BUTTON
@@ -755,7 +794,10 @@ function RootContent() {
     ) => {
       /*
        * AuthContext has already updated
-       * isLoggedIn.
+       * isLoggedIn and user.
+       *
+       * The firstLetter value above
+       * automatically updates from user.name.
        */
       setLoginVisible(false);
     };
@@ -832,6 +874,7 @@ function RootContent() {
             handleAuthPress
           }
           isLoggedIn={isLoggedIn}
+          firstLetter={firstLetter}
         />
 
         {/* ====================================================
@@ -960,4 +1003,3 @@ export default function RootLayout() {
     </AppThemeProvider>
   );
 }
-
