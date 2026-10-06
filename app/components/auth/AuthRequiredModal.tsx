@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Modal,
@@ -15,6 +14,10 @@ interface AuthRequiredModalProps {
   onClose: () => void;
   onLogin: () => void;
   onRegister: () => void;
+
+  // Optional custom content for different screens
+  title?: string;
+  description?: string;
 }
 
 export default function AuthRequiredModal({
@@ -22,6 +25,8 @@ export default function AuthRequiredModal({
   onClose,
   onLogin,
   onRegister,
+  title = "Sign in to view property details",
+  description = "Please sign in or create an account to view the full details of this property.",
 }: AuthRequiredModalProps) {
   const { isDark } = useTheme();
 
@@ -106,7 +111,7 @@ export default function AuthRequiredModal({
                 : "text-black"
             }`}
           >
-            Sign in to view property details
+            {title}
           </Text>
 
           {/* DESCRIPTION */}
@@ -118,9 +123,7 @@ export default function AuthRequiredModal({
                 : "text-gray-600"
             }`}
           >
-            Please sign in or create an account
-            to view the full details of this
-            property.
+            {description}
           </Text>
 
           {/* SIGN IN */}
@@ -194,4 +197,3 @@ export default function AuthRequiredModal({
     </Modal>
   );
 }
-

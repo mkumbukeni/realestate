@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Alert,
@@ -11,6 +10,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
+
+import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
+import LoginModal from "@/app/components/auth/LoginModal";
+import RegisterModal from "@/app/components/auth/RegisterModal";
+import { useAuth } from "@/app/components/auth/AuthContext";
 
 type PlanType = "renting" | "buying" | "whatsapp";
 
@@ -59,7 +63,11 @@ const PlanCard = ({
               backgroundColor: isDark ? "#2b1111" : "#fef2f2",
             }}
           >
-            <Ionicons name={icon} size={25} color="#dc2626" />
+            <Ionicons
+              name={icon}
+              size={25}
+              color="#dc2626"
+            />
           </View>
 
           <View className="flex-1">
@@ -83,7 +91,9 @@ const PlanCard = ({
         <View
           className="mb-5 rounded-xl p-4"
           style={{
-            backgroundColor: isDark ? "#101010" : "#f7f7f7",
+            backgroundColor: isDark
+              ? "#101010"
+              : "#f7f7f7",
           }}
         >
           <View className="flex-row items-baseline">
@@ -120,10 +130,16 @@ const PlanCard = ({
               <View
                 className="mr-3 mt-0.5 h-5 w-5 items-center justify-center rounded-full"
                 style={{
-                  backgroundColor: isDark ? "#2b1111" : "#fef2f2",
+                  backgroundColor: isDark
+                    ? "#2b1111"
+                    : "#fef2f2",
                 }}
               >
-                <Ionicons name="checkmark" size={13} color="#dc2626" />
+                <Ionicons
+                  name="checkmark"
+                  size={13}
+                  color="#dc2626"
+                />
               </View>
 
               <Text
@@ -152,16 +168,50 @@ const PlanCard = ({
 
 export default function PaymentScreen() {
   const router = useRouter();
+
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
 
-  const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
+  /*
+   * Authentication state
+   */
+  const { isLoggedIn } = useAuth();
 
-  const backgroundColor = isDark ? "#0d0d0d" : "#f5f5f5";
-  const primaryText = isDark ? "#ffffff" : "#171717";
-  const secondaryText = isDark ? "#a3a3a3" : "#666666";
+  /*
+   * Selected plan
+   */
+  const [selectedPlan, setSelectedPlan] =
+    useState<PlanType | null>(null);
 
-  const handleChoosePlan = (plan: PlanType) => {
+  /*
+   * Authentication modal states
+   */
+  const [authRequiredVisible, setAuthRequiredVisible] =
+    useState(false);
+
+  const [loginVisible, setLoginVisible] =
+    useState(false);
+
+  const [registerVisible, setRegisterVisible] =
+    useState(false);
+
+  const backgroundColor = isDark
+    ? "#0d0d0d"
+    : "#f5f5f5";
+
+  const primaryText = isDark
+    ? "#ffffff"
+    : "#171717";
+
+  const secondaryText = isDark
+    ? "#a3a3a3"
+    : "#666666";
+
+  // ============================================================
+  // CONTINUE WITH SELECTED PLAN
+  // ============================================================
+
+  const continueWithPlan = (plan: PlanType) => {
     setSelectedPlan(plan);
 
     if (plan === "renting") {
@@ -172,7 +222,9 @@ export default function PaymentScreen() {
           {
             text: "Continue",
             onPress: () => {
-              // Add payment navigation/API here later.
+              /*
+               * Add payment navigation/API here later.
+               */
             },
           },
           {
@@ -181,6 +233,7 @@ export default function PaymentScreen() {
           },
         ],
       );
+
       return;
     }
 
@@ -192,7 +245,9 @@ export default function PaymentScreen() {
           {
             text: "Continue",
             onPress: () => {
-              // Add payment navigation/API here later.
+              /*
+               * Add payment navigation/API here later.
+               */
             },
           },
           {
@@ -201,6 +256,7 @@ export default function PaymentScreen() {
           },
         ],
       );
+
       return;
     }
 
@@ -211,7 +267,9 @@ export default function PaymentScreen() {
         {
           text: "Continue",
           onPress: () => {
-            // Add WhatsApp subscription/payment navigation here later.
+            /*
+             * Add WhatsApp subscription/payment navigation here later.
+             */
           },
         },
         {
@@ -222,24 +280,111 @@ export default function PaymentScreen() {
     );
   };
 
+  // ============================================================
+  // CHOOSE PLAN / SUBSCRIBE
+  // ============================================================
+
+  const handleChoosePlan = (plan: PlanType) => {
+    /*
+     * Logged-out users must authenticate before continuing.
+     */
+    if (!isLoggedIn) {
+      setSelectedPlan(plan);
+      setAuthRequiredVisible(true);
+      return;
+    }
+
+    /*
+     * Logged-in users can continue directly.
+     */
+    continueWithPlan(plan);
+  };
+
+  // ============================================================
+  // AUTHENTICATION REQUIRED POPUP
+  // ============================================================
+
+  const handleCloseAuthRequired = () => {
+    setAuthRequiredVisible(false);
+    setSelectedPlan(null);
+  };
+
+  const handleOpenLogin = () => {
+    setAuthRequiredVisible(false);
+    setLoginVisible(true);
+  };
+
+  const handleOpenRegister = () => {
+    setAuthRequiredVisible(false);
+    setRegisterVisible(true);
+  };
+
+  // ============================================================
+  // LOGIN
+  // ============================================================
+
+  const handleCloseLogin = () => {
+    setLoginVisible(false);
+  };
+
+  const handleLoginSuccess = (
+    _email: string,
+    _response: Record<string, unknown>,
+  ) => {
+    /*
+     * AuthContext updates isLoggedIn.
+     */
+    setLoginVisible(false);
+
+    /*
+     * Clear the pending plan after successful login.
+     * The user can now choose the plan using the normal
+     * logged-in button.
+     */
+    setSelectedPlan(null);
+  };
+
+  // ============================================================
+  // REGISTER
+  // ============================================================
+
+  const handleCloseRegister = () => {
+    setRegisterVisible(false);
+  };
+
+  const handleRegistrationComplete = () => {
+    /*
+     * After registration, open the login modal.
+     */
+    setRegisterVisible(false);
+    setLoginVisible(true);
+  };
+
   return (
     <SafeAreaView
       className="flex-1"
       edges={["top", "bottom"]}
       style={{ backgroundColor }}
     >
-      {/* Header */}
+      {/* ========================================================
+          HEADER
+          ======================================================== */}
+
       <View
         className="flex-row items-center border-b px-4 py-3"
         style={{
-          borderBottomColor: isDark ? "#292929" : "#e5e5e5",
+          borderBottomColor: isDark
+            ? "#292929"
+            : "#e5e5e5",
         }}
       >
         <Pressable
           onPress={() => router.back()}
           className="mr-3 h-10 w-10 items-center justify-center rounded-full active:opacity-70"
           style={{
-            backgroundColor: isDark ? "#1c1c1c" : "#ffffff",
+            backgroundColor: isDark
+              ? "#1c1c1c"
+              : "#ffffff",
           }}
         >
           <Ionicons
@@ -274,7 +419,10 @@ export default function PaymentScreen() {
           paddingBottom: 40,
         }}
       >
-        {/* Intro */}
+        {/* ======================================================
+            INTRO
+            ====================================================== */}
+
         <View className="mb-6">
           <Text
             className="text-2xl font-extrabold"
@@ -287,12 +435,111 @@ export default function PaymentScreen() {
             className="mt-2 text-sm leading-5"
             style={{ color: secondaryText }}
           >
-            Get priority access to properties that match your requirements
-            and receive relevant property updates directly from us.
+            Get priority access to properties that match your
+            requirements and receive relevant property updates
+            directly from us.
           </Text>
         </View>
 
-        {/* Renting */}
+        {/* ======================================================
+            AUTHENTICATION STATUS
+            ====================================================== */}
+
+        {isLoggedIn ? (
+          <View
+            className="mb-6 flex-row items-start rounded-2xl border p-4"
+            style={{
+              backgroundColor: isDark
+                ? "#171717"
+                : "#ffffff",
+              borderColor: isDark
+                ? "#2a2a2a"
+                : "#e5e5e5",
+            }}
+          >
+            <View
+              className="mr-3 h-10 w-10 items-center justify-center rounded-full"
+              style={{
+                backgroundColor: isDark
+                  ? "#102719"
+                  : "#f0fdf4",
+              }}
+            >
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={22}
+                color="#22c55e"
+              />
+            </View>
+
+            <View className="flex-1">
+              <Text
+                className="text-sm font-bold"
+                style={{ color: primaryText }}
+              >
+                You're signed in
+              </Text>
+
+              <Text
+                className="mt-1 text-sm leading-5"
+                style={{ color: secondaryText }}
+              >
+                You can now choose a subscription plan or
+                subscribe to WhatsApp property alerts.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View
+            className="mb-6 flex-row items-start rounded-2xl border p-4"
+            style={{
+              backgroundColor: isDark
+                ? "#171717"
+                : "#ffffff",
+              borderColor: isDark
+                ? "#2a2a2a"
+                : "#e5e5e5",
+            }}
+          >
+            <View
+              className="mr-3 h-10 w-10 items-center justify-center rounded-full"
+              style={{
+                backgroundColor: isDark
+                  ? "#2b1111"
+                  : "#fef2f2",
+              }}
+            >
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color="#dc2626"
+              />
+            </View>
+
+            <View className="flex-1">
+              <Text
+                className="text-sm font-bold"
+                style={{ color: primaryText }}
+              >
+                Sign in to choose a plan
+              </Text>
+
+              <Text
+                className="mt-1 text-sm leading-5"
+                style={{ color: secondaryText }}
+              >
+                Please sign in or create an account to choose
+                a property subscription plan or subscribe to
+                WhatsApp property alerts.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* ======================================================
+            RENTING PLAN
+            ====================================================== */}
+
         <PlanCard
           title="Renting a Property"
           price="MK10,000"
@@ -305,12 +552,21 @@ export default function PaymentScreen() {
             "Up to 4 property referrals per month",
             "Receive WhatsApp and email notifications",
           ]}
-          buttonText="Choose a Plan"
-          onPress={() => handleChoosePlan("renting")}
+          buttonText={
+            isLoggedIn
+              ? "Choose a Plan"
+              : "Sign in to Choose a Plan"
+          }
+          onPress={() =>
+            handleChoosePlan("renting")
+          }
           isDark={isDark}
         />
 
-        {/* Buying */}
+        {/* ======================================================
+            BUYING PLAN
+            ====================================================== */}
+
         <PlanCard
           title="Buying a Property"
           price="MK100,000"
@@ -324,12 +580,21 @@ export default function PaymentScreen() {
             "Receive WhatsApp and email notifications",
             "Priority customer support",
           ]}
-          buttonText="Choose a Plan"
-          onPress={() => handleChoosePlan("buying")}
+          buttonText={
+            isLoggedIn
+              ? "Choose a Plan"
+              : "Sign in to Choose a Plan"
+          }
+          onPress={() =>
+            handleChoosePlan("buying")
+          }
           isDark={isDark}
         />
 
-        {/* WhatsApp Subscription Section */}
+        {/* ======================================================
+            WHATSAPP PROPERTY ALERTS
+            ====================================================== */}
+
         <View className="mb-4 mt-3">
           <Text
             className="text-xl font-extrabold"
@@ -342,25 +607,32 @@ export default function PaymentScreen() {
             className="mt-2 text-sm leading-5"
             style={{ color: secondaryText }}
           >
-            Stay updated with property opportunities and important updates
-            through WhatsApp.
+            Stay updated with property opportunities and
+            important updates through WhatsApp.
           </Text>
         </View>
 
         <View
           className="mb-5 overflow-hidden rounded-2xl border"
           style={{
-            backgroundColor: isDark ? "#171717" : "#ffffff",
-            borderColor: isDark ? "#2a2a2a" : "#e5e5e5",
+            backgroundColor: isDark
+              ? "#171717"
+              : "#ffffff",
+            borderColor: isDark
+              ? "#2a2a2a"
+              : "#e5e5e5",
           }}
         >
           <View className="p-5">
             {/* WhatsApp header */}
+
             <View className="mb-5 flex-row items-center">
               <View
                 className="mr-3 h-12 w-12 items-center justify-center rounded-full"
                 style={{
-                  backgroundColor: isDark ? "#102719" : "#f0fdf4",
+                  backgroundColor: isDark
+                    ? "#102719"
+                    : "#f0fdf4",
                 }}
               >
                 <Ionicons
@@ -388,10 +660,13 @@ export default function PaymentScreen() {
             </View>
 
             {/* WhatsApp information */}
+
             <View
               className="mb-5 rounded-xl p-4"
               style={{
-                backgroundColor: isDark ? "#101010" : "#f7f7f7",
+                backgroundColor: isDark
+                  ? "#101010"
+                  : "#f7f7f7",
               }}
             >
               <Text
@@ -448,6 +723,7 @@ export default function PaymentScreen() {
             </View>
 
             {/* Subscription details */}
+
             <View className="mb-5">
               <Text
                 className="mb-2 text-sm font-bold"
@@ -460,39 +736,52 @@ export default function PaymentScreen() {
                 className="text-sm leading-5"
                 style={{ color: secondaryText }}
               >
-                Subscribe with your WhatsApp number and tell us what type of
-                property you are looking for. We will send relevant property
-                opportunities and updates directly to your WhatsApp.
+                Subscribe with your WhatsApp number and tell us
+                what type of property you are looking for. We will
+                send relevant property opportunities and updates
+                directly to your WhatsApp.
               </Text>
             </View>
 
-            {/* WhatsApp button */}
-            <Pressable
-              onPress={() => handleChoosePlan("whatsapp")}
-              className="flex-row items-center justify-center rounded-xl py-3.5 active:opacity-80"
-              style={{
-                backgroundColor: "#22c55e",
-              }}
-            >
-              <Ionicons
-                name="logo-whatsapp"
-                size={20}
-                color="#ffffff"
-              />
+            
 
-              <Text className="ml-2 text-base font-bold text-white">
-                Subscribe to WhatsApp Alerts
-              </Text>
-            </Pressable>
+            {/* WhatsApp button */}
+
+          <Pressable
+  onPress={() => handleChoosePlan("whatsapp")}
+  className="w-full flex-row items-center justify-center rounded-xl px-4 py-3.5 active:opacity-80"
+  style={{
+    backgroundColor: "#22c55e",
+  }}
+>
+  <Ionicons
+    name="logo-whatsapp"
+    size={20}
+    color="#ffffff"
+  />
+
+  <Text className="ml-2 flex-shrink text-center text-base font-bold text-white">
+    {isLoggedIn
+      ? "Subscribe to WhatsApp Alerts"
+      : "Sign in to Subscribe to WhatsApp Alerts"}
+  </Text>
+</Pressable>
           </View>
         </View>
 
-        {/* Benefits */}
+        {/* ======================================================
+            BENEFITS
+            ====================================================== */}
+
         <View
           className="rounded-2xl border p-5"
           style={{
-            backgroundColor: isDark ? "#171717" : "#ffffff",
-            borderColor: isDark ? "#2a2a2a" : "#e5e5e5",
+            backgroundColor: isDark
+              ? "#171717"
+              : "#ffffff",
+            borderColor: isDark
+              ? "#2a2a2a"
+              : "#e5e5e5",
           }}
         >
           <View className="mb-3 flex-row items-center">
@@ -514,40 +803,53 @@ export default function PaymentScreen() {
             className="text-sm leading-5"
             style={{ color: secondaryText }}
           >
-            Our property subscription service helps you save time by
-            connecting you with properties that match your requirements.
-            Receive relevant listings, recommendations and important updates
-            without having to search constantly.
+            Our property subscription service helps you save
+            time by connecting you with properties that match
+            your requirements. Receive relevant listings,
+            recommendations and important updates without
+            having to search constantly.
           </Text>
         </View>
-
-        {/* Selected plan indicator */}
-        {selectedPlan && (
-          <View
-            className="mt-4 rounded-xl border p-4"
-            style={{
-              backgroundColor: isDark ? "#171717" : "#ffffff",
-              borderColor: isDark ? "#2a2a2a" : "#e5e5e5",
-            }}
-          >
-            <View className="flex-row items-center">
-              <Ionicons
-                name="checkmark-circle"
-                size={22}
-                color="#22c55e"
-              />
-
-              <Text
-                className="ml-2 flex-1 text-sm font-semibold"
-                style={{ color: primaryText }}
-              >
-                Plan selected. Continue to complete your subscription.
-              </Text>
-            </View>
-          </View>
-        )}
       </ScrollView>
+
+      {/* ========================================================
+          AUTHENTICATION REQUIRED POPUP
+          ======================================================== */}
+
+      <AuthRequiredModal
+        visible={authRequiredVisible}
+        onClose={handleCloseAuthRequired}
+        onLogin={handleOpenLogin}
+        onRegister={handleOpenRegister}
+        title="Sign in to choose a plan"
+        description="Please sign in or create an account to choose a property subscription plan or subscribe to WhatsApp property alerts."
+      />
+
+      {/* ========================================================
+          LOGIN MODAL
+          ======================================================== */}
+
+      <LoginModal
+        visible={loginVisible}
+        onClose={handleCloseLogin}
+        onLogin={handleLoginSuccess}
+        onRegister={() => {
+          setLoginVisible(false);
+          setRegisterVisible(true);
+        }}
+      />
+
+      {/* ========================================================
+          REGISTER MODAL
+          ======================================================== */}
+
+      <RegisterModal
+        visible={registerVisible}
+        onClose={handleCloseRegister}
+        onRegistrationComplete={
+          handleRegistrationComplete
+        }
+      />
     </SafeAreaView>
   );
 }
-

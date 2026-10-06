@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -572,6 +573,13 @@ export default function HomeScreen() {
     useState(true);
 
   // ============================================================
+  // REFRESH STATE
+  // ============================================================
+
+  const [refreshing, setRefreshing] =
+    useState(false);
+
+  // ============================================================
   // MAIN SCROLL POSITION
   // ============================================================
 
@@ -666,142 +674,266 @@ export default function HomeScreen() {
   }, []);
 
   // ============================================================
-  // LOAD NEW TO MARKET
+  // LOAD ALL HOME DATA
+  //
+  // This function is used both on initial load and when the
+  // user pulls the entire screen down to refresh.
+  //
+  // IMPORTANT:
+  // If one request fails because the network is down, the
+  // existing data is kept. This prevents a failed refresh from
+  // replacing working property sections with empty arrays.
+  // ============================================================
+
+  const loadHomeData = async (
+    isRefresh = false,
+  ) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    }
+
+    /*
+     * During a manual refresh we do not show the large loading
+     * placeholders inside every section. The pull-to-refresh
+     * indicator at the top is enough.
+     *
+     * On the first load, the individual section loaders remain
+     * visible.
+     */
+    if (!isRefresh) {
+      setLoadingProperties(true);
+      setLoadingFeatured(true);
+      setLoadingOpenHouses(true);
+      setLoadingMostViewed(true);
+      setLoadingAgents(true);
+    }
+
+    try {
+      /*
+       * Load all main home requests together.
+       *
+       * Promise.allSettled is intentional here.
+       *
+       * If the network is down and one endpoint fails, the
+       * successful sections still update instead of the entire
+       * refresh failing.
+       */
+      const results =
+        await Promise.allSettled([
+          fetchProperties(),
+          fetchFeaturedProperties(),
+          fetchMostViewedProperties(),
+          fetchAgents(),
+        ]);
+
+      // ========================================================
+      // NEW TO MARKET + OPEN HOUSES
+      // ========================================================
+
+      const propertiesResult =
+        results[0];
+
+      if (
+        propertiesResult.status ===
+        "fulfilled"
+      ) {
+        const result =
+          propertiesResult.value;
+
+        setProperties(result);
+
+        const openHouses =
+          result.filter(
+            (property) =>
+              property.isOpenHouse ===
+              true,
+          );
+
+        setOpenHouseProperties(
+          openHouses,
+        );
+      } else {
+        console.error(
+          "Failed to load properties:",
+          propertiesResult.reason,
+        );
+      }
+
+      // ========================================================
+      // FEATURED
+      // ========================================================
+
+      const featuredResult =
+        results[1];
+
+      if (
+        featuredResult.status ===
+        "fulfilled"
+      ) {
+        setFeaturedProperties(
+          featuredResult.value,
+        );
+      } else {
+        console.error(
+          "Failed to load featured properties:",
+          featuredResult.reason,
+        );
+      }
+
+      // ========================================================
+      // MOST VIEWED
+      // ========================================================
+
+      const mostViewedResult =
+        results[2];
+
+      if (
+        mostViewedResult.status ===
+        "fulfilled"
+      ) {
+        setMostViewedProperties(
+          mostViewedResult.value,
+        );
+      } else {
+        console.error(
+          "Failed to load most viewed properties:",
+          mostViewedResult.reason,
+        );
+      }
+
+      // ========================================================
+      // AGENTS
+      // ========================================================
+
+      const agentsResult =
+        results[3];
+
+      if (
+        agentsResult.status ===
+        "fulfilled"
+      ) {
+        setAgents(
+          agentsResult.value,
+        );
+      } else {
+        console.error(
+          "Failed to load home agents:",
+          agentsResult.reason,
+        );
+      }
+    } catch (error) {
+      /*
+       * This is a final safety net.
+       *
+       * We intentionally do NOT clear existing data here.
+       */
+      console.error(
+        "Failed to refresh home data:",
+        error,
+      );
+    } finally {
+      if (!isRefresh) {
+        setLoadingProperties(false);
+        setLoadingFeatured(false);
+        setLoadingOpenHouses(false);
+        setLoadingMostViewed(false);
+        setLoadingAgents(false);
+      }
+
+      if (isRefresh) {
+        setRefreshing(false);
+      }
+    }
+  };
+
+  // ============================================================
+  // INITIAL LOAD
   // ============================================================
 
   useEffect(() => {
-    const loadProperties =
-      async () => {
-        try {
-          const result =
-            await fetchProperties();
-
-          setProperties(result);
-        } catch (error) {
-          console.error(
-            "Failed to load new-to-market properties:",
-            error,
-          );
-        } finally {
-          setLoadingProperties(false);
-        }
-      };
-
-    void loadProperties();
+    void loadHomeData(false);
   }, []);
 
   // ============================================================
-  // LOAD FEATURED PROPERTIES
+  // PULL TO REFRESH
+  //
+  // Sliding down from the top of the ENTIRE screen triggers
+  // this function.
   // ============================================================
 
-  useEffect(() => {
-    const loadFeaturedProperties =
-      async () => {
-        try {
-          const result =
-            await fetchFeaturedProperties();
+  const handleRefresh = async () => {
+    if (refreshing) {
+      return;
+    }
 
-          setFeaturedProperties(
-            result,
+    await loadHomeData(true);
+
+    /*
+     * If the user has already used "Use My Location", refresh
+     * that section as well.
+     *
+     * We deliberately do this after the normal home requests so
+     * the standard property sections always reload.
+     */
+    if (nearbyRequested) {
+      try {
+        const servicesEnabled =
+          await Location.hasServicesEnabledAsync();
+
+        if (!servicesEnabled) {
+          console.warn(
+            "Location services are disabled while refreshing nearby properties.",
           );
-        } catch (error) {
-          console.error(
-            "Failed to load featured properties:",
-            error,
-          );
-        } finally {
-          setLoadingFeatured(false);
+
+          return;
         }
-      };
 
-    void loadFeaturedProperties();
-  }, []);
+        const permission =
+          await Location.getForegroundPermissionsAsync();
 
-  // ============================================================
-  // LOAD OPEN HOUSES
-  // ============================================================
-
-  useEffect(() => {
-    const loadOpenHouses =
-      async () => {
-        try {
-          const result =
-            await fetchProperties();
-
-          const openHouses =
-            result.filter(
-              (property) =>
-                property.isOpenHouse ===
-                true,
-            );
-
-          setOpenHouseProperties(
-            openHouses,
+        if (
+          permission.status !==
+          Location.PermissionStatus.GRANTED
+        ) {
+          console.warn(
+            "Location permission is not granted while refreshing nearby properties.",
           );
-        } catch (error) {
-          console.error(
-            "Failed to load open houses:",
-            error,
-          );
-        } finally {
-          setLoadingOpenHouses(false);
+
+          return;
         }
-      };
 
-    void loadOpenHouses();
-  }, []);
-
-  // ============================================================
-  // LOAD MOST VIEWED PROPERTIES
-  // ============================================================
-
-  useEffect(() => {
-    const loadMostViewedProperties =
-      async () => {
-        try {
-          const result =
-            await fetchMostViewedProperties();
-
-          setMostViewedProperties(
-            result,
+        const currentLocation =
+          await Location.getCurrentPositionAsync(
+            {
+              accuracy:
+                Location.Accuracy.Balanced,
+            },
           );
-        } catch (error) {
-          console.error(
-            "Failed to load most viewed properties:",
-            error,
+
+        const {
+          latitude,
+          longitude,
+        } = currentLocation.coords;
+
+        const result =
+          await fetchNearbyProperties(
+            latitude,
+            longitude,
           );
-        } finally {
-          setLoadingMostViewed(false);
-        }
-      };
 
-    void loadMostViewedProperties();
-  }, []);
-
-  // ============================================================
-  // LOAD AGENTS
-  // ============================================================
-
-  useEffect(() => {
-    const loadAgents =
-      async () => {
-        try {
-          const result =
-            await fetchAgents();
-
-          setAgents(result);
-        } catch (error) {
-          console.error(
-            "Failed to load home agents:",
-            error,
-          );
-        } finally {
-          setLoadingAgents(false);
-        }
-      };
-
-    void loadAgents();
-  }, []);
+        setNearbyProperties(result);
+      } catch (error) {
+        /*
+         * Keep the previous nearby properties if the network
+         * is down during refresh.
+         */
+        console.error(
+          "Failed to refresh nearby properties:",
+          error,
+        );
+      }
+    }
+  };
 
   // ============================================================
   // FIND PROPERTIES IN MY LOCATION
@@ -1182,6 +1314,19 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={100}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#ef4444"
+            colors={["#ef4444"]}
+            progressBackgroundColor={
+              isDark
+                ? "#171717"
+                : "#ffffff"
+            }
+          />
+        }
         onScroll={(event) => {
           setParentScrollY(
             event.nativeEvent.contentOffset.y,
