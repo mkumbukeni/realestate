@@ -248,7 +248,7 @@ function GlobalHeader({
           numberOfLines={1}
           className="
             text-center
-            text-2xl
+            text-xl
             font-bold
             text-red-500
           "
