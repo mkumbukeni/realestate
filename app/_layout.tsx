@@ -26,6 +26,7 @@ import {
 } from "@/app/components/auth/AuthContext";
 
 import LoginModal from "@/app/components/auth/LoginModal";
+import RegisterModal from "@/app/components/auth/RegisterModal";
 
 import {
   ThemeProvider as AppThemeProvider,
@@ -137,7 +138,7 @@ function GlobalAuthButton({
       accessibilityLabel={
         isLoggedIn
           ? "Open account menu"
-          : "Login"
+          : "Open login and register menu"
       }
       className={`
         h-8
@@ -251,7 +252,7 @@ function GlobalHeader({
 }
 
 /* ============================================================
-   ACCOUNT DROPDOWN
+   LOGGED-IN ACCOUNT DROPDOWN
    ============================================================ */
 
 function AccountDropdown({
@@ -274,8 +275,7 @@ function AccountDropdown({
 
   return (
     <>
-      {/* Invisible area to close the dropdown when
-          the user taps somewhere else */}
+      {/* Invisible area to close the dropdown */}
       <Pressable
         onPress={onClose}
         className="absolute inset-0 z-40"
@@ -299,9 +299,7 @@ function AccountDropdown({
           }
         `}
       >
-        {/* ==================================================
-            PROFILE
-            ================================================== */}
+        {/* PROFILE */}
 
         <Pressable
           onPress={onProfile}
@@ -354,9 +352,7 @@ function AccountDropdown({
           </Text>
         </Pressable>
 
-        {/* ==================================================
-            DIVIDER
-            ================================================== */}
+        {/* DIVIDER */}
 
         <View
           className={
@@ -366,9 +362,7 @@ function AccountDropdown({
           }
         />
 
-        {/* ==================================================
-            LOGOUT
-            ================================================== */}
+        {/* LOGOUT */}
 
         <Pressable
           onPress={onLogout}
@@ -415,6 +409,204 @@ function AccountDropdown({
 }
 
 /* ============================================================
+   LOGGED-OUT AUTH DROPDOWN
+   ============================================================ */
+
+function AuthDropdown({
+  visible,
+  onLogin,
+  onRegister,
+  onClose,
+}: {
+  visible: boolean;
+  onLogin: () => void;
+  onRegister: () => void;
+  onClose: () => void;
+}) {
+  const { isDark } =
+    useTheme();
+
+  if (!visible) {
+    return null;
+  }
+
+  return (
+    <>
+      {/* Invisible area to close the dropdown */}
+      <Pressable
+        onPress={onClose}
+        className="absolute inset-0 z-40"
+      />
+
+      <View
+        className={`
+          absolute
+          right-5
+          top-[88px]
+          z-[60]
+          w-[210px]
+          overflow-hidden
+          rounded-xl
+          border
+          shadow-xl
+          ${
+            isDark
+              ? "border-[#292929] bg-[#171717]"
+              : "border-gray-200 bg-white"
+          }
+        `}
+      >
+        {/* LOGIN */}
+
+        <Pressable
+          onPress={onLogin}
+          className={`
+            flex-row
+            items-center
+            px-4
+            py-4
+            ${
+              isDark
+                ? "active:bg-[#242424]"
+                : "active:bg-gray-100"
+            }
+          `}
+        >
+          <View
+            className={`
+              h-9
+              w-9
+              items-center
+              justify-center
+              rounded-full
+              ${
+                isDark
+                  ? "bg-[#292929]"
+                  : "bg-gray-100"
+              }
+            `}
+          >
+            <Ionicons
+              name="log-in-outline"
+              size={20}
+              color="#ef4444"
+            />
+          </View>
+
+          <View className="ml-3 flex-1">
+            <Text
+              className={`
+                text-sm
+                font-semibold
+                ${
+                  isDark
+                    ? "text-white"
+                    : "text-gray-900"
+                }
+              `}
+            >
+              Login
+            </Text>
+
+            <Text
+              className={`
+                mt-0.5
+                text-xs
+                ${
+                  isDark
+                    ? "text-gray-400"
+                    : "text-gray-500"
+                }
+              `}
+            >
+              Sign in to your account
+            </Text>
+          </View>
+        </Pressable>
+
+        {/* DIVIDER */}
+
+        <View
+          className={
+            isDark
+              ? "h-px bg-[#292929]"
+              : "h-px bg-gray-200"
+          }
+        />
+
+        {/* REGISTER */}
+
+        <Pressable
+          onPress={onRegister}
+          className={`
+            flex-row
+            items-center
+            px-4
+            py-4
+            ${
+              isDark
+                ? "active:bg-[#242424]"
+                : "active:bg-gray-100"
+            }
+          `}
+        >
+          <View
+            className={`
+              h-9
+              w-9
+              items-center
+              justify-center
+              rounded-full
+              ${
+                isDark
+                  ? "bg-[#292929]"
+                  : "bg-gray-100"
+              }
+            `}
+          >
+            <Ionicons
+              name="person-add-outline"
+              size={20}
+              color="#ef4444"
+            />
+          </View>
+
+          <View className="ml-3 flex-1">
+            <Text
+              className={`
+                text-sm
+                font-semibold
+                ${
+                  isDark
+                    ? "text-white"
+                    : "text-gray-900"
+                }
+              `}
+            >
+              Register
+            </Text>
+
+            <Text
+              className={`
+                mt-0.5
+                text-xs
+                ${
+                  isDark
+                    ? "text-gray-400"
+                    : "text-gray-500"
+                }
+              `}
+            >
+              Create a new account
+            </Text>
+          </View>
+        </Pressable>
+      </View>
+    </>
+  );
+}
+
+/* ============================================================
    ROOT CONTENT
    ============================================================ */
 
@@ -443,78 +635,97 @@ function RootContent() {
   ] = useState(false);
 
   const [
+    registerVisible,
+    setRegisterVisible,
+  ] = useState(false);
+
+  const [
     accountMenuVisible,
     setAccountMenuVisible,
+  ] = useState(false);
+
+  const [
+    authDropdownVisible,
+    setAuthDropdownVisible,
   ] = useState(false);
 
   /* ==========================================================
      AUTH BUTTON
 
      LOGGED OUT:
-     Open LoginModal directly.
+     Open Login/Register dropdown.
 
      LOGGED IN:
-     Open account dropdown.
+     Open Profile/Logout dropdown.
      ========================================================== */
 
   const handleAuthPress =
     () => {
       if (isLoggedIn) {
+        setAuthDropdownVisible(false);
+
         setAccountMenuVisible(
           (visible) => !visible,
         );
+
         return;
       }
 
-      // IMPORTANT:
-      // Do NOT open SideMenu here.
+      setAccountMenuVisible(false);
+
+      setAuthDropdownVisible(
+        (visible) => !visible,
+      );
+    };
+
+  /* ==========================================================
+     LOGIN FROM LOGGED-OUT DROPDOWN
+     ========================================================== */
+
+  const handleOpenLogin =
+    () => {
+      setAuthDropdownVisible(false);
       setLoginVisible(true);
     };
 
   /* ==========================================================
-     PROFILE
+     REGISTER FROM LOGGED-OUT DROPDOWN
+     ========================================================== */
 
-     Close dropdown and navigate to profile.
+  const handleOpenRegister =
+    () => {
+      setAuthDropdownVisible(false);
+      setRegisterVisible(true);
+    };
+
+  /* ==========================================================
+     PROFILE
      ========================================================== */
 
   const handleProfile =
     () => {
-      setAccountMenuVisible(
-        false,
-      );
+      setAccountMenuVisible(false);
 
-      router.push("/others/profile/profile");
+      router.push(
+        "/others/profile/profile",
+      );
     };
 
   /* ==========================================================
      LOGOUT
-
-     After logout:
-     1. Close account dropdown
-     2. Close side menu
-     3. Close login modal if necessary
-     4. Navigate to Home
      ========================================================== */
 
   const handleLogout =
     async () => {
       try {
-        setAccountMenuVisible(
-          false,
-        );
-
+        setAccountMenuVisible(false);
+        setAuthDropdownVisible(false);
         setMenuVisible(false);
         setLoginVisible(false);
+        setRegisterVisible(false);
 
         await logout();
 
-        /*
-         * Replace the current screen with Home.
-         *
-         * Using replace prevents the user from pressing
-         * Back and returning to the protected screen they
-         * were viewing before logout.
-         */
         router.replace(
           "/(tabs)/home",
         );
@@ -524,10 +735,8 @@ function RootContent() {
           error,
         );
 
-        setAccountMenuVisible(
-          false,
-        );
-
+        setAccountMenuVisible(false);
+        setAuthDropdownVisible(false);
         setMenuVisible(false);
       }
     };
@@ -545,9 +754,19 @@ function RootContent() {
       >,
     ) => {
       /*
-       * AuthContext has already updated isLoggedIn.
+       * AuthContext has already updated
+       * isLoggedIn.
        */
       setLoginVisible(false);
+    };
+
+  /* ==========================================================
+     REGISTER CLOSE
+     ========================================================== */
+
+  const handleRegisterClose =
+    () => {
+      setRegisterVisible(false);
     };
 
   return (
@@ -605,10 +824,8 @@ function RootContent() {
 
         <GlobalHeader
           onMenuPress={() => {
-            setAccountMenuVisible(
-              false,
-            );
-
+            setAccountMenuVisible(false);
+            setAuthDropdownVisible(false);
             setMenuVisible(true);
           }}
           onAuthPress={
@@ -631,9 +848,7 @@ function RootContent() {
         </Stack>
 
         {/* ====================================================
-            ACCOUNT DROPDOWN
-
-            Only available when logged in.
+            LOGGED-IN ACCOUNT DROPDOWN
             ==================================================== */}
 
         <AccountDropdown
@@ -655,10 +870,29 @@ function RootContent() {
         />
 
         {/* ====================================================
-            SIDE MENU
+            LOGGED-OUT LOGIN / REGISTER DROPDOWN
+            ==================================================== */}
 
-            ONLY the menu button opens this.
-            Login/logout does NOT open it.
+        <AuthDropdown
+          visible={
+            !isLoggedIn &&
+            authDropdownVisible
+          }
+          onLogin={
+            handleOpenLogin
+          }
+          onRegister={
+            handleOpenRegister
+          }
+          onClose={() =>
+            setAuthDropdownVisible(
+              false,
+            )
+          }
+        />
+
+        {/* ====================================================
+            SIDE MENU
             ==================================================== */}
 
         <SideMenu
@@ -670,9 +904,6 @@ function RootContent() {
 
         {/* ====================================================
             LOGIN MODAL
-
-            This is opened directly by the person icon when
-            the user is logged out.
             ==================================================== */}
 
         <LoginModal
@@ -685,7 +916,19 @@ function RootContent() {
           }
           onRegister={() => {
             setLoginVisible(false);
+            setRegisterVisible(true);
           }}
+        />
+
+        {/* ====================================================
+            REGISTER MODAL
+            ==================================================== */}
+
+        <RegisterModal
+          visible={registerVisible}
+          onClose={
+            handleRegisterClose
+          }
         />
 
         {/* ====================================================

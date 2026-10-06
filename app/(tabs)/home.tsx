@@ -133,15 +133,7 @@ function PropertySection({
           accessibilityLabel={`View all ${title}`}
           className="flex-row items-center"
         >
-          <Text className="mr-1 text-sm font-semibold text-red-500">
-            View All
-          </Text>
-
-          <Ionicons
-            name="arrow-forward"
-            size={16}
-            color="#ef4444"
-          />
+          
         </Pressable>
       </View>
 
@@ -1421,7 +1413,7 @@ export default function HomeScreen() {
           ) : (
             <View>
               {agents
-                .slice(0, 2)
+                .slice(0, 1)
                 .map((agent) => (
                   <AgentCard
                     key={agent.id}
