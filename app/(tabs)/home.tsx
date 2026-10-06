@@ -1481,7 +1481,7 @@ export default function HomeScreen() {
           <Pressable
             onPress={() =>
               router.push(
-                "/appcomponents/listProperty/list-property",
+                "/properties/list-property",
               )
             }
             accessibilityRole="button"
