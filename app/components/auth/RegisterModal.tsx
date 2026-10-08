@@ -774,7 +774,7 @@ export default function RegisterModal({
                     </View>
 
                     <Text
-                      className={`mt-4 text-center text-xl font-bold ${primaryText}`}
+                      className={`mt-4  text-center text-xl font-bold ${primaryText}`}
                     >
                       Generate OTP
                     </Text>
@@ -822,19 +822,19 @@ export default function RegisterModal({
 
                   {/* GENERATE OTP BUTTON */}
 
-                  <Pressable
-                    onPress={handleGenerateOtp}
-                    disabled={!emailFormValid || loading}
-                    accessibilityRole="button"
-                    accessibilityLabel="Generate OTP"
-                    className={`mt-2 h-13 items-center justify-center rounded-xl bg-red-600 ${
-                      !emailFormValid || loading ? "opacity-50" : ""
-                    }`}
-                    style={({ pressed }) => ({
-                      opacity:
-                        !emailFormValid || loading ? 0.5 : pressed ? 0.7 : 1,
-                    })}
-                  >
+                 <Pressable
+  onPress={handleGenerateOtp}
+  disabled={!emailFormValid || loading}
+  accessibilityRole="button"
+  accessibilityLabel="Generate OTP"
+  className={`mt-2 w-full items-center justify-center rounded-xl bg-red-600 px-4 py-4 ${
+    !emailFormValid || loading ? "opacity-50" : ""
+  }`}
+  style={({ pressed }) => ({
+    minHeight: 56,
+    opacity: !emailFormValid || loading ? 0.5 : pressed ? 0.7 : 1,
+  })}
+>
                     {loading ? (
                       <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
@@ -939,19 +939,19 @@ export default function RegisterModal({
 
                   {/* VERIFY BUTTON */}
 
-                  <Pressable
-                    onPress={handleVerifyOtp}
-                    disabled={!otpFormValid || loading}
-                    accessibilityRole="button"
-                    accessibilityLabel="Verify OTP"
-                    className={`mt-2 h-13 items-center justify-center rounded-xl bg-red-600 ${
-                      !otpFormValid || loading ? "opacity-50" : ""
-                    }`}
-                    style={({ pressed }) => ({
-                      opacity:
-                        !otpFormValid || loading ? 0.5 : pressed ? 0.7 : 1,
-                    })}
-                  >
+                 <Pressable
+  onPress={handleVerifyOtp}
+  disabled={!otpFormValid || loading}
+  accessibilityRole="button"
+  accessibilityLabel="Verify OTP"
+  className={`mt-2 w-full items-center justify-center rounded-xl bg-red-600 px-4 py-4 ${
+    !otpFormValid || loading ? "opacity-50" : ""
+  }`}
+  style={({ pressed }) => ({
+    minHeight: 56,
+    opacity: !otpFormValid || loading ? 0.5 : pressed ? 0.7 : 1,
+  })}
+>
                     {loading ? (
                       <ActivityIndicator size="small" color="#ffffff" />
                     ) : (
@@ -1197,19 +1197,19 @@ export default function RegisterModal({
 
                   {/* CREATE ACCOUNT */}
 
-                  <Pressable
-                    onPress={handleRegister}
-                    disabled={!detailsFormValid || loading}
-                    accessibilityRole="button"
-                    accessibilityLabel="Create account"
-                    className={`mt-2 h-13 items-center justify-center rounded-xl bg-red-600 ${
-                      !detailsFormValid || loading ? "opacity-50" : ""
-                    }`}
-                    style={({ pressed }) => ({
-                      opacity:
-                        !detailsFormValid || loading ? 0.5 : pressed ? 0.7 : 1,
-                    })}
-                  >
+                 <Pressable
+  onPress={handleRegister}
+  disabled={!detailsFormValid || loading}
+  accessibilityRole="button"
+  accessibilityLabel="Create account"
+  className={`mt-2 w-full items-center justify-center rounded-xl bg-red-600 px-4 py-4 ${
+    !detailsFormValid || loading ? "opacity-50" : ""
+  }`}
+  style={({ pressed }) => ({
+    minHeight: 56,
+    opacity: !detailsFormValid || loading ? 0.5 : pressed ? 0.7 : 1,
+  })}
+>
                     {loading ? (
                       <ActivityIndicator size="small" color="#ffffff" />
                     ) : (

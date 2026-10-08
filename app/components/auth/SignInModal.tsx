@@ -183,7 +183,7 @@ export default function SignInModal({
         return;
       }
 
-      router.push("/register");
+      router.push("/components/auth/RegisterModal");
     };
 
   return (
