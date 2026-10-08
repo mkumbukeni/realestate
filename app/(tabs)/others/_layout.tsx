@@ -10,7 +10,7 @@ const Others = () => {
         animation: 'slide_from_right',
       }}>
         
-      <Stack.Screen  name='others'/>
+      <Stack.Screen  name='others-screen'/>
         
         
     </Stack>

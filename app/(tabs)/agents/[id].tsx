@@ -21,19 +21,18 @@ import PropertyCard from "@/app/components/properties/PropertyCard";
 import { useTheme } from "@/app/components/theme/ThemeContext";
 
 import {
-  fetchProperties,
+  fetchAgentDetails,
   type Property,
 } from "@/app/services/propertyApi";
 
-import {
-  fetchAgents,
-  type Agent,
+import type {
+  Agent,
 } from "@/app/services/agentApi";
 
 export default function AgentDetailsScreen() {
   const router = useRouter();
 
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
 
   const params = useLocalSearchParams<{
     id?: string | string[];
@@ -58,99 +57,168 @@ export default function AgentDetailsScreen() {
   const [menuVisible, setMenuVisible] =
     useState(false);
 
+  const [error, setError] =
+    useState<string | null>(null);
+
   // ============================================================
-  // LOAD AGENT + ASSIGNED PROPERTIES
+  // LOAD AGENT + ASSOCIATED PROPERTIES
+  //
+  // IMPORTANT:
+  //
+  // We now use:
+  //
+  // GET /v2/agents/{agentId}
+  //
+  // instead of:
+  //
+  // GET /v2/agents
+  // GET /v2/properties
+  //
+  // The agent-details endpoint specifically returns the
+  // properties associated with this agent.
   // ============================================================
 
   const loadAgentDetails =
-    useCallback(async () => {
-      if (!agentId) {
-        setAgent(null);
-        setProperties([]);
-        setLoading(false);
-        setRefreshing(false);
-        return;
-      }
+    useCallback(
+      async (
+        isRefresh = false,
+      ) => {
+        if (!agentId) {
+          setAgent(null);
+          setProperties([]);
+          setError("Agent ID is missing.");
+          setLoading(false);
+          setRefreshing(false);
+          return;
+        }
 
-      try {
-        setLoading(true);
+        try {
+          if (isRefresh) {
+            setRefreshing(true);
+          } else {
+            setLoading(true);
+          }
 
-        /*
-         * Load the agent and all properties.
-         *
-         * IMPORTANT:
-         *
-         * The relationship between a property and its assigned
-         * agent comes from the nested property.agent object.
-         *
-         * Example:
-         *
-         * property.agent.id = 7
-         * property.agent.name = "Patricia Thonyiwa"
-         *
-         * Therefore we must NOT use:
-         *
-         * property.valuerId
-         *
-         * to determine the assigned agent.
-         */
+          setError(null);
 
-        const [
-          agents,
-          allProperties,
-        ] = await Promise.all([
-          fetchAgents(true),
-          fetchProperties(),
-        ]);
+          console.log(
+            "================================================",
+          );
 
-        // --------------------------------------------------------
-        // Find requested agent
-        // --------------------------------------------------------
+          console.log(
+            "Loading agent details",
+          );
 
-        const foundAgent =
-          agents.find(
-            (item) =>
-              String(item.id) ===
-              String(agentId),
-          ) ?? null;
+          console.log(
+            "Agent ID:",
+            agentId,
+          );
 
-        setAgent(foundAgent);
+          console.log(
+            "================================================",
+          );
 
-        // --------------------------------------------------------
-        // Find properties assigned to this agent
-        // --------------------------------------------------------
+          // ------------------------------------------------------
+          // IMPORTANT:
+          //
+          // This directly calls:
+          //
+          // /v2/agents/{agentId}
+          //
+          // and receives BOTH the agent and its properties.
+          // ------------------------------------------------------
 
-        if (foundAgent) {
-          const assignedProperties =
-            allProperties.filter(
-              (property) =>
-                property.agent !== null &&
-                String(property.agent.id) ===
-                  String(foundAgent.id),
+          const result =
+            await fetchAgentDetails(
+              agentId,
             );
 
-          setProperties(
-            assignedProperties,
+          console.log(
+            "Agent details result:",
+            result,
           );
-        } else {
-          setProperties([]);
-        }
-      } catch (error) {
-        console.error(
-          "Failed to load agent details:",
-          error,
-        );
 
-        setAgent(null);
-        setProperties([]);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    }, [agentId]);
+          console.log(
+            "Agent:",
+            result.agent,
+          );
+
+          console.log(
+            "Associated properties:",
+            result.properties,
+          );
+
+          console.log(
+            "Associated property count:",
+            result.properties.length,
+          );
+
+          // ------------------------------------------------------
+          // Set agent
+          // ------------------------------------------------------
+
+          setAgent(result.agent);
+
+          // ------------------------------------------------------
+          // Set ALL properties returned by the agent endpoint.
+          //
+          // IMPORTANT:
+          //
+          // We do NOT filter by:
+          //
+          // property.agent.id
+          //
+          // We do NOT filter by:
+          //
+          // property.valuerId
+          //
+          // The endpoint itself has already determined that these
+          // properties belong to this agent.
+          // ------------------------------------------------------
+
+          setProperties(
+            Array.isArray(
+              result.properties,
+            )
+              ? result.properties
+              : [],
+          );
+        } catch (requestError) {
+          console.error(
+            "================================================",
+          );
+
+          console.error(
+            "Failed to load agent details:",
+            requestError,
+          );
+
+          console.error(
+            "================================================",
+          );
+
+          setAgent(null);
+          setProperties([]);
+
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Failed to load agent details.",
+          );
+        } finally {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      },
+      [agentId],
+    );
+
+  // ============================================================
+  // INITIAL LOAD
+  // ============================================================
 
   useEffect(() => {
-    void loadAgentDetails();
+    void loadAgentDetails(false);
   }, [loadAgentDetails]);
 
   // ============================================================
@@ -158,8 +226,7 @@ export default function AgentDetailsScreen() {
   // ============================================================
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    void loadAgentDetails();
+    void loadAgentDetails(true);
   };
 
   // ============================================================
@@ -249,6 +316,30 @@ export default function AgentDetailsScreen() {
             There are currently no properties
             assigned to this agent.
           </Text>
+
+          {error ? (
+            <Text
+              className="mt-4 text-center text-xs leading-5"
+              style={{
+                color: theme.textMuted,
+              }}
+            >
+              {error}
+            </Text>
+          ) : null}
+
+          <Pressable
+            onPress={() =>
+              void loadAgentDetails(
+                false,
+              )
+            }
+            className="mt-5 rounded-xl bg-red-600 px-5 py-3"
+          >
+            <Text className="font-bold text-white">
+              Try Again
+            </Text>
+          </Pressable>
         </View>
       );
     };
@@ -262,21 +353,24 @@ export default function AgentDetailsScreen() {
       <SafeAreaView
         className="flex-1"
         style={{
-          backgroundColor: theme.background,
+          backgroundColor:
+            theme.background,
         }}
       >
         <View
           className="flex-row items-center px-4 py-3"
           style={{
             borderBottomWidth: 1,
-            borderBottomColor: theme.border,
+            borderBottomColor:
+              theme.border,
           }}
         >
           <Pressable
             onPress={handleBack}
             className="h-11 w-11 items-center justify-center rounded-full"
             style={{
-              backgroundColor: theme.card,
+              backgroundColor:
+                theme.card,
             }}
           >
             <Ionicons
@@ -324,21 +418,24 @@ export default function AgentDetailsScreen() {
       <SafeAreaView
         className="flex-1"
         style={{
-          backgroundColor: theme.background,
+          backgroundColor:
+            theme.background,
         }}
       >
         <View
           className="flex-row items-center px-4 py-3"
           style={{
             borderBottomWidth: 1,
-            borderBottomColor: theme.border,
+            borderBottomColor:
+              theme.border,
           }}
         >
           <Pressable
             onPress={handleBack}
             className="h-11 w-11 items-center justify-center rounded-full"
             style={{
-              backgroundColor: theme.card,
+              backgroundColor:
+                theme.card,
             }}
           >
             <Ionicons
@@ -380,15 +477,40 @@ export default function AgentDetailsScreen() {
               color: theme.textMuted,
             }}
           >
-            The requested agent could not be
-            found.
+            {error ||
+              "The requested agent could not be found."}
           </Text>
 
           <Pressable
-            onPress={handleBack}
-            className="mt-6 rounded-xl bg-red-600 px-6 py-3"
+            onPress={() =>
+              void loadAgentDetails(
+                false,
+              )
+            }
+            className="mt-5 rounded-xl bg-red-600 px-6 py-3"
           >
             <Text className="font-bold text-white">
+              Try Again
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleBack}
+            className="mt-3 rounded-xl px-6 py-3"
+            style={{
+              backgroundColor:
+                theme.card,
+              borderWidth: 1,
+              borderColor:
+                theme.border,
+            }}
+          >
+            <Text
+              className="font-bold"
+              style={{
+                color: theme.text,
+              }}
+            >
               Go Back
             </Text>
           </Pressable>
@@ -405,7 +527,8 @@ export default function AgentDetailsScreen() {
     <SafeAreaView
       className="flex-1"
       style={{
-        backgroundColor: theme.background,
+        backgroundColor:
+          theme.background,
       }}
       edges={[
         "top",
@@ -420,9 +543,11 @@ export default function AgentDetailsScreen() {
       <View
         className="flex-row items-center justify-between px-4 py-3"
         style={{
-          backgroundColor: theme.background,
+          backgroundColor:
+            theme.background,
           borderBottomWidth: 1,
-          borderBottomColor: theme.border,
+          borderBottomColor:
+            theme.border,
         }}
       >
         <View className="flex-1 flex-row items-center">
@@ -430,7 +555,8 @@ export default function AgentDetailsScreen() {
             onPress={handleBack}
             className="h-11 w-11 items-center justify-center rounded-full"
             style={{
-              backgroundColor: theme.card,
+              backgroundColor:
+                theme.card,
             }}
           >
             <Ionicons
@@ -468,7 +594,8 @@ export default function AgentDetailsScreen() {
           }
           className="h-11 w-11 items-center justify-center rounded-full"
           style={{
-            backgroundColor: theme.card,
+            backgroundColor:
+              theme.card,
           }}
         >
           <Ionicons
@@ -498,9 +625,11 @@ export default function AgentDetailsScreen() {
             <View
               className="overflow-hidden rounded-2xl"
               style={{
-                backgroundColor: theme.card,
+                backgroundColor:
+                  theme.card,
                 borderWidth: 1,
-                borderColor: theme.border,
+                borderColor:
+                  theme.border,
               }}
             >
               <View className="items-center px-5 pb-6 pt-7">
@@ -523,7 +652,9 @@ export default function AgentDetailsScreen() {
                     <Ionicons
                       name="person-outline"
                       size={52}
-                      color={theme.textMuted}
+                      color={
+                        theme.textMuted
+                      }
                     />
                   </View>
                 )}
@@ -557,7 +688,8 @@ export default function AgentDetailsScreen() {
                     <Text
                       className="ml-1.5 text-xs"
                       style={{
-                        color: theme.textMuted,
+                        color:
+                          theme.textMuted,
                       }}
                     >
                       {agent.licenseStatus}
@@ -574,7 +706,8 @@ export default function AgentDetailsScreen() {
                 className="px-4"
                 style={{
                   borderTopWidth: 1,
-                  borderTopColor: theme.border,
+                  borderTopColor:
+                    theme.border,
                 }}
               >
                 {agent.email ? (
@@ -613,7 +746,7 @@ export default function AgentDetailsScreen() {
 
                 <InfoRow
                   icon="home-outline"
-                  label="Assigned Properties"
+                  label="Associated Properties"
                   value={String(
                     properties.length,
                   )}
@@ -825,7 +958,7 @@ export default function AgentDetailsScreen() {
             ) : null}
 
             {/* ================================================= */}
-            {/* ASSIGNED PROPERTIES HEADER */}
+            {/* ASSOCIATED PROPERTIES HEADER */}
             {/* ================================================= */}
 
             <View className="mb-4 mt-8 flex-row items-center justify-between">
@@ -836,7 +969,7 @@ export default function AgentDetailsScreen() {
                     color: theme.text,
                   }}
                 >
-                  Assigned Properties
+                  Associated Properties
                 </Text>
 
                 <Text
@@ -845,7 +978,7 @@ export default function AgentDetailsScreen() {
                     color: theme.textMuted,
                   }}
                 >
-                  Properties assigned to{" "}
+                  All properties associated with{" "}
                   {agent.name}
                 </Text>
               </View>
@@ -930,7 +1063,8 @@ function InfoRow({
       <View
         className="h-9 w-9 items-center justify-center rounded-lg"
         style={{
-          backgroundColor: theme.surface,
+          backgroundColor:
+            theme.surface,
         }}
       >
         <Ionicons
@@ -953,7 +1087,8 @@ function InfoRow({
         <Text
           className="mt-1 text-sm font-semibold"
           style={{
-            color: theme.textSecondary,
+            color:
+              theme.textSecondary,
           }}
           numberOfLines={3}
         >

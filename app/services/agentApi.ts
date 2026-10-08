@@ -488,3 +488,123 @@ export function clearAgentsCache(): void {
   agentsCache = null;
 }
 
+
+
+
+
+// ============================================================
+// FETCH SINGLE AGENT WITH ASSOCIATED PROPERTIES
+// ============================================================
+//
+// Endpoint:
+//
+// GET /v2/agents/{agent_id}
+//
+// The response contains:
+//
+// {
+//   msg: "...",
+//   data: { ...agent },
+//   properties: [ ...properties ]
+// }
+//
+// The properties are returned as raw API properties.
+// AgentDetailsScreen maps them using mapApiProperty() from
+// propertyApi.ts.
+//
+// ============================================================
+
+export interface AgentDetailsApiResponse {
+  msg?: string;
+  data: ApiAgent;
+  properties?: unknown[];
+  
+}
+
+
+
+
+
+
+
+// ============================================================
+// FETCH AGENT DETAILS + ASSOCIATED PROPERTIES
+// ============================================================
+
+export async function fetchAgentDetails(
+  agentId: string | number,
+): Promise<{
+  agent: Agent;
+  properties: unknown[];
+}> {
+  const endpoint =
+    `${EXPO_PUBLIC_API_URL}/v2/agents/${encodeURIComponent(
+      String(agentId),
+    )}`;
+
+  console.log(
+    "Fetching agent details from:",
+    endpoint,
+  );
+
+  const response = await fetch(
+    endpoint,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const errorText =
+      await response.text();
+
+    throw new Error(
+      `Agent request failed (${response.status}): ${errorText}`,
+    );
+  }
+
+  const json: unknown =
+    await response.json();
+
+  if (
+    typeof json !== "object" ||
+    json === null ||
+    !("data" in json)
+  ) {
+    throw new Error(
+      "Invalid agent details response.",
+    );
+  }
+
+  const responseData =
+    json as {
+      data?: unknown;
+      properties?: unknown;
+    };
+
+  if (
+    !responseData.data ||
+    typeof responseData.data !==
+      "object"
+  ) {
+    throw new Error(
+      "Agent details response does not contain valid agent data.",
+    );
+  }
+
+  return {
+    agent: mapApiAgent(
+      responseData.data as ApiAgent,
+    ),
+
+    properties:
+      Array.isArray(
+        responseData.properties,
+      )
+        ? responseData.properties
+        : [],
+  };
+}

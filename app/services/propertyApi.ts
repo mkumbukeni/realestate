@@ -1,4 +1,3 @@
-
 // app/services/propertyApi.ts
 
 import {
@@ -98,55 +97,37 @@ export interface ApiProperty {
    *   "user_id": "8",
    *   "name": "Patricia Thonyiwa"
    * }
+   *
+   * NOTE:
+   * The /v2/agents/{id} endpoint does not include this field
+   * inside every property. fetchAgentDetails() handles that
+   * situation by attaching the returned agent.
    */
   agent: ApiAgent | null;
 
   property_number: string | null;
-
   parent_valuation: number | null;
-
   project_id: number | null;
-
   owner_name: string | null;
-
   property_type: string;
-
   property_design: string | null;
-
   construction_stage: string | null;
-
   year_built: string | null;
-
   age: number | null;
-
   eul: number | null;
-
   rel: number | null;
-
   measurements: string | null;
-
   no_rooms: number | null;
-
   no_of_bathrooms: number | null;
-
   occupancy: string | null;
-
   attributes: PropertyAttributes | null;
-
   title_deeds_available: string | null;
-
   certificate_of_search_available: string | null;
-
   encumbrances_available: string | null;
-
   defects: string | null;
-
   master_bedroom_ensuite: string | null;
-
   building_size: number | null;
-
   entry_type: string | null;
-
   price: number | null;
 
   /**
@@ -159,51 +140,28 @@ export interface ApiProperty {
   listing_type: string;
 
   created_by: number | null;
-
   is_approved: string | null;
-
   is_sale_completed: string | null;
-
   is_submitted: string | null;
-
   description: string | null;
-
   is_referred: string | null;
-
   has_accepted_offer: string | null;
-
   bulding_size_unit: string | null;
-
   land_size: number | null;
-
   land_size_unit: string | null;
-
   approved_at: string | null;
-
   visibility: string | null;
-
   created_at: string;
-
   updated_at: string;
-
   media: PropertyMedia[];
-
   location: PropertyLocation | null;
-
   coordinates_string: string | null;
-
   views: number;
-
   created_at_fmt: string;
-
   open_houses: OpenHouse[];
-
   system_status: string | null;
-
   property_videos: unknown[];
-
   cover_photo: string | null;
-
   property_images: PropertyImage[];
 }
 
@@ -213,6 +171,26 @@ export interface ApiProperty {
 
 interface PropertiesApiResponse {
   data: ApiProperty[];
+}
+
+// ============================================================
+// AGENT DETAILS API RESPONSE
+//
+// GET /v2/agents/{agentId}
+//
+// The API returns:
+//
+// {
+//   "msg": "...",
+//   "data": { ...agent },
+//   "properties": [ ...properties ]
+// }
+// ============================================================
+
+export interface AgentDetailsApiResponse {
+  msg?: string;
+  data?: ApiAgent;
+  properties?: ApiProperty[];
 }
 
 // ============================================================
@@ -238,24 +216,17 @@ export interface Property {
    *
    * ApiProperty.agent
    *
-   * Example:
-   *
-   * property.agent.id === 7
+   * For properties returned by /v2/agents/{id}, the agent
+   * is attached by fetchAgentDetails().
    */
   agent: Agent | null;
 
   type: string;
-
   beds: number;
-
   baths: number;
-
   price: string;
-
   priceValue: number;
-
   location: string;
-
   image: string;
 
   /**
@@ -268,62 +239,39 @@ export interface Property {
   tag: string;
 
   period: string;
-
   category: string;
-
   district: string;
-
   region: string;
-
   area: string;
-
   description: string;
-
   propertyDesign: string;
-
   constructionStage: string;
-
   yearBuilt: string;
-
   age: number | null;
-
   buildingSize: number | null;
-
   buildingSizeUnit: string;
-
   landSize: number | null;
-
   landSizeUnit: string;
-
   views: number;
-
   attributes: string[];
-
   isOpenHouse: boolean;
-
   latitude: number | null;
-
   longitude: number | null;
-
   googleMapLink: string | null;
-
   createdAt: string;
-
   systemStatus: string;
 }
 
 // ============================================================
 // PROPERTY MEDIA ITEM
+//
 // Used by /media/images and /media/videos
 // ============================================================
 
 export interface PropertyMediaItem {
   id: number;
-
   url: string;
-
   description?: string | null;
-
   collection?: string | null;
 }
 
@@ -542,10 +490,9 @@ export function mapApiProperty(
   //
   // IMPORTANT:
   //
-  // The API property response contains the authoritative
-  // relationship:
+  // The normal properties API response contains:
   //
-  // property.agent.id
+  // property.agent
   //
   // We DO NOT use valuer_id here.
   // ----------------------------------------------------------
@@ -745,11 +692,21 @@ async function fetchPropertyEndpoint(
   );
 
   const response =
-    await fetch(endpoint);
+    await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
   if (!response.ok) {
+    const errorText =
+      await response.text().catch(
+        () => "",
+      );
+
     throw new Error(
-      `Failed to load properties. Server returned ${response.status}.`,
+      `Failed to load properties. Server returned ${response.status}.${errorText ? ` ${errorText}` : ""}`,
     );
   }
 
@@ -765,6 +722,7 @@ async function fetchPropertyEndpoint(
   // The API already returns property.agent.
   //
   // Therefore we do not make another /agents request and
+
   // do not try to match valuer_id.
   // ----------------------------------------------------------
 
@@ -830,31 +788,34 @@ export async function fetchNearbyProperties(
   latitude: number,
   longitude: number,
 ): Promise<Property[]> {
+  const endpoint =
+    `${BASE_API_URL}/v2/property/nearby`;
+
   const response =
-    await fetch(
-      `${BASE_API_URL}/v2/property/nearby`,
-      {
-        method: "POST",
-
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          latitude,
-          longitude,
-          radius: 1,
-          min_price: 0,
-          max_price: 0,
-          search: "",
-        }),
+    await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        latitude,
+        longitude,
+        radius: 1,
+        min_price: 0,
+        max_price: 0,
+        search: "",
+      }),
+    });
 
   if (!response.ok) {
+    const errorText =
+      await response.text().catch(
+        () => "",
+      );
+
     throw new Error(
-      `Nearby properties request failed: ${response.status}`,
+      `Nearby properties request failed: ${response.status}${errorText ? ` ${errorText}` : ""}`,
     );
   }
 
@@ -892,6 +853,158 @@ export async function fetchNearbyProperties(
 }
 
 // ============================================================
+// FETCH AGENT DETAILS + ASSOCIATED PROPERTIES
+//
+// Endpoint:
+//
+// GET /v2/agents/{agentId}
+//
+// Expected response:
+//
+// {
+//   "msg": "Displaying all properties by this agent",
+//   "data": {
+//     ...agent
+//   },
+//   "properties": [
+//     {
+//       ...property
+//     }
+//   ]
+// }
+//
+// IMPORTANT:
+//
+// This endpoint is different from:
+//
+// GET /v2/agents
+//
+// The list endpoint returns agents only.
+//
+// The details endpoint returns the agent AND its properties.
+// ============================================================
+
+export async function fetchAgentDetails(
+  agentId: string | number,
+): Promise<{
+  agent: Agent;
+  properties: Property[];
+}> {
+  const endpoint =
+    `${BASE_API_URL}/v2/agents/${encodeURIComponent(
+      String(agentId),
+    )}`;
+
+  console.log(
+    "Fetching agent details from:",
+    endpoint,
+  );
+
+  const response =
+    await fetch(endpoint, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+  if (!response.ok) {
+    const errorText =
+      await response.text().catch(
+        () => "",
+      );
+
+    throw new Error(
+      `Agent request failed (${response.status}): ${errorText}`,
+    );
+  }
+
+  const json: unknown =
+    await response.json();
+
+  // ----------------------------------------------------------
+  // Validate basic response structure
+  // ----------------------------------------------------------
+
+  if (
+    typeof json !== "object" ||
+    json === null
+  ) {
+    throw new Error(
+      "Invalid agent details API response.",
+    );
+  }
+
+  const result =
+    json as AgentDetailsApiResponse;
+
+  // ----------------------------------------------------------
+  // Validate agent
+  // ----------------------------------------------------------
+
+  if (
+    !result.data ||
+    typeof result.data !== "object"
+  ) {
+    throw new Error(
+      "Agent details data is missing.",
+    );
+  }
+
+  // ----------------------------------------------------------
+  // Map the agent
+  // ----------------------------------------------------------
+
+  const agent =
+    mapApiAgent(result.data);
+
+  // ----------------------------------------------------------
+  // Map associated properties
+  //
+  // The /v2/agents/{id} endpoint returns properties
+  // alongside the agent.
+  //
+  // Those property objects do NOT necessarily contain:
+  //
+  // "agent": {...}
+  //
+  // because the agent is already identified by the endpoint.
+  //
+  // Therefore we attach the returned agent after mapping.
+  // ----------------------------------------------------------
+
+  const properties =
+    Array.isArray(result.properties)
+      ? result.properties.map(
+          (property) => {
+            const mappedProperty =
+              mapApiProperty(
+                property as ApiProperty,
+              );
+
+            if (
+              mappedProperty.agent === null
+            ) {
+              mappedProperty.agent =
+                agent;
+            }
+
+            return mappedProperty;
+          },
+        )
+      : [];
+
+  console.log(
+    `Agent ${agent.id} loaded with ${properties.length} associated properties.`,
+  );
+
+  return {
+    agent,
+    properties,
+  };
+}
+
+// ============================================================
 // PROPERTY IMAGES
 // ============================================================
 
@@ -910,7 +1023,6 @@ export const fetchPropertyImages =
     const response =
       await fetch(endpoint, {
         method: "GET",
-
         headers: {
           Accept: "application/json",
         },
@@ -963,7 +1075,6 @@ export const fetchPropertyVideos =
     const response =
       await fetch(endpoint, {
         method: "GET",
-
         headers: {
           Accept: "application/json",
         },
@@ -1017,4 +1128,3 @@ export const fetchPropertyVideos =
 
     return [];
   };
-
