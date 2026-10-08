@@ -1,5 +1,5 @@
 import React from "react";
-import { Tabs } from "expo-router";
+import { Tabs, useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,23 +8,13 @@ import { useTheme } from "@/app/components/theme/ThemeContext";
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { isDark, theme } = useTheme();
+  const router = useRouter();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
 
-        // ==========================================
-        // TAB TEXT + ICON COLORS
-        // ==========================================
-        //
-        // Active:
-        // Red in both dark and light modes
-        //
-        // Inactive:
-        // White in dark mode
-        // Black in light mode
-        //
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: isDark ? "#ffffff" : "#111111",
 
@@ -40,9 +30,6 @@ export default function TabLayout() {
           marginVertical: 6,
         },
 
-        // ==========================================
-        // TAB BAR
-        // ==========================================
         tabBarStyle: {
           backgroundColor: isDark ? "#171717" : "#ffffff",
 
@@ -61,10 +48,7 @@ export default function TabLayout() {
         },
       }}
     >
-      {/* ==========================================
-          HOME TAB
-      ========================================== */}
-
+      {/* HOME */}
       <Tabs.Screen
         name="home"
         options={{
@@ -80,10 +64,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* ==========================================
-          PROPERTIES TAB
-      ========================================== */}
-
+      {/* PROPERTIES */}
       <Tabs.Screen
         name="properties"
         options={{
@@ -101,12 +82,16 @@ export default function TabLayout() {
             />
           ),
         }}
+        listeners={{
+          tabPress: (event) => {
+            event.preventDefault();
+
+            router.replace("/(tabs)/properties");
+          },
+        }}
       />
 
-      {/* ==========================================
-          AGENTS TAB
-      ========================================== */}
-
+      {/* AGENTS */}
       <Tabs.Screen
         name="agents"
         options={{
@@ -124,12 +109,16 @@ export default function TabLayout() {
             />
           ),
         }}
+        listeners={{
+          tabPress: (event) => {
+            event.preventDefault();
+
+            router.replace("/(tabs)/agents");
+          },
+        }}
       />
 
-      {/* ==========================================
-          PAYMENTS TAB
-      ========================================== */}
-
+      {/* PAYMENTS */}
       <Tabs.Screen
         name="payments"
         options={{
@@ -149,10 +138,7 @@ export default function TabLayout() {
         }}
       />
 
-      {/* ==========================================
-          OTHERS TAB
-      ========================================== */}
-
+      {/* OTHERS */}
       <Tabs.Screen
         name="others"
         options={{
