@@ -1,3 +1,4 @@
+
 import React, {
   useEffect,
   useMemo,
@@ -44,9 +45,18 @@ import {
   fetchProperties,
   fetchPropertyImages,
   fetchPropertyVideos,
+  fetchAgentDetails,
   type Property,
   type PropertyMedia,
 } from "@/app/services/propertyApi";
+
+import {
+  fetchAgents,
+} from "@/app/services/agentApi";
+
+import type {
+  Agent,
+} from "@/app/services/agentApi";
 
 const { width: SCREEN_WIDTH } =
   Dimensions.get("window");
@@ -148,6 +158,10 @@ export default function PropertyDetailsScreen() {
   const loggedInUserId =
     user?.id;
 
+  // ============================================================
+  // ROUTE PARAMS
+  // ============================================================
+
   const params =
     useLocalSearchParams<{
       id?: string | string[];
@@ -165,6 +179,12 @@ export default function PropertyDetailsScreen() {
 
   const [property, setProperty] =
     useState<Property | null>(null);
+
+  const [listingAgent, setListingAgent] =
+    useState<Agent | null>(null);
+
+  const [listingAgentLoading, setListingAgentLoading] =
+    useState(false);
 
   const [images, setImages] =
     useState<PropertyMedia[]>([]);
@@ -214,6 +234,23 @@ export default function PropertyDetailsScreen() {
         setProperty(
           foundProperty ?? null,
         );
+
+        console.log(
+          "Loaded property:",
+          foundProperty,
+        );
+
+        if (foundProperty) {
+          console.log(
+            "Property agent from property:",
+            foundProperty.agent,
+          );
+
+          console.log(
+            "Property valuer ID:",
+            foundProperty.valuerId,
+          );
+        }
       } catch (error) {
         console.error(
           "Failed to load property:",
@@ -228,6 +265,287 @@ export default function PropertyDetailsScreen() {
 
     void loadProperty();
   }, [propertyId]);
+
+  // ============================================================
+  // LOAD LISTING AGENT
+  //
+  // IMPORTANT:
+  //
+  // The generic property endpoint may return:
+  //
+  //   agent: null
+  //   valuerId: null
+  //
+  // even though the property is actually associated with
+  // an agent.
+  //
+  // The working endpoint is:
+  //
+  //   GET /v2/agents/{agentId}
+  //
+  // That endpoint returns:
+  //
+  //   {
+  //     data: agent,
+  //     properties: [...]
+  //   }
+  //
+  // Therefore we:
+  //
+  // 1. Use property.agent if already available.
+  // 2. Use property.valuerId if available.
+  // 3. Otherwise load all agents.
+  // 4. Check each agent's associated properties.
+  // 5. Find the agent whose property list contains this
+  //    property's ID.
+  //
+  // This is why property ID 9 can correctly resolve to
+  // Patricia Thonyiwa even when property 9 itself has:
+  //
+  //   valuer_id: null
+  //   agent: null
+  // ============================================================
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadListingAgent = async () => {
+      if (!property) {
+        setListingAgent(null);
+        setListingAgentLoading(false);
+        return;
+      }
+
+      setListingAgentLoading(true);
+      setListingAgent(null);
+
+      try {
+        // ------------------------------------------------------
+        // STEP 1
+        // If the property already contains its agent, use it.
+        // ------------------------------------------------------
+
+        if (property.agent) {
+          console.log(
+            "Using agent already attached to property:",
+            property.agent,
+          );
+
+          if (!cancelled) {
+            setListingAgent(
+              property.agent,
+            );
+          }
+
+          return;
+        }
+
+        // ------------------------------------------------------
+        // STEP 2
+        // If valuerId exists, directly request that agent.
+        // ------------------------------------------------------
+
+        if (
+          property.valuerId !==
+            undefined &&
+          property.valuerId !== null &&
+          String(
+            property.valuerId,
+          ).trim() !== ""
+        ) {
+          console.log(
+            "Property has valuer ID:",
+            property.valuerId,
+          );
+
+          try {
+            const result =
+              await fetchAgentDetails(
+                property.valuerId,
+              );
+
+            if (!cancelled) {
+              setListingAgent(
+                result.agent,
+              );
+            }
+
+            return;
+          } catch (error) {
+            console.error(
+              "Failed to load agent using property valuerId:",
+              error,
+            );
+          }
+        }
+
+        // ------------------------------------------------------
+        // STEP 3
+        // The property has no agent and no valuerId.
+        //
+        // Search through the agent-details endpoint.
+        // ------------------------------------------------------
+
+        console.log(
+          "Property does not contain agent or valuerId.",
+        );
+
+        console.log(
+          "Searching agents for property:",
+          property.id,
+        );
+
+        const agentsResponse =
+          await fetchAgents();
+
+        console.log(
+          "Available agents:",
+          agentsResponse,
+        );
+
+        if (
+          !Array.isArray(
+            agentsResponse,
+          )
+        ) {
+          console.log(
+            "Agents response is not an array.",
+          );
+
+          if (!cancelled) {
+            setListingAgent(null);
+          }
+
+          return;
+        }
+
+        // ------------------------------------------------------
+        // STEP 4
+        // Check every agent.
+        //
+        // We intentionally check one by one so that if one
+        // agent endpoint fails, the remaining agents can still
+        // be checked.
+        // ------------------------------------------------------
+
+        for (const agent of agentsResponse) {
+          if (cancelled) {
+            return;
+          }
+
+          try {
+            console.log(
+              `Checking agent ${agent.id} for property ${property.id}`,
+            );
+
+            const result =
+              await fetchAgentDetails(
+                agent.id,
+              );
+
+            console.log(
+              `Agent ${agent.id} returned ${result.properties.length} properties.`,
+            );
+
+            // --------------------------------------------------
+            // STEP 5
+            // Look for the current property inside the
+            // properties returned by this agent.
+            // --------------------------------------------------
+
+            const associatedProperty =
+              result.properties.find(
+                (agentProperty) =>
+                  String(
+                    agentProperty.id,
+                  ) ===
+                  String(
+                    property.id,
+                  ),
+              );
+
+            if (
+              associatedProperty
+            ) {
+              console.log(
+                "================================================",
+              );
+
+              console.log(
+                "FOUND LISTING AGENT",
+              );
+
+              console.log(
+                "Property ID:",
+                property.id,
+              );
+
+              console.log(
+                "Agent:",
+                result.agent,
+              );
+
+              console.log(
+                "Associated property:",
+                associatedProperty,
+              );
+
+              console.log(
+                "================================================",
+              );
+
+              if (!cancelled) {
+                setListingAgent(
+                  result.agent,
+                );
+              }
+
+              return;
+            }
+          } catch (agentError) {
+            console.error(
+              `Failed checking agent ${agent.id}:`,
+              agentError,
+            );
+
+            // Continue checking the next agent.
+          }
+        }
+
+        // ------------------------------------------------------
+        // No agent was found.
+        // ------------------------------------------------------
+
+        console.log(
+          "No listing agent was found for property:",
+          property.id,
+        );
+
+        if (!cancelled) {
+          setListingAgent(null);
+        }
+      } catch (error) {
+        console.error(
+          "Failed to search for listing agent:",
+          error,
+        );
+
+        if (!cancelled) {
+          setListingAgent(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setListingAgentLoading(false);
+        }
+      }
+    };
+
+    void loadListingAgent();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [property]);
 
   // ============================================================
   // LOAD PROPERTY IMAGES
@@ -383,7 +701,7 @@ export default function PropertyDetailsScreen() {
   }, [property]);
 
   // ============================================================
-  // HELPERS
+  // GENERIC VALUE HELPER
   // ============================================================
 
   const getValue = (
@@ -544,6 +862,25 @@ export default function PropertyDetailsScreen() {
   };
 
   // ============================================================
+  // OPEN AGENT DETAILS
+  // ============================================================
+
+  const handleAgentPress = () => {
+    if (!listingAgent) {
+      return;
+    }
+
+    router.push({
+      pathname: "/(tabs)/agents/[id]",
+      params: {
+        id: String(
+          listingAgent.id,
+        ),
+      },
+    });
+  };
+
+  // ============================================================
   // LOADING
   // ============================================================
 
@@ -698,7 +1035,7 @@ export default function PropertyDetailsScreen() {
   }
 
   // ============================================================
-  // PROPERTY DETAILS
+  // PROPERTY DETAILS VALUES
   // ============================================================
 
   const bedrooms = getValue(
@@ -1747,34 +2084,62 @@ export default function PropertyDetailsScreen() {
               Listing Agent
             </Text>
 
-            {property.agent ? (
+            {listingAgentLoading ? (
               <View
+                className={
+                  isDark
+                    ? "items-center rounded-xl border border-[#292929] bg-[#171717] py-10"
+                    : "items-center rounded-xl border border-gray-200 bg-white py-10"
+                }
+              >
+                <ActivityIndicator
+                  size="small"
+                  color="#dc2626"
+                />
+
+                <Text
+                  className={
+                    isDark
+                      ? "mt-3 text-sm text-zinc-500"
+                      : "mt-3 text-sm text-gray-500"
+                  }
+                >
+                  Finding listing agent...
+                </Text>
+              </View>
+            ) : listingAgent ? (
+              <Pressable
+                onPress={handleAgentPress}
                 className={
                   isDark
                     ? "rounded-xl border border-[#292929] bg-[#171717] p-4"
                     : "rounded-xl border border-gray-200 bg-white p-4"
                 }
               >
+                {/* ================================================= */}
+                {/* AGENT HEADER */}
+                {/* ================================================= */}
+
                 <View className="flex-row items-center">
-                  {property.agent.image ? (
+                  {listingAgent.image ? (
                     <Image
                       source={{
-                        uri: property.agent.image,
+                        uri: listingAgent.image,
                       }}
-                      className="h-14 w-14 rounded-full"
+                      className="h-16 w-16 rounded-full border-2 border-red-600"
                       resizeMode="cover"
                     />
                   ) : (
                     <View
                       className={
                         isDark
-                          ? "h-14 w-14 items-center justify-center rounded-full bg-[#292929]"
-                          : "h-14 w-14 items-center justify-center rounded-full bg-gray-200"
+                          ? "h-16 w-16 items-center justify-center rounded-full border-2 border-red-600 bg-[#292929]"
+                          : "h-16 w-16 items-center justify-center rounded-full border-2 border-red-600 bg-gray-200"
                       }
                     >
                       <Ionicons
                         name="person-outline"
-                        size={28}
+                        size={30}
                         color={
                           isDark
                             ? "#777"
@@ -1784,130 +2149,281 @@ export default function PropertyDetailsScreen() {
                     </View>
                   )}
 
-                  <View className="ml-3 flex-1">
-                    <Text
-                      className={
-                        isDark
-                          ? "text-base font-bold text-white"
-                          : "text-base font-bold text-black"
-                      }
-                      numberOfLines={2}
-                    >
-                      {property.agent.name ||
-                        "Listing Agent"}
-                    </Text>
+                  <View className="ml-4 flex-1">
+                    <View className="flex-row items-center">
+                      <Text
+                        className={
+                          isDark
+                            ? "flex-1 text-lg font-bold text-white"
+                            : "flex-1 text-lg font-bold text-black"
+                        }
+                        numberOfLines={2}
+                      >
+                        {listingAgent.name ||
+                          "Listing Agent"}
+                      </Text>
 
-                    <Text
-                      className={
-                        isDark
-                          ? "mt-1 text-sm text-zinc-500"
-                          : "mt-1 text-sm text-gray-500"
-                      }
-                    >
-                      {property.agent.agentType ||
-                        "Property Agent"}
-                    </Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={20}
+                        color={
+                          isDark
+                            ? "#777"
+                            : "#9ca3af"
+                        }
+                      />
+                    </View>
+
+                    {listingAgent.agentType ? (
+                      <View className="mt-2 self-start rounded-full bg-red-600/15 px-3 py-1">
+                        <Text className="text-xs font-semibold text-red-500">
+                          {
+                            listingAgent.agentType
+                          }
+                        </Text>
+                      </View>
+                    ) : null}
+
+                    {listingAgent.licenseStatus ? (
+                      <View className="mt-2 flex-row items-center">
+                        <Ionicons
+                          name="shield-checkmark-outline"
+                          size={15}
+                          color="#22c55e"
+                        />
+
+                        <Text
+                          className={
+                            isDark
+                              ? "ml-1.5 text-xs text-zinc-500"
+                              : "ml-1.5 text-xs text-gray-500"
+                          }
+                        >
+                          License:{" "}
+                          {
+                            listingAgent.licenseStatus
+                          }
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
+
+                {/* ================================================= */}
+                {/* AGENT CONTACT INFORMATION */}
+                {/* ================================================= */}
 
                 <View
                   className={
                     isDark
-                      ? "mt-4 border-t border-[#292929] pt-4"
-                      : "mt-4 border-t border-gray-200 pt-4"
+                      ? "mt-5 border-t border-[#292929] pt-4"
+                      : "mt-5 border-t border-gray-200 pt-4"
                   }
                 >
-                  {property.agent.email ? (
+                  {listingAgent.email ? (
                     <View className="flex-row items-center">
-                      <Ionicons
-                        name="mail-outline"
-                        size={19}
-                        color={
-                          isDark
-                            ? "#888"
-                            : "#6b7280"
-                        }
-                      />
-
-                      <Text
+                      <View
                         className={
                           isDark
-                            ? "ml-3 flex-1 text-sm text-zinc-400"
-                            : "ml-3 flex-1 text-sm text-gray-600"
+                            ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
+                            : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
                         }
-                        numberOfLines={2}
                       >
-                        {property.agent.email}
-                      </Text>
+                        <Ionicons
+                          name="mail-outline"
+                          size={18}
+                          color="#ef4444"
+                        />
+                      </View>
+
+                      <View className="ml-3 flex-1">
+                        <Text
+                          className={
+                            isDark
+                              ? "text-xs text-zinc-500"
+                              : "text-xs text-gray-500"
+                          }
+                        >
+                          Email
+                        </Text>
+
+                        <Text
+                          className={
+                            isDark
+                              ? "mt-1 text-sm font-medium text-zinc-300"
+                              : "mt-1 text-sm font-medium text-gray-700"
+                          }
+                          numberOfLines={2}
+                        >
+                          {
+                            listingAgent.email
+                          }
+                        </Text>
+                      </View>
                     </View>
                   ) : null}
 
-                  {property.agent.phone ? (
+                  {listingAgent.phone ? (
                     <View
                       className={`flex-row items-center ${
-                        property.agent.email
-                          ? "mt-3"
+                        listingAgent.email
+                          ? "mt-4"
                           : ""
                       }`}
                     >
-                      <Ionicons
-                        name="call-outline"
-                        size={19}
-                        color={
-                          isDark
-                            ? "#888"
-                            : "#6b7280"
-                        }
-                      />
-
-                      <Text
+                      <View
                         className={
                           isDark
-                            ? "ml-3 flex-1 text-sm text-zinc-400"
-                            : "ml-3 flex-1 text-sm text-gray-600"
+                            ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
+                            : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
                         }
-                        numberOfLines={2}
                       >
-                        {property.agent.phone}
-                      </Text>
+                        <Ionicons
+                          name="call-outline"
+                          size={18}
+                          color="#ef4444"
+                        />
+                      </View>
+
+                      <View className="ml-3 flex-1">
+                        <Text
+                          className={
+                            isDark
+                              ? "text-xs text-zinc-500"
+                              : "text-xs text-gray-500"
+                          }
+                        >
+                          Phone
+                        </Text>
+
+                        <Text
+                          className={
+                            isDark
+                              ? "mt-1 text-sm font-medium text-zinc-300"
+                              : "mt-1 text-sm font-medium text-gray-700"
+                          }
+                          numberOfLines={2}
+                        >
+                          {
+                            listingAgent.phone
+                          }
+                        </Text>
+                      </View>
                     </View>
                   ) : null}
 
-                  {property.agent.specialization ? (
-                    <View className="mt-3 flex-row items-center">
-                      <Ionicons
-                        name="briefcase-outline"
-                        size={19}
-                        color={
-                          isDark
-                            ? "#888"
-                            : "#6b7280"
-                        }
-                      />
-
-                      <Text
+                  {listingAgent.specialization ? (
+                    <View
+                      className={`flex-row items-center ${
+                        listingAgent.email ||
+                        listingAgent.phone
+                          ? "mt-4"
+                          : ""
+                      }`}
+                    >
+                      <View
                         className={
                           isDark
-                            ? "ml-3 flex-1 text-sm text-zinc-400"
-                            : "ml-3 flex-1 text-sm text-gray-600"
+                            ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
+                            : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
                         }
-                        numberOfLines={2}
                       >
-                        {
-                          property.agent
-                            .specialization
+                        <Ionicons
+                          name="briefcase-outline"
+                          size={18}
+                          color="#ef4444"
+                        />
+                      </View>
+
+                      <View className="ml-3 flex-1">
+                        <Text
+                          className={
+                            isDark
+                              ? "text-xs text-zinc-500"
+                              : "text-xs text-gray-500"
+                          }
+                        >
+                          Specialization
+                        </Text>
+
+                        <Text
+                          className={
+                            isDark
+                              ? "mt-1 text-sm font-medium text-zinc-300"
+                              : "mt-1 text-sm font-medium text-gray-700"
+                          }
+                          numberOfLines={2}
+                        >
+                          {
+                            listingAgent.specialization
+                          }
+                        </Text>
+                      </View>
+                    </View>
+                  ) : null}
+
+                  {listingAgent.address ? (
+                    <View
+                      className={`flex-row items-center ${
+                        listingAgent.email ||
+                        listingAgent.phone ||
+                        listingAgent.specialization
+                          ? "mt-4"
+                          : ""
+                      }`}
+                    >
+                      <View
+                        className={
+                          isDark
+                            ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
+                            : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
                         }
-                      </Text>
+                      >
+                        <Ionicons
+                          name="location-outline"
+                          size={18}
+                          color="#ef4444"
+                        />
+                      </View>
+
+                      <View className="ml-3 flex-1">
+                        <Text
+                          className={
+                            isDark
+                              ? "text-xs text-zinc-500"
+                              : "text-xs text-gray-500"
+                          }
+                        >
+                          Address
+                        </Text>
+
+                        <Text
+                          className={
+                            isDark
+                              ? "mt-1 text-sm font-medium text-zinc-300"
+                              : "mt-1 text-sm font-medium text-gray-700"
+                          }
+                          numberOfLines={3}
+                        >
+                          {
+                            listingAgent.address
+                          }
+                        </Text>
+                      </View>
                     </View>
                   ) : null}
                 </View>
 
-                {property.agent.about ? (
+                {/* ================================================= */}
+                {/* AGENT ABOUT */}
+                {/* ================================================= */}
+
+                {listingAgent.about ? (
                   <View
                     className={
                       isDark
-                        ? "mt-4 border-t border-[#292929] pt-4"
-                        : "mt-4 border-t border-gray-200 pt-4"
+                        ? "mt-5 border-t border-[#292929] pt-4"
+                        : "mt-5 border-t border-gray-200 pt-4"
                     }
                   >
                     <Text
@@ -1927,11 +2443,38 @@ export default function PropertyDetailsScreen() {
                           : "mt-2 text-sm leading-6 text-gray-700"
                       }
                     >
-                      {property.agent.about}
+                      {
+                        listingAgent.about
+                      }
                     </Text>
                   </View>
                 ) : null}
-              </View>
+
+                {/* ================================================= */}
+                {/* VIEW AGENT */}
+                {/* ================================================= */}
+
+                <View
+                  className={
+                    isDark
+                      ? "mt-5 flex-row items-center justify-center rounded-lg bg-[#242424] py-3"
+                      : "mt-5 flex-row items-center justify-center rounded-lg bg-gray-100 py-3"
+                  }
+                >
+                  <Text className="text-sm font-bold text-red-500">
+                    View Agent Profile
+                  </Text>
+
+                  <Ionicons
+                    name="arrow-forward"
+                    size={17}
+                    color="#ef4444"
+                    style={{
+                      marginLeft: 7,
+                    }}
+                  />
+                </View>
+              </Pressable>
             ) : (
               <View
                 className={
@@ -1976,8 +2519,9 @@ export default function PropertyDetailsScreen() {
                         : "mt-1 text-center text-sm leading-5 text-gray-500"
                     }
                   >
-                    No agent is currently associated with
-                    this property.
+                    No agent is currently
+                    associated with this
+                    property.
                   </Text>
                 </View>
               </View>
@@ -2008,9 +2552,13 @@ interface HighlightProps {
   icon: React.ComponentProps<
     typeof Ionicons
   >["name"];
+
   value: string;
+
   label: string;
+
   wide?: boolean;
+
   isDark: boolean;
 }
 
@@ -2074,9 +2622,13 @@ interface DetailRowProps {
   icon: React.ComponentProps<
     typeof Ionicons
   >["name"];
+
   label: string;
+
   value: string;
+
   last?: boolean;
+
   isDark: boolean;
 }
 
@@ -2134,3 +2686,4 @@ function DetailRow({
     </View>
   );
 }
+
