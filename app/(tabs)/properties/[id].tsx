@@ -1,4 +1,3 @@
-
 import React, {
   useEffect,
   useMemo,
@@ -7,13 +6,18 @@ import React, {
 
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
+  KeyboardAvoidingView,
   Linking,
+  Modal,
+  Platform,
   Pressable,
   ScrollView,
   StatusBar,
   Text,
+  TextInput,
   View,
   useColorScheme,
 } from "react-native";
@@ -70,6 +74,16 @@ const VIDEO_HEIGHT = Math.min(
   240,
   SCREEN_WIDTH * 0.56,
 );
+
+// ============================================================
+// API BASE URL
+// ============================================================
+
+const API_URL =
+  process.env.EXPO_PUBLIC_API_URL;
+
+const BASE_API_URL =
+  API_URL?.replace(/\/+$/, "") ?? "";
 
 // ============================================================
 // VIDEO PLAYER COMPONENT
@@ -153,7 +167,11 @@ export default function PropertyDetailsScreen() {
   // AUTHENTICATED USER
   // ============================================================
 
-  const { user } = useAuth();
+  const {
+    user,
+    isLoggedIn,
+    getAuthHeaders,
+  } = useAuth();
 
   const loggedInUserId =
     user?.id;
@@ -205,6 +223,19 @@ export default function PropertyDetailsScreen() {
     useState(0);
 
   const [menuVisible, setMenuVisible] =
+    useState(false);
+
+  // ============================================================
+  // MESSAGE STATE
+  // ============================================================
+
+  const [messageModalVisible, setMessageModalVisible] =
+    useState(false);
+
+  const [messageText, setMessageText] =
+    useState("");
+
+  const [sendingMessage, setSendingMessage] =
     useState(false);
 
   // ============================================================
@@ -298,12 +329,6 @@ export default function PropertyDetailsScreen() {
   // 4. Check each agent's associated properties.
   // 5. Find the agent whose property list contains this
   //    property's ID.
-  //
-  // This is why property ID 9 can correctly resolve to
-  // Patricia Thonyiwa even when property 9 itself has:
-  //
-  //   valuer_id: null
-  //   agent: null
   // ============================================================
 
   useEffect(() => {
@@ -422,10 +447,6 @@ export default function PropertyDetailsScreen() {
         // ------------------------------------------------------
         // STEP 4
         // Check every agent.
-        //
-        // We intentionally check one by one so that if one
-        // agent endpoint fails, the remaining agents can still
-        // be checked.
         // ------------------------------------------------------
 
         for (const agent of agentsResponse) {
@@ -449,8 +470,7 @@ export default function PropertyDetailsScreen() {
 
             // --------------------------------------------------
             // STEP 5
-            // Look for the current property inside the
-            // properties returned by this agent.
+            // Look for the current property.
             // --------------------------------------------------
 
             const associatedProperty =
@@ -850,6 +870,305 @@ export default function PropertyDetailsScreen() {
         "Failed to open Make Offer website:",
         error,
       );
+    }
+  };
+
+  // ============================================================
+  // OPEN MESSAGE MODAL
+  // ============================================================
+
+  const handleOpenMessage = () => {
+    if (!listingAgent) {
+      return;
+    }
+
+    if (!isLoggedIn) {
+      Alert.alert(
+        "Sign In Required",
+        "Please sign in before sending a message to the agent.",
+      );
+
+      return;
+    }
+
+    if (
+      loggedInUserId ===
+        undefined ||
+      loggedInUserId === null
+    ) {
+      Alert.alert(
+        "Account Error",
+        "Your account ID could not be found. Please sign in again.",
+      );
+
+      return;
+    }
+
+    if (
+      listingAgent.userId ===
+        undefined ||
+      listingAgent.userId === null
+    ) {
+      Alert.alert(
+        "Agent Unavailable",
+        "The agent's user account could not be identified, so a message cannot be sent.",
+      );
+
+      return;
+    }
+
+    if (
+      String(loggedInUserId) ===
+      String(listingAgent.userId)
+    ) {
+      Alert.alert(
+        "Cannot Send Message",
+        "You cannot send a message to your own account.",
+      );
+
+      return;
+    }
+
+    setMessageText("");
+    setMessageModalVisible(true);
+  };
+
+  // ============================================================
+  // CLOSE MESSAGE MODAL
+  // ============================================================
+
+  const handleCloseMessage = () => {
+    if (sendingMessage) {
+      return;
+    }
+
+    setMessageModalVisible(false);
+    setMessageText("");
+  };
+
+  // ============================================================
+  // SEND MESSAGE
+  // ============================================================
+
+  const handleSendMessage = async () => {
+    const trimmedMessage =
+      messageText.trim();
+
+    if (!trimmedMessage) {
+      Alert.alert(
+        "Message Required",
+        "Please enter a message before sending.",
+      );
+
+      return;
+    }
+
+    if (!isLoggedIn) {
+      Alert.alert(
+        "Sign In Required",
+        "Please sign in before sending a message.",
+      );
+
+      return;
+    }
+
+    if (
+      loggedInUserId ===
+        undefined ||
+      loggedInUserId === null
+    ) {
+      Alert.alert(
+        "Account Error",
+        "Your account ID could not be found. Please sign in again.",
+      );
+
+      return;
+    }
+
+    if (!listingAgent) {
+      Alert.alert(
+        "Agent Unavailable",
+        "The listing agent could not be found.",
+      );
+
+      return;
+    }
+
+    if (
+      listingAgent.userId ===
+        undefined ||
+      listingAgent.userId === null
+    ) {
+      Alert.alert(
+        "Agent Unavailable",
+        "The agent's user account could not be identified.",
+      );
+
+      return;
+    }
+
+    if (
+      String(loggedInUserId) ===
+      String(listingAgent.userId)
+    ) {
+      Alert.alert(
+        "Cannot Send Message",
+        "You cannot send a message to your own account.",
+      );
+
+      return;
+    }
+
+    if (!BASE_API_URL) {
+      Alert.alert(
+        "Configuration Error",
+        "The API URL is not configured.",
+      );
+
+      return;
+    }
+
+    try {
+      setSendingMessage(true);
+
+      const endpoint =
+        `${BASE_API_URL}/v2/messages/send`;
+
+      console.log(
+        "Sending message to:",
+        endpoint,
+      );
+
+      console.log(
+        "Message sender ID:",
+        loggedInUserId,
+      );
+
+      console.log(
+        "Message receiver ID:",
+        listingAgent.userId,
+      );
+
+      const authHeaders =
+        await getAuthHeaders();
+
+      const response =
+        await fetch(endpoint, {
+          method: "POST",
+
+          headers: {
+            Accept:
+              "application/json",
+
+            "Content-Type":
+              "application/json",
+
+            ...authHeaders,
+          },
+
+          body: JSON.stringify({
+            sender_id:
+              loggedInUserId,
+
+            receiver_id:
+              listingAgent.userId,
+
+            message:
+              trimmedMessage,
+          }),
+        });
+
+      const responseText =
+        await response.text();
+
+      let responseData: unknown =
+        null;
+
+      if (responseText) {
+        try {
+          responseData =
+            JSON.parse(
+              responseText,
+            ) as unknown;
+        } catch {
+          responseData =
+            responseText;
+        }
+      }
+
+      console.log(
+        "Send message response status:",
+        response.status,
+      );
+
+      console.log(
+        "Send message response:",
+        responseData,
+      );
+
+      if (!response.ok) {
+        let errorMessage =
+          "Failed to send your message.";
+
+        if (
+          typeof responseData ===
+            "object" &&
+          responseData !== null
+        ) {
+          const data =
+            responseData as Record<
+              string,
+              unknown
+            >;
+
+          const serverMessage =
+            data.message ??
+            data.msg ??
+            data.error;
+
+          if (
+            typeof serverMessage ===
+            "string" &&
+            serverMessage.trim()
+          ) {
+            errorMessage =
+              serverMessage;
+          }
+        } else if (
+          typeof responseData ===
+            "string" &&
+          responseData.trim()
+        ) {
+          errorMessage =
+            responseData;
+        }
+
+        throw new Error(
+          `Message request failed (${response.status}): ${errorMessage}`,
+        );
+      }
+
+      setMessageModalVisible(false);
+      setMessageText("");
+
+      Alert.alert(
+        "Message Sent",
+        `Your message has been sent to ${listingAgent.name || "the agent"}.`,
+      );
+    } catch (error) {
+      console.error(
+        "Failed to send message:",
+        error,
+      );
+
+      Alert.alert(
+        "Message Not Sent",
+        error instanceof Error
+          ? error.message
+          : "Unable to send your message. Please try again.",
+      );
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -2108,8 +2427,7 @@ export default function PropertyDetailsScreen() {
                 </Text>
               </View>
             ) : listingAgent ? (
-              <Pressable
-                onPress={handleAgentPress}
+              <View
                 className={
                   isDark
                     ? "rounded-xl border border-[#292929] bg-[#171717] p-4"
@@ -2117,308 +2435,109 @@ export default function PropertyDetailsScreen() {
                 }
               >
                 {/* ================================================= */}
-                {/* AGENT HEADER */}
+                {/* AGENT PROFILE AREA */}
                 {/* ================================================= */}
 
-                <View className="flex-row items-center">
-                  {listingAgent.image ? (
-                    <Image
-                      source={{
-                        uri: listingAgent.image,
-                      }}
-                      className="h-16 w-16 rounded-full border-2 border-red-600"
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View
-                      className={
-                        isDark
-                          ? "h-16 w-16 items-center justify-center rounded-full border-2 border-red-600 bg-[#292929]"
-                          : "h-16 w-16 items-center justify-center rounded-full border-2 border-red-600 bg-gray-200"
-                      }
-                    >
-                      <Ionicons
-                        name="person-outline"
-                        size={30}
-                        color={
-                          isDark
-                            ? "#777"
-                            : "#6b7280"
-                        }
-                      />
-                    </View>
-                  )}
-
-                  <View className="ml-4 flex-1">
-                    <View className="flex-row items-center">
-                      <Text
-                        className={
-                          isDark
-                            ? "flex-1 text-lg font-bold text-white"
-                            : "flex-1 text-lg font-bold text-black"
-                        }
-                        numberOfLines={2}
-                      >
-                        {listingAgent.name ||
-                          "Listing Agent"}
-                      </Text>
-
-                      <Ionicons
-                        name="chevron-forward"
-                        size={20}
-                        color={
-                          isDark
-                            ? "#777"
-                            : "#9ca3af"
-                        }
-                      />
-                    </View>
-
-                    {listingAgent.agentType ? (
-                      <View className="mt-2 self-start rounded-full bg-red-600/15 px-3 py-1">
-                        <Text className="text-xs font-semibold text-red-500">
-                          {
-                            listingAgent.agentType
-                          }
-                        </Text>
-                      </View>
-                    ) : null}
-
-                    {listingAgent.licenseStatus ? (
-                      <View className="mt-2 flex-row items-center">
-                        <Ionicons
-                          name="shield-checkmark-outline"
-                          size={15}
-                          color="#22c55e"
-                        />
-
-                        <Text
-                          className={
-                            isDark
-                              ? "ml-1.5 text-xs text-zinc-500"
-                              : "ml-1.5 text-xs text-gray-500"
-                          }
-                        >
-                          License:{" "}
-                          {
-                            listingAgent.licenseStatus
-                          }
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </View>
-
-                {/* ================================================= */}
-                {/* AGENT CONTACT INFORMATION */}
-                {/* ================================================= */}
-
-                <View
-                  className={
-                    isDark
-                      ? "mt-5 border-t border-[#292929] pt-4"
-                      : "mt-5 border-t border-gray-200 pt-4"
-                  }
+                <Pressable
+                  onPress={handleAgentPress}
                 >
-                  {listingAgent.email ? (
-                    <View className="flex-row items-center">
+                  {/* ================================================= */}
+                  {/* AGENT HEADER */}
+                  {/* ================================================= */}
+
+                  <View className="flex-row items-center">
+                    {listingAgent.image ? (
+                      <Image
+                        source={{
+                          uri: listingAgent.image,
+                        }}
+                        className="h-16 w-16 rounded-full border-2 border-red-600"
+                        resizeMode="cover"
+                      />
+                    ) : (
                       <View
                         className={
                           isDark
-                            ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
-                            : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
+                            ? "h-16 w-16 items-center justify-center rounded-full border-2 border-red-600 bg-[#292929]"
+                            : "h-16 w-16 items-center justify-center rounded-full border-2 border-red-600 bg-gray-200"
                         }
                       >
                         <Ionicons
-                          name="mail-outline"
-                          size={18}
-                          color="#ef4444"
+                          name="person-outline"
+                          size={30}
+                          color={
+                            isDark
+                              ? "#777"
+                              : "#6b7280"
+                          }
                         />
                       </View>
+                    )}
 
-                      <View className="ml-3 flex-1">
+                    <View className="ml-4 flex-1">
+                      <View className="flex-row items-center">
                         <Text
                           className={
                             isDark
-                              ? "text-xs text-zinc-500"
-                              : "text-xs text-gray-500"
-                          }
-                        >
-                          Email
-                        </Text>
-
-                        <Text
-                          className={
-                            isDark
-                              ? "mt-1 text-sm font-medium text-zinc-300"
-                              : "mt-1 text-sm font-medium text-gray-700"
+                              ? "flex-1 text-lg font-bold text-white"
+                              : "flex-1 text-lg font-bold text-black"
                           }
                           numberOfLines={2}
                         >
-                          {
-                            listingAgent.email
-                          }
+                          {listingAgent.name ||
+                            "Listing Agent"}
                         </Text>
-                      </View>
-                    </View>
-                  ) : null}
 
-                  {listingAgent.phone ? (
-                    <View
-                      className={`flex-row items-center ${
-                        listingAgent.email
-                          ? "mt-4"
-                          : ""
-                      }`}
-                    >
-                      <View
-                        className={
-                          isDark
-                            ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
-                            : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
-                        }
-                      >
                         <Ionicons
-                          name="call-outline"
-                          size={18}
-                          color="#ef4444"
+                          name="chevron-forward"
+                          size={20}
+                          color={
+                            isDark
+                              ? "#777"
+                              : "#9ca3af"
+                          }
                         />
                       </View>
 
-                      <View className="ml-3 flex-1">
-                        <Text
-                          className={
-                            isDark
-                              ? "text-xs text-zinc-500"
-                              : "text-xs text-gray-500"
-                          }
-                        >
-                          Phone
-                        </Text>
+                      {listingAgent.agentType ? (
+                        <View className="mt-2 self-start rounded-full bg-red-600/15 px-3 py-1">
+                          <Text className="text-xs font-semibold text-red-500">
+                            {
+                              listingAgent.agentType
+                            }
+                          </Text>
+                        </View>
+                      ) : null}
 
-                        <Text
-                          className={
-                            isDark
-                              ? "mt-1 text-sm font-medium text-zinc-300"
-                              : "mt-1 text-sm font-medium text-gray-700"
-                          }
-                          numberOfLines={2}
-                        >
-                          {
-                            listingAgent.phone
-                          }
-                        </Text>
-                      </View>
+                      {listingAgent.licenseStatus ? (
+                        <View className="mt-2 flex-row items-center">
+                          <Ionicons
+                            name="shield-checkmark-outline"
+                            size={15}
+                            color="#22c55e"
+                          />
+
+                          <Text
+                            className={
+                              isDark
+                                ? "ml-1.5 text-xs text-zinc-500"
+                                : "ml-1.5 text-xs text-gray-500"
+                            }
+                          >
+                            License:{" "}
+                            {
+                              listingAgent.licenseStatus
+                            }
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
-                  ) : null}
+                  </View>
 
-                  {listingAgent.specialization ? (
-                    <View
-                      className={`flex-row items-center ${
-                        listingAgent.email ||
-                        listingAgent.phone
-                          ? "mt-4"
-                          : ""
-                      }`}
-                    >
-                      <View
-                        className={
-                          isDark
-                            ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
-                            : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
-                        }
-                      >
-                        <Ionicons
-                          name="briefcase-outline"
-                          size={18}
-                          color="#ef4444"
-                        />
-                      </View>
+                  {/* ================================================= */}
+                  {/* AGENT CONTACT INFORMATION */}
+                  {/* ================================================= */}
 
-                      <View className="ml-3 flex-1">
-                        <Text
-                          className={
-                            isDark
-                              ? "text-xs text-zinc-500"
-                              : "text-xs text-gray-500"
-                          }
-                        >
-                          Specialization
-                        </Text>
-
-                        <Text
-                          className={
-                            isDark
-                              ? "mt-1 text-sm font-medium text-zinc-300"
-                              : "mt-1 text-sm font-medium text-gray-700"
-                          }
-                          numberOfLines={2}
-                        >
-                          {
-                            listingAgent.specialization
-                          }
-                        </Text>
-                      </View>
-                    </View>
-                  ) : null}
-
-                  {listingAgent.address ? (
-                    <View
-                      className={`flex-row items-center ${
-                        listingAgent.email ||
-                        listingAgent.phone ||
-                        listingAgent.specialization
-                          ? "mt-4"
-                          : ""
-                      }`}
-                    >
-                      <View
-                        className={
-                          isDark
-                            ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
-                            : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
-                        }
-                      >
-                        <Ionicons
-                          name="location-outline"
-                          size={18}
-                          color="#ef4444"
-                        />
-                      </View>
-
-                      <View className="ml-3 flex-1">
-                        <Text
-                          className={
-                            isDark
-                              ? "text-xs text-zinc-500"
-                              : "text-xs text-gray-500"
-                          }
-                        >
-                          Address
-                        </Text>
-
-                        <Text
-                          className={
-                            isDark
-                              ? "mt-1 text-sm font-medium text-zinc-300"
-                              : "mt-1 text-sm font-medium text-gray-700"
-                          }
-                          numberOfLines={3}
-                        >
-                          {
-                            listingAgent.address
-                          }
-                        </Text>
-                      </View>
-                    </View>
-                  ) : null}
-                </View>
-
-                {/* ================================================= */}
-                {/* AGENT ABOUT */}
-                {/* ================================================= */}
-
-                {listingAgent.about ? (
                   <View
                     className={
                       isDark
@@ -2426,55 +2545,286 @@ export default function PropertyDetailsScreen() {
                         : "mt-5 border-t border-gray-200 pt-4"
                     }
                   >
-                    <Text
-                      className={
-                        isDark
-                          ? "text-xs font-semibold uppercase tracking-wide text-zinc-500"
-                          : "text-xs font-semibold uppercase tracking-wide text-gray-500"
-                      }
-                    >
-                      About the Agent
-                    </Text>
+                    {listingAgent.email ? (
+                      <View className="flex-row items-center">
+                        <View
+                          className={
+                            isDark
+                              ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
+                              : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
+                          }
+                        >
+                          <Ionicons
+                            name="mail-outline"
+                            size={18}
+                            color="#ef4444"
+                          />
+                        </View>
 
-                    <Text
-                      className={
-                        isDark
-                          ? "mt-2 text-sm leading-6 text-zinc-300"
-                          : "mt-2 text-sm leading-6 text-gray-700"
-                      }
-                    >
-                      {
-                        listingAgent.about
-                      }
-                    </Text>
+                        <View className="ml-3 flex-1">
+                          <Text
+                            className={
+                              isDark
+                                ? "text-xs text-zinc-500"
+                                : "text-xs text-gray-500"
+                            }
+                          >
+                            Email
+                          </Text>
+
+                          <Text
+                            className={
+                              isDark
+                                ? "mt-1 text-sm font-medium text-zinc-300"
+                                : "mt-1 text-sm font-medium text-gray-700"
+                            }
+                            numberOfLines={2}
+                          >
+                            {
+                              listingAgent.email
+                            }
+                          </Text>
+                        </View>
+                      </View>
+                    ) : null}
+
+                    {listingAgent.phone ? (
+                      <View
+                        className={`flex-row items-center ${
+                          listingAgent.email
+                            ? "mt-4"
+                            : ""
+                        }`}
+                      >
+                        <View
+                          className={
+                            isDark
+                              ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
+                              : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
+                          }
+                        >
+                          <Ionicons
+                            name="call-outline"
+                            size={18}
+                            color="#ef4444"
+                          />
+                        </View>
+
+                        <View className="ml-3 flex-1">
+                          <Text
+                            className={
+                              isDark
+                                ? "text-xs text-zinc-500"
+                                : "text-xs text-gray-500"
+                            }
+                          >
+                            Phone
+                          </Text>
+
+                          <Text
+                            className={
+                              isDark
+                                ? "mt-1 text-sm font-medium text-zinc-300"
+                                : "mt-1 text-sm font-medium text-gray-700"
+                            }
+                            numberOfLines={2}
+                          >
+                            {
+                              listingAgent.phone
+                            }
+                          </Text>
+                        </View>
+                      </View>
+                    ) : null}
+
+                    {listingAgent.specialization ? (
+                      <View
+                        className={`flex-row items-center ${
+                          listingAgent.email ||
+                          listingAgent.phone
+                            ? "mt-4"
+                            : ""
+                        }`}
+                      >
+                        <View
+                          className={
+                            isDark
+                              ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
+                              : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
+                          }
+                        >
+                          <Ionicons
+                            name="briefcase-outline"
+                            size={18}
+                            color="#ef4444"
+                          />
+                        </View>
+
+                        <View className="ml-3 flex-1">
+                          <Text
+                            className={
+                              isDark
+                                ? "text-xs text-zinc-500"
+                                : "text-xs text-gray-500"
+                            }
+                          >
+                            Specialization
+                          </Text>
+
+                          <Text
+                            className={
+                              isDark
+                                ? "mt-1 text-sm font-medium text-zinc-300"
+                                : "mt-1 text-sm font-medium text-gray-700"
+                            }
+                            numberOfLines={2}
+                          >
+                            {
+                              listingAgent.specialization
+                            }
+                          </Text>
+                        </View>
+                      </View>
+                    ) : null}
+
+                    {listingAgent.address ? (
+                      <View
+                        className={`flex-row items-center ${
+                          listingAgent.email ||
+                          listingAgent.phone ||
+                          listingAgent.specialization
+                            ? "mt-4"
+                            : ""
+                        }`}
+                      >
+                        <View
+                          className={
+                            isDark
+                              ? "h-9 w-9 items-center justify-center rounded-lg bg-[#242424]"
+                              : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
+                          }
+                        >
+                          <Ionicons
+                            name="location-outline"
+                            size={18}
+                            color="#ef4444"
+                          />
+                        </View>
+
+                        <View className="ml-3 flex-1">
+                          <Text
+                            className={
+                              isDark
+                                ? "text-xs text-zinc-500"
+                                : "text-xs text-gray-500"
+                            }
+                          >
+                            Address
+                          </Text>
+
+                          <Text
+                            className={
+                              isDark
+                                ? "mt-1 text-sm font-medium text-zinc-300"
+                                : "mt-1 text-sm font-medium text-gray-700"
+                            }
+                            numberOfLines={3}
+                          >
+                            {
+                              listingAgent.address
+                            }
+                          </Text>
+                        </View>
+                      </View>
+                    ) : null}
                   </View>
-                ) : null}
+
+                  {/* ================================================= */}
+                  {/* AGENT ABOUT */}
+                  {/* ================================================= */}
+
+                  {listingAgent.about ? (
+                    <View
+                      className={
+                        isDark
+                          ? "mt-5 border-t border-[#292929] pt-4"
+                          : "mt-5 border-t border-gray-200 pt-4"
+                      }
+                    >
+                      <Text
+                        className={
+                          isDark
+                            ? "text-xs font-semibold uppercase tracking-wide text-zinc-500"
+                            : "text-xs font-semibold uppercase tracking-wide text-gray-500"
+                        }
+                      >
+                        About the Agent
+                      </Text>
+
+                      <Text
+                        className={
+                          isDark
+                            ? "mt-2 text-sm leading-6 text-zinc-300"
+                            : "mt-2 text-sm leading-6 text-gray-700"
+                        }
+                      >
+                        {
+                          listingAgent.about
+                        }
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {/* ================================================= */}
+                  {/* VIEW AGENT */}
+                  {/* ================================================= */}
+
+                  <View
+                    className={
+                      isDark
+                        ? "mt-5 flex-row items-center justify-center rounded-lg bg-[#242424] py-3"
+                        : "mt-5 flex-row items-center justify-center rounded-lg bg-gray-100 py-3"
+                    }
+                  >
+                    <Text className="text-sm font-bold text-red-500">
+                      View Agent Profile
+                    </Text>
+
+                    <Ionicons
+                      name="arrow-forward"
+                      size={17}
+                      color="#ef4444"
+                      style={{
+                        marginLeft: 7,
+                      }}
+                    />
+                  </View>
+                </Pressable>
 
                 {/* ================================================= */}
-                {/* VIEW AGENT */}
+                {/* MESSAGE AGENT */}
                 {/* ================================================= */}
 
-                <View
-                  className={
-                    isDark
-                      ? "mt-5 flex-row items-center justify-center rounded-lg bg-[#242424] py-3"
-                      : "mt-5 flex-row items-center justify-center rounded-lg bg-gray-100 py-3"
+                <Pressable
+                  onPress={
+                    handleOpenMessage
                   }
+                  disabled={
+                    sendingMessage
+                  }
+                  className="mt-3 flex-row items-center justify-center rounded-lg bg-red-600 py-3.5 active:bg-red-700"
                 >
-                  <Text className="text-sm font-bold text-red-500">
-                    View Agent Profile
-                  </Text>
-
                   <Ionicons
-                    name="arrow-forward"
-                    size={17}
-                    color="#ef4444"
-                    style={{
-                      marginLeft: 7,
-                    }}
+                    name="chatbubble-ellipses-outline"
+                    size={19}
+                    color="#fff"
                   />
-                </View>
-              </Pressable>
+
+                  <Text className="ml-2 text-sm font-bold text-white">
+                    Message Agent
+                  </Text>
+                </Pressable>
+              </View>
             ) : (
               <View
                 className={
@@ -2529,6 +2879,267 @@ export default function PropertyDetailsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* ====================================================== */}
+      {/* MESSAGE MODAL */}
+      {/* ====================================================== */}
+
+      <Modal
+        visible={messageModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={
+          handleCloseMessage
+        }
+      >
+        <KeyboardAvoidingView
+          className="flex-1"
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : undefined
+        }
+        keyboardVerticalOffset={
+          Platform.OS === "ios"
+            ? 10
+            : 0
+        }
+      >
+          <View className="flex-1 justify-end bg-black/60">
+            <View
+              className={
+                isDark
+                  ? "max-h-[85%] rounded-t-3xl border-t border-[#292929] bg-[#111111] px-5 pb-8 pt-5"
+                  : "max-h-[85%] rounded-t-3xl border-t border-gray-200 bg-white px-5 pb-8 pt-5"
+              }
+            >
+              {/* ================================================= */}
+              {/* MODAL HEADER */}
+              {/* ================================================= */}
+
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1">
+                  <Text
+                    className={
+                      isDark
+                        ? "text-xl font-bold text-white"
+                        : "text-xl font-bold text-black"
+                    }
+                  >
+                    Message Agent
+                  </Text>
+
+                  <Text
+                    className={
+                      isDark
+                        ? "mt-1 text-sm text-zinc-500"
+                        : "mt-1 text-sm text-gray-500"
+                    }
+                    numberOfLines={1}
+                  >
+                    {listingAgent?.name ||
+                      "Listing Agent"}
+                  </Text>
+                </View>
+
+                <Pressable
+                  onPress={
+                    handleCloseMessage
+                  }
+                  disabled={
+                    sendingMessage
+                  }
+                  className={
+                    isDark
+                      ? "h-10 w-10 items-center justify-center rounded-full bg-[#242424]"
+                      : "h-10 w-10 items-center justify-center rounded-full bg-gray-100"
+                  }
+                >
+                  <Ionicons
+                    name="close"
+                    size={23}
+                    color={
+                      isDark
+                        ? "#fff"
+                        : "#000"
+                    }
+                  />
+                </Pressable>
+              </View>
+
+              {/* ================================================= */}
+              {/* AGENT SUMMARY */}
+              {/* ================================================= */}
+
+              <View
+                className={
+                  isDark
+                    ? "mt-5 flex-row items-center rounded-xl border border-[#292929] bg-[#171717] p-3"
+                    : "mt-5 flex-row items-center rounded-xl border border-gray-200 bg-gray-50 p-3"
+                }
+              >
+                {listingAgent?.image ? (
+                  <Image
+                    source={{
+                      uri: listingAgent.image,
+                    }}
+                    className="h-12 w-12 rounded-full border border-red-600"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View
+                    className={
+                      isDark
+                        ? "h-12 w-12 items-center justify-center rounded-full bg-[#292929]"
+                        : "h-12 w-12 items-center justify-center rounded-full bg-gray-200"
+                    }
+                  >
+                    <Ionicons
+                      name="person-outline"
+                      size={23}
+                      color={
+                        isDark
+                          ? "#777"
+                          : "#6b7280"
+                      }
+                    />
+                  </View>
+                )}
+
+                <View className="ml-3 flex-1">
+                  <Text
+                    className={
+                      isDark
+                        ? "text-sm font-bold text-white"
+                        : "text-sm font-bold text-black"
+                    }
+                    numberOfLines={1}
+                  >
+                    {listingAgent?.name ||
+                      "Listing Agent"}
+                  </Text>
+
+                  <Text
+                    className={
+                      isDark
+                        ? "mt-1 text-xs text-zinc-500"
+                        : "mt-1 text-xs text-gray-500"
+                    }
+                  >
+                    About this property
+                  </Text>
+                </View>
+              </View>
+
+              {/* ================================================= */}
+              {/* MESSAGE INPUT */}
+              {/* ================================================= */}
+
+              <View className="mt-5">
+                <Text
+                  className={
+                    isDark
+                      ? "mb-2 text-sm font-semibold text-zinc-300"
+                      : "mb-2 text-sm font-semibold text-gray-700"
+                  }
+                >
+                  Your message
+                </Text>
+
+                <TextInput
+                  value={messageText}
+                  onChangeText={
+                    setMessageText
+                  }
+                  placeholder="Write a message to the agent..."
+                  placeholderTextColor={
+                    isDark
+                      ? "#666"
+                      : "#9ca3af"
+                  }
+                  multiline
+                  textAlignVertical="top"
+                  editable={
+                    !sendingMessage
+                  }
+                  maxLength={2000}
+                  className={
+                    isDark
+                      ? "min-h-[140px] rounded-xl border border-[#292929] bg-[#171717] px-4 py-3 text-base text-white"
+                      : "min-h-[140px] rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-base text-black"
+                  }
+                />
+
+                <View className="mt-2 flex-row justify-end">
+                  <Text
+                    className={
+                      isDark
+                        ? "text-xs text-zinc-600"
+                        : "text-xs text-gray-500"
+                    }
+                  >
+                    {messageText.length}/2000
+                  </Text>
+                </View>
+              </View>
+
+              {/* ================================================= */}
+              {/* SEND BUTTON */}
+              {/* ================================================= */}
+
+              <Pressable
+                onPress={
+                  handleSendMessage
+                }
+                disabled={
+                  sendingMessage
+                }
+                className={`mt-4 flex-row items-center justify-center rounded-xl px-5 py-4 ${
+                  sendingMessage
+                    ? "bg-red-900"
+                    : "bg-red-600 active:bg-red-700"
+                }`}
+              >
+                {sendingMessage ? (
+                  <>
+                    <ActivityIndicator
+                      size="small"
+                      color="#fff"
+                    />
+
+                    <Text className="ml-2 text-base font-bold text-white">
+                      Sending...
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Ionicons
+                      name="send-outline"
+                      size={19}
+                      color="#fff"
+                    />
+
+                    <Text className="ml-2 text-base font-bold text-white">
+                      Send Message
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+
+              <Text
+                className={
+                  isDark
+                    ? "mt-3 text-center text-xs leading-5 text-zinc-600"
+                    : "mt-3 text-center text-xs leading-5 text-gray-500"
+                }
+              >
+                Your message will be sent directly
+                to the listing agent.
+              </Text>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* ====================================================== */}
       {/* SIDE MENU */}
@@ -2686,4 +3297,3 @@ function DetailRow({
     </View>
   );
 }
-
