@@ -24,6 +24,7 @@ import * as Location from "expo-location";
 import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
 import LoginModal from "@/app/components/auth/LoginModal";
 import RegisterModal from "@/app/components/auth/RegisterModal";
+import NewsletterSubscribeModal from "@/app/components/newsletter/NewsletterSubscribeModal";
 import { useAuth } from "@/app/components/auth/AuthContext";
 
 import PropertyCard from "@/app/components/properties/PropertyCard";
@@ -556,6 +557,15 @@ export default function HomeScreen() {
   const [
     registerVisible,
     setRegisterVisible,
+  ] = useState(false);
+
+  // ============================================================
+  // NEWSLETTER SUBSCRIPTION MODAL STATE
+  // ============================================================
+
+  const [
+    newsletterVisible,
+    setNewsletterVisible,
   ] = useState(false);
 
   const [
@@ -1722,11 +1732,9 @@ export default function HomeScreen() {
           {/* BLOGS */}
 
           <Pressable
-            onPress={() =>
-              router.push("/blogs")
-            }
+            onPress={() => setNewsletterVisible(true)}
             accessibilityRole="button"
-            accessibilityLabel="Open blogs"
+            accessibilityLabel="Subscribe to our newsletter"
             className={
               isDark
                 ? "w-full flex-row items-center rounded-2xl border border-[#292929] bg-[#171717] px-4 py-4 active:bg-[#222]"
@@ -1771,6 +1779,15 @@ export default function HomeScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      {/* ========================================================
+          NEWSLETTER SUBSCRIPTION MODAL
+          ======================================================== */}
+
+      <NewsletterSubscribeModal
+        visible={newsletterVisible}
+        onClose={() => setNewsletterVisible(false)}
+      />
 
       {/* ========================================================
           AUTH REQUIRED MODAL
