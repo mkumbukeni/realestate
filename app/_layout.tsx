@@ -530,7 +530,7 @@ function AuthDropdown({
                 }
               `}
             >
-              Login
+              Sign In
             </Text>
 
             <Text

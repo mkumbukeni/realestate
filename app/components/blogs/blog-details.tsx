@@ -610,7 +610,8 @@ export default function BlogDetailsScreen() {
               <Text
                 className={`ml-2 text-xs ${mutedText}`}
               >
-                Published by iMORRCS
+                Published by Real Estate Africa on{" "}
+                {formatDate(blog.created_at)}
               </Text>
             </View>
           </View>
