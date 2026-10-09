@@ -1,3 +1,13 @@
+
+import type {
+  GenerateOtpResponse,
+  VerifyOtpResponse,
+  RegisterUserData,
+  RegisterUserResponse,
+  LoginUserData,
+  LoginUserResponse,
+} from "@/app/types/auth/auth.types";
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 if (!API_BASE_URL) {
@@ -5,53 +15,6 @@ if (!API_BASE_URL) {
     "EXPO_PUBLIC_API_URL is not configured.",
   );
 }
-
-type GenerateOtpResponse = {
-  success?: boolean;
-  message?: string;
-  msg?: string;
-  [key: string]: unknown;
-};
-
-type VerifyOtpResponse = {
-  success?: boolean;
-  message?: string;
-  msg?: string;
-  [key: string]: unknown;
-};
-
-type RegisterUserData = {
-  phone: string;
-  address: string;
-  email: string;
-  name: string;
-  role_name: "client";
-  channel: "email";
-};
-
-type RegisterUserResponse = {
-  success?: boolean;
-  message?: string;
-  msg?: string;
-  [key: string]: unknown;
-};
-
-type LoginUserData = {
-  email: string;
-  password: string;
-};
-
-type LoginUserResponse = {
-  success?: boolean;
-  message?: string;
-  msg?: string;
-  token?: string;
-  access_token?: string;
-  api_token?: string;
-  data?: unknown;
-  user?: Record<string, unknown>;
-  [key: string]: unknown;
-};
 
 /**
  * Safely read an API response.

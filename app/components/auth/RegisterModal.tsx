@@ -418,13 +418,15 @@ export default function RegisterModal({
     try {
       setLoading(true);
 
-      await registerUser({
-        phone: phoneNumber.trim(),
-        address: address.trim(),
-        email: verifiedEmail,
-        name: fullName.trim(),
-        role_name: "client",
-      });
+     
+await registerUser({
+  phone: phoneNumber.trim(),
+  address: address.trim(),
+  email: verifiedEmail,
+  name: fullName.trim(),
+  role_name: "client",
+  channel: "email",
+});
 
       /**
        * Backend registration succeeded.
