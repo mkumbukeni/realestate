@@ -23,17 +23,19 @@ import SideMenu from "@/app/components/sidebar/SideMenu";
 
 import { useAuth } from "@/app/components/auth/AuthContext";
 
-import {
-  type Property,
-  type PropertyMedia,
-} from "@/app/types/properties/property";
+import type { Property } from "@/app/types/properties/property";
+import type { PropertyMediaItem } from "@/app/types/properties/property";
 
-import{ fetchProperties,
+import {
+  fetchProperties,
   fetchPropertyImages,
   fetchPropertyVideos,
-  fetchAgentDetails,} from "@/app/services/propertyApi";
+  fetchAgentDetails,
+} from "@/app/services/propertyApi";
 
-import { type Agent } from "@/app/types/agents/agent";
+import type { PropertyMedia } from "@/app/types/properties/property";
+
+import type { Agent } from "@/app/types/agents/agent";
 
 import { fetchAgents } from "@/app/services/agentApi";
 
@@ -69,9 +71,6 @@ import {
   getPropertyAmenities,
   getPropertyOpenHouses,
 } from "@/app/components/properties/PropertyDetails/propertyDetailsUtils";
-
-import PropertyVideo from "@/app/components/properties/PropertyDetails/PropertyVideo";
-
 
 // ============================================================
 // API BASE URL
@@ -120,8 +119,10 @@ export default function PropertyDetailsScreen() {
 
   const [listingAgentLoading, setListingAgentLoading] = useState(false);
 
-  const [images, setImages] = useState<PropertyMedia[]>([]);
+  // Images use the PropertyMediaItem type returned by the image endpoint.
+  const [images, setImages] = useState<PropertyMediaItem[]>([]);
 
+  // PropertyVideosSection expects PropertyMedia from propertyApi.
   const [videos, setVideos] = useState<PropertyMedia[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -360,6 +361,8 @@ export default function PropertyDetailsScreen() {
 
         const result = await fetchPropertyImages(propertyId);
 
+        console.log("Loaded property images:", result);
+
         if (!cancelled) {
           setImages(result);
           setImageIndex(0);
@@ -407,7 +410,18 @@ export default function PropertyDetailsScreen() {
         console.log("Loaded property videos:", result);
 
         if (!cancelled) {
-          setVideos(result);
+          // Convert the API media items into the type expected by
+          // PropertyVideosSection: id, name, original_url, preview_url.
+          const formattedVideos: PropertyMedia[] = result.map(
+            (video, index) => ({
+              id: Number(video.id) || index + 1,
+              name: video.name || `Property video ${index + 1}`,
+              original_url: video.url,
+              preview_url: video.url,
+            }),
+          );
+
+          setVideos(formattedVideos);
         }
       } catch (error) {
         console.error("Failed to load property videos:", error);
@@ -584,7 +598,10 @@ export default function PropertyDetailsScreen() {
     const trimmedMessage = messageText.trim();
 
     if (!trimmedMessage) {
-      Alert.alert("Message Required", "Please enter a message before sending.");
+      Alert.alert(
+        "Message Required",
+        "Please enter a message before sending.",
+      );
       return;
     }
 
@@ -684,7 +701,10 @@ export default function PropertyDetailsScreen() {
           if (typeof serverMessage === "string" && serverMessage.trim()) {
             errorMessage = serverMessage;
           }
-        } else if (typeof responseData === "string" && responseData.trim()) {
+        } else if (
+          typeof responseData === "string" &&
+          responseData.trim()
+        ) {
           errorMessage = responseData;
         }
 
@@ -897,7 +917,8 @@ export default function PropertyDetailsScreen() {
   // ============================================================
 
   const propertyInformation: PropertyInformationData = {
-    title: property.title,
+    // Property does not define a title field; use its property type.
+    title: propertyType || property.type || "Property Details",
     listingType: listingType || "For Sale",
     status: property.systemStatus,
     location: locationText,
@@ -917,13 +938,14 @@ export default function PropertyDetailsScreen() {
   // IMAGE FALLBACK
   // ============================================================
 
-  const displayImages: PropertyMedia[] =
+  const displayImages: PropertyMediaItem[] =
     images.length > 0
       ? images
       : property.image
         ? [
             {
-              id: "main",
+              id: 0,
+              name: propertyType || property.type || "Property image",
               url: property.image,
               description: null,
               collection: "images",
@@ -1126,7 +1148,7 @@ export default function PropertyDetailsScreen() {
           <PropertyLocationMap
             coordinates={coordinates}
             locationText={locationText}
-            propertyTitle={property.title}
+            propertyTitle={propertyType || property.type || "Property"}
             isDark={isDark}
           />
         </View>

@@ -9,13 +9,13 @@ import {
   ScrollView,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import type { PropertyMedia } from "@/app/types/properties/property";
+import type { PropertyMediaItem } from "@/app/types/properties/property";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const IMAGE_HEIGHT = Math.min(320, SCREEN_WIDTH * 0.7);
 
 interface PropertyImageGalleryProps {
-  images: PropertyMedia[];
+  images: PropertyMediaItem[];
   fallbackImage?: string | null;
   loading: boolean;
   imageIndex: number;
@@ -31,7 +31,7 @@ export default function PropertyImageGallery({
   isDark,
   onImageIndexChange,
 }: PropertyImageGalleryProps) {
-  const displayImages: PropertyMedia[] =
+  const displayImages: PropertyMediaItem[] =
     images.length > 0
       ? images
       : fallbackImage
@@ -39,8 +39,9 @@ export default function PropertyImageGallery({
             {
               id: 0,
               name: "Property image",
-              original_url: fallbackImage,
-              preview_url: fallbackImage,
+              url: fallbackImage,
+              description: null,
+              collection: "images",
             },
           ]
         : [];
@@ -73,7 +74,10 @@ export default function PropertyImageGallery({
               const index = Math.round(
                 event.nativeEvent.contentOffset.x / SCREEN_WIDTH
               );
-              onImageIndexChange(index);
+
+              onImageIndexChange(
+                Math.max(0, Math.min(index, displayImages.length - 1))
+              );
             }}
           >
             {displayImages.map((image, index) => (
@@ -85,12 +89,25 @@ export default function PropertyImageGallery({
                 }}
               >
                 <Image
-                  source={{
-                    uri: image.original_url || image.preview_url,
-                  }}
+                  source={{ uri: image.url }}
                   className="h-full w-full"
                   resizeMode="cover"
+                  onError={(event) => {
+                    console.warn(
+                      "Failed to load property image:",
+                      image.url,
+                      event.nativeEvent.error
+                    );
+                  }}
                 />
+
+                {image.description ? (
+                  <View className="absolute bottom-0 left-0 right-0 bg-black/60 px-4 py-3">
+                    <Text className="text-sm text-white">
+                      {image.description}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
             ))}
           </ScrollView>
@@ -131,6 +148,7 @@ export default function PropertyImageGallery({
             size={55}
             color={isDark ? "#555" : "#9ca3af"}
           />
+
           <Text
             className={
               isDark

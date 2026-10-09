@@ -35,7 +35,7 @@ import {
 
 import type {
   Property,
-} from "../../services/propertyApi";
+} from "@/app/types/properties/property";
 
 import {
   useTheme,

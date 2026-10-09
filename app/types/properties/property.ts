@@ -217,6 +217,7 @@ export interface Property {
 
 export interface PropertyMediaItem {
   id: number;
+  name: string;
   url: string;
   description?: string | null;
   collection?: string | null;
