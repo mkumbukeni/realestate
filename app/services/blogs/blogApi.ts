@@ -5,43 +5,14 @@
 |--------------------------------------------------------------------------
 */
 
+import type { Blog, BlogsResponse } from "@/app/types/blogs/blog";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 if (!API_URL) {
   throw new Error(
     "EXPO_PUBLIC_API_URL is not defined. Please check your .env file."
   );
-}
-
-/*
-|--------------------------------------------------------------------------
-| Blog Type
-|--------------------------------------------------------------------------
-*/
-
-export interface Blog {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  excerpt: string | null;
-  featured_image_url: string | null;
-  author_id: string;
-  status: string;
-  designation: string | null;
-  view_count: number;
-  allow_comments: number;
-  created_at: string;
-  updated_at: string;
-  author_name: string;
-  author_email: string | null;
-  author_twitter: string | null;
-  author_website: string | null;
-  author_linkedin: string | null;
-}
-
-interface BlogsResponse {
-  data: Blog[];
 }
 
 /*
@@ -81,8 +52,7 @@ export async function getBlogs(): Promise<Blog[]> {
   */
 
   const imorccsBlogs = result.data.filter((blog) => {
-    const designation =
-      blog.designation?.trim().toLowerCase();
+    const designation = blog.designation?.trim().toLowerCase();
 
     return designation === "imorccs";
   });
@@ -111,13 +81,8 @@ export async function getBlogs(): Promise<Blog[]> {
 | Get Blog By ID
 |--------------------------------------------------------------------------
 |
-| The /blogs endpoint already returns the complete blog object,
+| The /blogs endpoint returns the complete blog object,
 | including the full content.
-|
-| We therefore find the requested blog from the existing blog list
-| instead of assuming that the backend provides:
-|
-| GET /blogs/{id}
 |
 */
 
@@ -130,9 +95,7 @@ export async function getBlogById(
 
   const blogs = await getBlogs();
 
-  const blog = blogs.find(
-    (item) => item.id === id
-  );
+  const blog = blogs.find((item) => item.id === id);
 
   if (!blog) {
     throw new Error(
@@ -142,4 +105,3 @@ export async function getBlogById(
 
   return blog;
 }
-

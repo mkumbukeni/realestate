@@ -1,8 +1,4 @@
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -26,20 +22,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-import {
-  useLocalSearchParams,
-  useRouter,
-} from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
-import {
-  VideoView,
-  useVideoPlayer,
-} from "expo-video";
+import { VideoView, useVideoPlayer } from "expo-video";
 
-import MapView, {
-  Marker,
-  PROVIDER_GOOGLE,
-} from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 import SideMenu from "@/app/components/sidebar/SideMenu";
 
@@ -54,36 +41,25 @@ import {
   type PropertyMedia,
 } from "@/app/services/propertyApi";
 
-import {
-  fetchAgents,
-} from "@/app/services/agentApi";
+import { fetchAgents } from "@/app/services/agentApi";
 
-import type {
-  Agent,
-} from "@/app/services/agentApi";
+import type { Agent } from "@/app/services/agentApi";
 
-const { width: SCREEN_WIDTH } =
-  Dimensions.get("window");
+import PropertyLocationMap from "@/app/components/properties/PropertyLocationMap";
 
-const IMAGE_HEIGHT = Math.min(
-  320,
-  SCREEN_WIDTH * 0.7,
-);
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const VIDEO_HEIGHT = Math.min(
-  240,
-  SCREEN_WIDTH * 0.56,
-);
+const IMAGE_HEIGHT = Math.min(320, SCREEN_WIDTH * 0.7);
+
+const VIDEO_HEIGHT = Math.min(240, SCREEN_WIDTH * 0.56);
 
 // ============================================================
 // API BASE URL
 // ============================================================
 
-const API_URL =
-  process.env.EXPO_PUBLIC_API_URL;
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-const BASE_API_URL =
-  API_URL?.replace(/\/+$/, "") ?? "";
+const BASE_API_URL = API_URL?.replace(/\/+$/, "") ?? "";
 
 // ============================================================
 // VIDEO PLAYER COMPONENT
@@ -93,21 +69,14 @@ interface PropertyVideoProps {
   video: PropertyMedia;
 }
 
-function PropertyVideo({
-  video,
-}: PropertyVideoProps) {
-  const colorScheme =
-    useColorScheme();
+function PropertyVideo({ video }: PropertyVideoProps) {
+  const colorScheme = useColorScheme();
 
-  const isDark =
-    colorScheme !== "light";
+  const isDark = colorScheme !== "light";
 
-  const player = useVideoPlayer(
-    video.url,
-    (player) => {
-      player.loop = false;
-    },
-  );
+  const player = useVideoPlayer(video.url, (player) => {
+    player.loop = false;
+  });
 
   return (
     <View
@@ -130,16 +99,12 @@ function PropertyVideo({
       {video.description ? (
         <View
           className={
-            isDark
-              ? "bg-[#171717] px-4 py-3"
-              : "bg-gray-100 px-4 py-3"
+            isDark ? "bg-[#171717] px-4 py-3" : "bg-gray-100 px-4 py-3"
           }
         >
           <Text
             className={
-              isDark
-                ? "text-sm text-zinc-300"
-                : "text-sm text-gray-700"
+              isDark ? "text-sm text-zinc-300" : "text-sm text-gray-700"
             }
           >
             {video.description}
@@ -157,86 +122,61 @@ function PropertyVideo({
 export default function PropertyDetailsScreen() {
   const router = useRouter();
 
-  const colorScheme =
-    useColorScheme();
+  const colorScheme = useColorScheme();
 
-  const isDark =
-    colorScheme !== "light";
+  const isDark = colorScheme !== "light";
 
   // ============================================================
   // AUTHENTICATED USER
   // ============================================================
 
-  const {
-    user,
-    isLoggedIn,
-    getAuthHeaders,
-  } = useAuth();
+  const { user, isLoggedIn, getAuthHeaders } = useAuth();
 
-  const loggedInUserId =
-    user?.id;
+  const loggedInUserId = user?.id;
 
   // ============================================================
   // ROUTE PARAMS
   // ============================================================
 
-  const params =
-    useLocalSearchParams<{
-      id?: string | string[];
-    }>();
+  const params = useLocalSearchParams<{
+    id?: string | string[];
+  }>();
 
-  const propertyId = Array.isArray(
-    params.id,
-  )
-    ? params.id[0]
-    : params.id;
+  const propertyId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   // ============================================================
   // STATE
   // ============================================================
 
-  const [property, setProperty] =
-    useState<Property | null>(null);
+  const [property, setProperty] = useState<Property | null>(null);
 
-  const [listingAgent, setListingAgent] =
-    useState<Agent | null>(null);
+  const [listingAgent, setListingAgent] = useState<Agent | null>(null);
 
-  const [listingAgentLoading, setListingAgentLoading] =
-    useState(false);
+  const [listingAgentLoading, setListingAgentLoading] = useState(false);
 
-  const [images, setImages] =
-    useState<PropertyMedia[]>([]);
+  const [images, setImages] = useState<PropertyMedia[]>([]);
 
-  const [videos, setVideos] =
-    useState<PropertyMedia[]>([]);
+  const [videos, setVideos] = useState<PropertyMedia[]>([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [imagesLoading, setImagesLoading] =
-    useState(true);
+  const [imagesLoading, setImagesLoading] = useState(true);
 
-  const [videosLoading, setVideosLoading] =
-    useState(true);
+  const [videosLoading, setVideosLoading] = useState(true);
 
-  const [imageIndex, setImageIndex] =
-    useState(0);
+  const [imageIndex, setImageIndex] = useState(0);
 
-  const [menuVisible, setMenuVisible] =
-    useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   // ============================================================
   // MESSAGE STATE
   // ============================================================
 
-  const [messageModalVisible, setMessageModalVisible] =
-    useState(false);
+  const [messageModalVisible, setMessageModalVisible] = useState(false);
 
-  const [messageText, setMessageText] =
-    useState("");
+  const [messageText, setMessageText] = useState("");
 
-  const [sendingMessage, setSendingMessage] =
-    useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   // ============================================================
   // LOAD PROPERTY
@@ -252,41 +192,23 @@ export default function PropertyDetailsScreen() {
       try {
         setLoading(true);
 
-        const properties =
-          await fetchProperties();
+        const properties = await fetchProperties();
 
-        const foundProperty =
-          properties.find(
-            (item) =>
-              String(item.id) ===
-              String(propertyId),
-          );
-
-        setProperty(
-          foundProperty ?? null,
+        const foundProperty = properties.find(
+          (item) => String(item.id) === String(propertyId),
         );
 
-        console.log(
-          "Loaded property:",
-          foundProperty,
-        );
+        setProperty(foundProperty ?? null);
+
+        console.log("Loaded property:", foundProperty);
 
         if (foundProperty) {
-          console.log(
-            "Property agent from property:",
-            foundProperty.agent,
-          );
+          console.log("Property agent from property:", foundProperty.agent);
 
-          console.log(
-            "Property valuer ID:",
-            foundProperty.valuerId,
-          );
+          console.log("Property valuer ID:", foundProperty.valuerId);
         }
       } catch (error) {
-        console.error(
-          "Failed to load property:",
-          error,
-        );
+        console.error("Failed to load property:", error);
 
         setProperty(null);
       } finally {
@@ -357,9 +279,7 @@ export default function PropertyDetailsScreen() {
           );
 
           if (!cancelled) {
-            setListingAgent(
-              property.agent,
-            );
+            setListingAgent(property.agent);
           }
 
           return;
@@ -371,28 +291,17 @@ export default function PropertyDetailsScreen() {
         // ------------------------------------------------------
 
         if (
-          property.valuerId !==
-            undefined &&
+          property.valuerId !== undefined &&
           property.valuerId !== null &&
-          String(
-            property.valuerId,
-          ).trim() !== ""
+          String(property.valuerId).trim() !== ""
         ) {
-          console.log(
-            "Property has valuer ID:",
-            property.valuerId,
-          );
+          console.log("Property has valuer ID:", property.valuerId);
 
           try {
-            const result =
-              await fetchAgentDetails(
-                property.valuerId,
-              );
+            const result = await fetchAgentDetails(property.valuerId);
 
             if (!cancelled) {
-              setListingAgent(
-                result.agent,
-              );
+              setListingAgent(result.agent);
             }
 
             return;
@@ -411,31 +320,16 @@ export default function PropertyDetailsScreen() {
         // Search through the agent-details endpoint.
         // ------------------------------------------------------
 
-        console.log(
-          "Property does not contain agent or valuerId.",
-        );
+        console.log("Property does not contain agent or valuerId.");
 
-        console.log(
-          "Searching agents for property:",
-          property.id,
-        );
+        console.log("Searching agents for property:", property.id);
 
-        const agentsResponse =
-          await fetchAgents();
+        const agentsResponse = await fetchAgents();
 
-        console.log(
-          "Available agents:",
-          agentsResponse,
-        );
+        console.log("Available agents:", agentsResponse);
 
-        if (
-          !Array.isArray(
-            agentsResponse,
-          )
-        ) {
-          console.log(
-            "Agents response is not an array.",
-          );
+        if (!Array.isArray(agentsResponse)) {
+          console.log("Agents response is not an array.");
 
           if (!cancelled) {
             setListingAgent(null);
@@ -459,10 +353,7 @@ export default function PropertyDetailsScreen() {
               `Checking agent ${agent.id} for property ${property.id}`,
             );
 
-            const result =
-              await fetchAgentDetails(
-                agent.id,
-              );
+            const result = await fetchAgentDetails(agent.id);
 
             console.log(
               `Agent ${agent.id} returned ${result.properties.length} properties.`,
@@ -473,60 +364,32 @@ export default function PropertyDetailsScreen() {
             // Look for the current property.
             // --------------------------------------------------
 
-            const associatedProperty =
-              result.properties.find(
-                (agentProperty) =>
-                  String(
-                    agentProperty.id,
-                  ) ===
-                  String(
-                    property.id,
-                  ),
-              );
+            const associatedProperty = result.properties.find(
+              (agentProperty) =>
+                String(agentProperty.id) === String(property.id),
+            );
 
-            if (
-              associatedProperty
-            ) {
-              console.log(
-                "================================================",
-              );
+            if (associatedProperty) {
+              console.log("================================================");
 
-              console.log(
-                "FOUND LISTING AGENT",
-              );
+              console.log("FOUND LISTING AGENT");
 
-              console.log(
-                "Property ID:",
-                property.id,
-              );
+              console.log("Property ID:", property.id);
 
-              console.log(
-                "Agent:",
-                result.agent,
-              );
+              console.log("Agent:", result.agent);
 
-              console.log(
-                "Associated property:",
-                associatedProperty,
-              );
+              console.log("Associated property:", associatedProperty);
 
-              console.log(
-                "================================================",
-              );
+              console.log("================================================");
 
               if (!cancelled) {
-                setListingAgent(
-                  result.agent,
-                );
+                setListingAgent(result.agent);
               }
 
               return;
             }
           } catch (agentError) {
-            console.error(
-              `Failed checking agent ${agent.id}:`,
-              agentError,
-            );
+            console.error(`Failed checking agent ${agent.id}:`, agentError);
 
             // Continue checking the next agent.
           }
@@ -536,19 +399,13 @@ export default function PropertyDetailsScreen() {
         // No agent was found.
         // ------------------------------------------------------
 
-        console.log(
-          "No listing agent was found for property:",
-          property.id,
-        );
+        console.log("No listing agent was found for property:", property.id);
 
         if (!cancelled) {
           setListingAgent(null);
         }
       } catch (error) {
-        console.error(
-          "Failed to search for listing agent:",
-          error,
-        );
+        console.error("Failed to search for listing agent:", error);
 
         if (!cancelled) {
           setListingAgent(null);
@@ -581,17 +438,11 @@ export default function PropertyDetailsScreen() {
       try {
         setImagesLoading(true);
 
-        const result =
-          await fetchPropertyImages(
-            propertyId,
-          );
+        const result = await fetchPropertyImages(propertyId);
 
         setImages(result);
       } catch (error) {
-        console.error(
-          "Failed to load property images:",
-          error,
-        );
+        console.error("Failed to load property images:", error);
 
         setImages([]);
       } finally {
@@ -616,22 +467,13 @@ export default function PropertyDetailsScreen() {
       try {
         setVideosLoading(true);
 
-        const result =
-          await fetchPropertyVideos(
-            propertyId,
-          );
+        const result = await fetchPropertyVideos(propertyId);
 
-        console.log(
-          "Loaded property videos:",
-          result,
-        );
+        console.log("Loaded property videos:", result);
 
         setVideos(result);
       } catch (error) {
-        console.error(
-          "Failed to load property videos:",
-          error,
-        );
+        console.error("Failed to load property videos:", error);
 
         setVideos([]);
       } finally {
@@ -651,24 +493,14 @@ export default function PropertyDetailsScreen() {
       return "";
     }
 
-    const location =
-      property.location;
+    const location = property.location;
 
-    if (
-      typeof location === "string"
-    ) {
+    if (typeof location === "string") {
       return location;
     }
 
-    if (
-      location &&
-      typeof location === "object"
-    ) {
-      const locationObject =
-        location as Record<
-          string,
-          unknown
-        >;
+    if (location && typeof location === "object") {
+      const locationObject = location as Record<string, unknown>;
 
       return [
         locationObject.area,
@@ -690,10 +522,7 @@ export default function PropertyDetailsScreen() {
     }
 
     return String(
-      property.listingType ??
-        property.listing_type ??
-        property.status ??
-        "",
+      property.listingType ?? property.listing_type ?? property.status ?? "",
     );
   }, [property]);
 
@@ -703,10 +532,7 @@ export default function PropertyDetailsScreen() {
     }
 
     return String(
-      property.propertyType ??
-        property.property_type ??
-        property.type ??
-        "",
+      property.propertyType ?? property.property_type ?? property.type ?? "",
     );
   }, [property]);
 
@@ -715,24 +541,15 @@ export default function PropertyDetailsScreen() {
       return "";
     }
 
-    return String(
-      property.description ?? "",
-    );
+    return String(property.description ?? "");
   }, [property]);
 
   // ============================================================
   // GENERIC VALUE HELPER
   // ============================================================
 
-  const getValue = (
-    propertyValue: Property,
-    ...keys: string[]
-  ): string => {
-    const object =
-      propertyValue as unknown as Record<
-        string,
-        unknown
-      >;
+  const getValue = (propertyValue: Property, ...keys: string[]): string => {
+    const object = propertyValue as unknown as Record<string, unknown>;
 
     for (const key of keys) {
       const value = object[key];
@@ -758,26 +575,15 @@ export default function PropertyDetailsScreen() {
       return null;
     }
 
-    const object =
-      property as unknown as Record<
-        string,
-        unknown
-      >;
+    const object = property as unknown as Record<string, unknown>;
 
     const location =
-      object.location &&
-      typeof object.location === "object"
-        ? (object.location as Record<
-            string,
-            unknown
-          >)
+      object.location && typeof object.location === "object"
+        ? (object.location as Record<string, unknown>)
         : null;
 
     const latitudeValue =
-      location?.latitude ??
-      location?.lat ??
-      object.latitude ??
-      object.lat;
+      location?.latitude ?? location?.lat ?? object.latitude ?? object.lat;
 
     const longitudeValue =
       location?.longitude ??
@@ -786,16 +592,11 @@ export default function PropertyDetailsScreen() {
       object.longitude ??
       object.lng;
 
-    const latitude =
-      Number(latitudeValue);
+    const latitude = Number(latitudeValue);
 
-    const longitude =
-      Number(longitudeValue);
+    const longitude = Number(longitudeValue);
 
-    if (
-      !Number.isFinite(latitude) ||
-      !Number.isFinite(longitude)
-    ) {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
       return null;
     }
 
@@ -811,65 +612,36 @@ export default function PropertyDetailsScreen() {
 
   const handleMakeOffer = async () => {
     if (!propertyId) {
-      console.error(
-        "Cannot make offer: property ID is missing.",
-      );
+      console.error("Cannot make offer: property ID is missing.");
       return;
     }
 
-    if (
-      loggedInUserId ===
-        undefined ||
-      loggedInUserId === null
-    ) {
-      console.error(
-        "Cannot make offer: logged-in user ID is missing.",
-      );
+    if (loggedInUserId === undefined || loggedInUserId === null) {
+      console.error("Cannot make offer: logged-in user ID is missing.");
 
       return;
     }
 
-    const makeOfferUrl =
-      `https://dev.valuationsafrica.mw/property/makeoffer/${loggedInUserId}/${propertyId}`;
+    const makeOfferUrl = `https://dev.valuationsafrica.mw/property/makeoffer/${loggedInUserId}/${propertyId}`;
 
-    console.log(
-      "Opening Make Offer URL:",
-      makeOfferUrl,
-    );
+    console.log("Opening Make Offer URL:", makeOfferUrl);
 
-    console.log(
-      "Logged-in user ID:",
-      loggedInUserId,
-    );
+    console.log("Logged-in user ID:", loggedInUserId);
 
-    console.log(
-      "Property ID:",
-      propertyId,
-    );
+    console.log("Property ID:", propertyId);
 
     try {
-      const supported =
-        await Linking.canOpenURL(
-          makeOfferUrl,
-        );
+      const supported = await Linking.canOpenURL(makeOfferUrl);
 
       if (!supported) {
-        console.error(
-          "Cannot open Make Offer URL:",
-          makeOfferUrl,
-        );
+        console.error("Cannot open Make Offer URL:", makeOfferUrl);
 
         return;
       }
 
-      await Linking.openURL(
-        makeOfferUrl,
-      );
+      await Linking.openURL(makeOfferUrl);
     } catch (error) {
-      console.error(
-        "Failed to open Make Offer website:",
-        error,
-      );
+      console.error("Failed to open Make Offer website:", error);
     }
   };
 
@@ -891,11 +663,7 @@ export default function PropertyDetailsScreen() {
       return;
     }
 
-    if (
-      loggedInUserId ===
-        undefined ||
-      loggedInUserId === null
-    ) {
+    if (loggedInUserId === undefined || loggedInUserId === null) {
       Alert.alert(
         "Account Error",
         "Your account ID could not be found. Please sign in again.",
@@ -904,11 +672,7 @@ export default function PropertyDetailsScreen() {
       return;
     }
 
-    if (
-      listingAgent.userId ===
-        undefined ||
-      listingAgent.userId === null
-    ) {
+    if (listingAgent.userId === undefined || listingAgent.userId === null) {
       Alert.alert(
         "Agent Unavailable",
         "The agent's user account could not be identified, so a message cannot be sent.",
@@ -917,10 +681,7 @@ export default function PropertyDetailsScreen() {
       return;
     }
 
-    if (
-      String(loggedInUserId) ===
-      String(listingAgent.userId)
-    ) {
+    if (String(loggedInUserId) === String(listingAgent.userId)) {
       Alert.alert(
         "Cannot Send Message",
         "You cannot send a message to your own account.",
@@ -951,14 +712,10 @@ export default function PropertyDetailsScreen() {
   // ============================================================
 
   const handleSendMessage = async () => {
-    const trimmedMessage =
-      messageText.trim();
+    const trimmedMessage = messageText.trim();
 
     if (!trimmedMessage) {
-      Alert.alert(
-        "Message Required",
-        "Please enter a message before sending.",
-      );
+      Alert.alert("Message Required", "Please enter a message before sending.");
 
       return;
     }
@@ -972,11 +729,7 @@ export default function PropertyDetailsScreen() {
       return;
     }
 
-    if (
-      loggedInUserId ===
-        undefined ||
-      loggedInUserId === null
-    ) {
+    if (loggedInUserId === undefined || loggedInUserId === null) {
       Alert.alert(
         "Account Error",
         "Your account ID could not be found. Please sign in again.",
@@ -986,19 +739,12 @@ export default function PropertyDetailsScreen() {
     }
 
     if (!listingAgent) {
-      Alert.alert(
-        "Agent Unavailable",
-        "The listing agent could not be found.",
-      );
+      Alert.alert("Agent Unavailable", "The listing agent could not be found.");
 
       return;
     }
 
-    if (
-      listingAgent.userId ===
-        undefined ||
-      listingAgent.userId === null
-    ) {
+    if (listingAgent.userId === undefined || listingAgent.userId === null) {
       Alert.alert(
         "Agent Unavailable",
         "The agent's user account could not be identified.",
@@ -1007,10 +753,7 @@ export default function PropertyDetailsScreen() {
       return;
     }
 
-    if (
-      String(loggedInUserId) ===
-      String(listingAgent.userId)
-    ) {
+    if (String(loggedInUserId) === String(listingAgent.userId)) {
       Alert.alert(
         "Cannot Send Message",
         "You cannot send a message to your own account.",
@@ -1020,10 +763,7 @@ export default function PropertyDetailsScreen() {
     }
 
     if (!BASE_API_URL) {
-      Alert.alert(
-        "Configuration Error",
-        "The API URL is not configured.",
-      );
+      Alert.alert("Configuration Error", "The API URL is not configured.");
 
       return;
     }
@@ -1031,116 +771,65 @@ export default function PropertyDetailsScreen() {
     try {
       setSendingMessage(true);
 
-      const endpoint =
-        `${BASE_API_URL}/v2/messages/send`;
+      const endpoint = `${BASE_API_URL}/v2/messages/send`;
 
-      console.log(
-        "Sending message to:",
-        endpoint,
-      );
+      console.log("Sending message to:", endpoint);
 
-      console.log(
-        "Message sender ID:",
-        loggedInUserId,
-      );
+      console.log("Message sender ID:", loggedInUserId);
 
-      console.log(
-        "Message receiver ID:",
-        listingAgent.userId,
-      );
+      console.log("Message receiver ID:", listingAgent.userId);
 
-      const authHeaders =
-        await getAuthHeaders();
+      const authHeaders = await getAuthHeaders();
 
-      const response =
-        await fetch(endpoint, {
-          method: "POST",
+      const response = await fetch(endpoint, {
+        method: "POST",
 
-          headers: {
-            Accept:
-              "application/json",
+        headers: {
+          Accept: "application/json",
 
-            "Content-Type":
-              "application/json",
+          "Content-Type": "application/json",
 
-            ...authHeaders,
-          },
+          ...authHeaders,
+        },
 
-          body: JSON.stringify({
-            sender_id:
-              loggedInUserId,
+        body: JSON.stringify({
+          sender_id: loggedInUserId,
 
-            receiver_id:
-              listingAgent.userId,
+          receiver_id: listingAgent.userId,
 
-            message:
-              trimmedMessage,
-          }),
-        });
+          message: trimmedMessage,
+        }),
+      });
 
-      const responseText =
-        await response.text();
+      const responseText = await response.text();
 
-      let responseData: unknown =
-        null;
+      let responseData: unknown = null;
 
       if (responseText) {
         try {
-          responseData =
-            JSON.parse(
-              responseText,
-            ) as unknown;
+          responseData = JSON.parse(responseText) as unknown;
         } catch {
-          responseData =
-            responseText;
+          responseData = responseText;
         }
       }
 
-      console.log(
-        "Send message response status:",
-        response.status,
-      );
+      console.log("Send message response status:", response.status);
 
-      console.log(
-        "Send message response:",
-        responseData,
-      );
+      console.log("Send message response:", responseData);
 
       if (!response.ok) {
-        let errorMessage =
-          "Failed to send your message.";
+        let errorMessage = "Failed to send your message.";
 
-        if (
-          typeof responseData ===
-            "object" &&
-          responseData !== null
-        ) {
-          const data =
-            responseData as Record<
-              string,
-              unknown
-            >;
+        if (typeof responseData === "object" && responseData !== null) {
+          const data = responseData as Record<string, unknown>;
 
-          const serverMessage =
-            data.message ??
-            data.msg ??
-            data.error;
+          const serverMessage = data.message ?? data.msg ?? data.error;
 
-          if (
-            typeof serverMessage ===
-            "string" &&
-            serverMessage.trim()
-          ) {
-            errorMessage =
-              serverMessage;
+          if (typeof serverMessage === "string" && serverMessage.trim()) {
+            errorMessage = serverMessage;
           }
-        } else if (
-          typeof responseData ===
-            "string" &&
-          responseData.trim()
-        ) {
-          errorMessage =
-            responseData;
+        } else if (typeof responseData === "string" && responseData.trim()) {
+          errorMessage = responseData;
         }
 
         throw new Error(
@@ -1156,10 +845,7 @@ export default function PropertyDetailsScreen() {
         `Your message has been sent to ${listingAgent.name || "the agent"}.`,
       );
     } catch (error) {
-      console.error(
-        "Failed to send message:",
-        error,
-      );
+      console.error("Failed to send message:", error);
 
       Alert.alert(
         "Message Not Sent",
@@ -1192,9 +878,7 @@ export default function PropertyDetailsScreen() {
     router.push({
       pathname: "/(tabs)/agents/[id]",
       params: {
-        id: String(
-          listingAgent.id,
-        ),
+        id: String(listingAgent.id),
       },
     });
   };
@@ -1206,30 +890,15 @@ export default function PropertyDetailsScreen() {
   if (loading) {
     return (
       <SafeAreaView
-        className={
-          isDark
-            ? "flex-1 bg-[#0d0d0d]"
-            : "flex-1 bg-white"
-        }
+        className={isDark ? "flex-1 bg-[#0d0d0d]" : "flex-1 bg-white"}
       >
         <StatusBar
-          barStyle={
-            isDark
-              ? "light-content"
-              : "dark-content"
-          }
-          backgroundColor={
-            isDark
-              ? "#0d0d0d"
-              : "#ffffff"
-          }
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor={isDark ? "#0d0d0d" : "#ffffff"}
         />
 
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator
-            size="large"
-            color="#dc2626"
-          />
+          <ActivityIndicator size="large" color="#dc2626" />
 
           <Text
             className={
@@ -1252,23 +921,11 @@ export default function PropertyDetailsScreen() {
   if (!property) {
     return (
       <SafeAreaView
-        className={
-          isDark
-            ? "flex-1 bg-[#0d0d0d]"
-            : "flex-1 bg-gray-50"
-        }
+        className={isDark ? "flex-1 bg-[#0d0d0d]" : "flex-1 bg-gray-50"}
       >
         <StatusBar
-          barStyle={
-            isDark
-              ? "light-content"
-              : "dark-content"
-          }
-          backgroundColor={
-            isDark
-              ? "#0d0d0d"
-              : "#f9fafb"
-          }
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor={isDark ? "#0d0d0d" : "#f9fafb"}
         />
 
         <View
@@ -1289,11 +946,7 @@ export default function PropertyDetailsScreen() {
             <Ionicons
               name="arrow-back"
               size={23}
-              color={
-                isDark
-                  ? "#fff"
-                  : "#000"
-              }
+              color={isDark ? "#fff" : "#000"}
             />
           </Pressable>
 
@@ -1312,11 +965,7 @@ export default function PropertyDetailsScreen() {
           <Ionicons
             name="home-outline"
             size={60}
-            color={
-              isDark
-                ? "#555"
-                : "#9ca3af"
-            }
+            color={isDark ? "#555" : "#9ca3af"}
           />
 
           <Text
@@ -1336,17 +985,14 @@ export default function PropertyDetailsScreen() {
                 : "mt-2 text-center text-sm text-gray-500"
             }
           >
-            The property may no longer be
-            available.
+            The property may no longer be available.
           </Text>
 
           <Pressable
             onPress={handleBack}
             className="mt-6 rounded-xl bg-red-600 px-6 py-3"
           >
-            <Text className="font-bold text-white">
-              Go Back
-            </Text>
+            <Text className="font-bold text-white">Go Back</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -1357,24 +1003,11 @@ export default function PropertyDetailsScreen() {
   // PROPERTY DETAILS VALUES
   // ============================================================
 
-  const bedrooms = getValue(
-    property,
-    "beds",
-    "bedrooms",
-    "rooms",
-  );
+  const bedrooms = getValue(property, "beds", "bedrooms", "rooms");
 
-  const bathrooms = getValue(
-    property,
-    "baths",
-    "bathrooms",
-  );
+  const bathrooms = getValue(property, "baths", "bathrooms");
 
-  const views = getValue(
-    property,
-    "views",
-    "view_count",
-  );
+  const views = getValue(property, "views", "view_count");
 
   const buildingSize = getValue(
     property,
@@ -1384,17 +1017,9 @@ export default function PropertyDetailsScreen() {
     "area_size",
   );
 
-  const yearBuilt = getValue(
-    property,
-    "year_built",
-    "yearBuilt",
-  );
+  const yearBuilt = getValue(property, "year_built", "yearBuilt");
 
-  const zone = getValue(
-    property,
-    "zone",
-    "zone_type",
-  );
+  const zone = getValue(property, "zone", "zone_type");
 
   const titleDeed = getValue(
     property,
@@ -1403,30 +1028,13 @@ export default function PropertyDetailsScreen() {
     "title_deed",
   );
 
-  const masterBedroom = getValue(
-    property,
-    "master_bedroom",
-    "masterBedroom",
-  );
+  const masterBedroom = getValue(property, "master_bedroom", "masterBedroom");
 
-  const amenities =
-    Array.isArray(
-      (
-        property as unknown as Record<
-          string,
-          unknown
-        >
-      ).amenities,
-    )
-      ? (
-          (
-            property as unknown as Record<
-              string,
-              unknown
-            >
-          ).amenities as unknown[]
-        )
-      : [];
+  const amenities = Array.isArray(
+    (property as unknown as Record<string, unknown>).amenities,
+  )
+    ? ((property as unknown as Record<string, unknown>).amenities as unknown[])
+    : [];
 
   // ============================================================
   // IMAGE FALLBACK
@@ -1448,28 +1056,12 @@ export default function PropertyDetailsScreen() {
 
   return (
     <SafeAreaView
-      className={
-        isDark
-          ? "flex-1 bg-[#0d0d0d]"
-          : "flex-1 bg-gray-50"
-      }
-      edges={[
-        "top",
-        "left",
-        "right",
-      ]}
+      className={isDark ? "flex-1 bg-[#0d0d0d]" : "flex-1 bg-gray-50"}
+      edges={["top", "left", "right"]}
     >
       <StatusBar
-        barStyle={
-          isDark
-            ? "light-content"
-            : "dark-content"
-        }
-        backgroundColor={
-          isDark
-            ? "#0d0d0d"
-            : "#f9fafb"
-        }
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#0d0d0d" : "#f9fafb"}
       />
 
       {/* ====================================================== */}
@@ -1495,11 +1087,7 @@ export default function PropertyDetailsScreen() {
             <Ionicons
               name="arrow-back"
               size={23}
-              color={
-                isDark
-                  ? "#fff"
-                  : "#000"
-              }
+              color={isDark ? "#fff" : "#000"}
             />
           </Pressable>
 
@@ -1517,9 +1105,7 @@ export default function PropertyDetailsScreen() {
 
             <Text
               className={
-                isDark
-                  ? "text-xs text-zinc-500"
-                  : "text-xs text-gray-500"
+                isDark ? "text-xs text-zinc-500" : "text-xs text-gray-500"
               }
             >
               Property #{property.id}
@@ -1528,9 +1114,7 @@ export default function PropertyDetailsScreen() {
         </View>
 
         <Pressable
-          onPress={() =>
-            setMenuVisible(true)
-          }
+          onPress={() => setMenuVisible(true)}
           className={
             isDark
               ? "h-11 w-11 items-center justify-center rounded-full bg-[#171717]"
@@ -1540,11 +1124,7 @@ export default function PropertyDetailsScreen() {
           <Ionicons
             name="menu-outline"
             size={26}
-            color={
-              isDark
-                ? "#fff"
-                : "#000"
-            }
+            color={isDark ? "#fff" : "#000"}
           />
         </Pressable>
       </View>
@@ -1563,13 +1143,7 @@ export default function PropertyDetailsScreen() {
         {/* IMAGE GALLERY */}
         {/* ==================================================== */}
 
-        <View
-          className={
-            isDark
-              ? "bg-[#111]"
-              : "bg-gray-100"
-          }
-        >
+        <View className={isDark ? "bg-[#111]" : "bg-gray-100"}>
           {imagesLoading ? (
             <View
               style={{
@@ -1577,10 +1151,7 @@ export default function PropertyDetailsScreen() {
               }}
               className="items-center justify-center"
             >
-              <ActivityIndicator
-                size="large"
-                color="#dc2626"
-              />
+              <ActivityIndicator size="large" color="#dc2626" />
 
               <Text
                 className={
@@ -1592,92 +1163,65 @@ export default function PropertyDetailsScreen() {
                 Loading property images...
               </Text>
             </View>
-          ) : displayImages.length >
-            0 ? (
+          ) : displayImages.length > 0 ? (
             <>
               <ScrollView
                 horizontal
                 pagingEnabled
-                showsHorizontalScrollIndicator={
-                  false
-                }
-                onMomentumScrollEnd={(
-                  event,
-                ) => {
-                  const index =
-                    Math.round(
-                      event.nativeEvent
-                        .contentOffset
-                        .x /
-                        SCREEN_WIDTH,
-                    );
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(event) => {
+                  const index = Math.round(
+                    event.nativeEvent.contentOffset.x / SCREEN_WIDTH,
+                  );
 
                   setImageIndex(index);
                 }}
               >
-                {displayImages.map(
-                  (image) => (
-                    <View
-                      key={String(
-                        image.id,
-                      )}
-                      style={{
-                        width:
-                          SCREEN_WIDTH,
-                        height:
-                          IMAGE_HEIGHT,
+                {displayImages.map((image) => (
+                  <View
+                    key={String(image.id)}
+                    style={{
+                      width: SCREEN_WIDTH,
+                      height: IMAGE_HEIGHT,
+                    }}
+                  >
+                    <Image
+                      source={{
+                        uri: image.url,
                       }}
-                    >
-                      <Image
-                        source={{
-                          uri: image.url,
-                        }}
-                        className="h-full w-full"
-                        resizeMode="cover"
-                      />
+                      className="h-full w-full"
+                      resizeMode="cover"
+                    />
 
-                      {image.description ? (
-                        <View className="absolute bottom-0 left-0 right-0 bg-black/60 px-4 py-3">
-                          <Text className="text-sm text-white">
-                            {
-                              image.description
-                            }
-                          </Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  ),
-                )}
+                    {image.description ? (
+                      <View className="absolute bottom-0 left-0 right-0 bg-black/60 px-4 py-3">
+                        <Text className="text-sm text-white">
+                          {image.description}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ))}
               </ScrollView>
 
               <View className="absolute right-4 top-4 rounded-full bg-black/70 px-3 py-1.5">
                 <Text className="text-xs font-semibold text-white">
-                  {imageIndex + 1} /{" "}
-                  {displayImages.length}
+                  {imageIndex + 1} / {displayImages.length}
                 </Text>
               </View>
 
-              {displayImages.length >
-                1 && (
+              {displayImages.length > 1 && (
                 <View className="absolute bottom-3 left-0 right-0 flex-row items-center justify-center">
-                  {displayImages.map(
-                    (
-                      image,
-                      index,
-                    ) => (
-                      <View
-                        key={`dot-${String(
-                          image.id,
-                        )}`}
-                        className={`mx-1 h-2 rounded-full ${
-                          index ===
-                          imageIndex
-                            ? "w-5 bg-red-500"
-                            : "w-2 bg-white/50"
-                        }`}
-                      />
-                    ),
-                  )}
+                  {displayImages.map((image, index) => (
+                    <View
+                      key={`dot-${String(image.id)}`}
+                      className={`mx-1 h-2 rounded-full ${
+                        index === imageIndex
+                          ? "w-5 bg-red-500"
+                          : "w-2 bg-white/50"
+                      }`}
+                    />
+                  ))}
                 </View>
               )}
             </>
@@ -1695,11 +1239,7 @@ export default function PropertyDetailsScreen() {
               <Ionicons
                 name="image-outline"
                 size={55}
-                color={
-                  isDark
-                    ? "#555"
-                    : "#9ca3af"
-                }
+                color={isDark ? "#555" : "#9ca3af"}
               />
 
               <Text
@@ -1723,8 +1263,7 @@ export default function PropertyDetailsScreen() {
           <View className="flex-row items-center justify-between">
             <View className="rounded-md bg-red-600 px-3 py-1.5">
               <Text className="text-xs font-bold text-white">
-                {listingType ||
-                  "For Sale"}
+                {listingType || "For Sale"}
               </Text>
             </View>
 
@@ -1748,17 +1287,11 @@ export default function PropertyDetailsScreen() {
                 : "mt-4 text-2xl font-bold text-black"
             }
           >
-            {property.title ||
-              locationText ||
-              "Property"}
+            {property.title || locationText || "Property"}
           </Text>
 
           <View className="mt-3 flex-row items-start">
-            <Ionicons
-              name="location-outline"
-              size={20}
-              color="#ef4444"
-            />
+            <Ionicons name="location-outline" size={20} color="#ef4444" />
 
             <View className="ml-2 flex-1">
               <Text
@@ -1768,8 +1301,7 @@ export default function PropertyDetailsScreen() {
                     : "text-base font-semibold text-gray-700"
                 }
               >
-                {locationText ||
-                  "Location unavailable"}
+                {locationText || "Location unavailable"}
               </Text>
 
               {zone ? (
@@ -1793,8 +1325,7 @@ export default function PropertyDetailsScreen() {
                 : "mt-5 text-2xl font-bold text-black"
             }
           >
-            {property.price ||
-              "Price on request"}
+            {property.price || "Price on request"}
           </Text>
 
           {/* ================================================= */}
@@ -1896,30 +1427,21 @@ export default function PropertyDetailsScreen() {
               <DetailRow
                 icon="location-outline"
                 label="Zone"
-                value={
-                  zone ||
-                  "Not specified"
-                }
+                value={zone || "Not specified"}
                 isDark={isDark}
               />
 
               <DetailRow
                 icon="business-outline"
                 label="Type"
-                value={
-                  propertyType ||
-                  "Not specified"
-                }
+                value={propertyType || "Not specified"}
                 isDark={isDark}
               />
 
               <DetailRow
                 icon="calendar-outline"
                 label="Built"
-                value={
-                  yearBuilt ||
-                  "Not specified"
-                }
+                value={yearBuilt || "Not specified"}
                 last
                 isDark={isDark}
               />
@@ -1955,8 +1477,7 @@ export default function PropertyDetailsScreen() {
                     : "text-sm leading-6 text-gray-700"
                 }
               >
-                {description ||
-                  "No description available for this property."}
+                {description || "No description available for this property."}
               </Text>
             </View>
           </View>
@@ -1978,53 +1499,41 @@ export default function PropertyDetailsScreen() {
 
             {amenities.length > 0 ? (
               <View className="flex-row flex-wrap">
-                {amenities.map(
-                  (
-                    amenity,
-                    index,
-                  ) => {
-                    const value =
-                      typeof amenity ===
-                      "string"
-                        ? amenity
-                        : String(
-                            (
-                              amenity as Record<
-                                string,
-                                unknown
-                              >
-                            )?.name ??
-                              amenity,
-                          );
+                {amenities.map((amenity, index) => {
+                  const value =
+                    typeof amenity === "string"
+                      ? amenity
+                      : String(
+                          (amenity as Record<string, unknown>)?.name ?? amenity,
+                        );
 
-                    return (
-                      <View
-                        key={`${value}-${index}`}
+                  return (
+                    <View
+                      key={`${value}-${index}`}
+                      className={
+                        isDark
+                          ? "mb-2 mr-2 flex-row items-center rounded-lg border border-[#292929] bg-[#171717] px-3 py-2"
+                          : "mb-2 mr-2 flex-row items-center rounded-lg border border-gray-200 bg-white px-3 py-2"
+                      }
+                    >
+                      <Ionicons
+                        name="checkmark-circle-outline"
+                        size={18}
+                        color="#ef4444"
+                      />
+
+                      <Text
                         className={
                           isDark
-                            ? "mb-2 mr-2 flex-row items-center rounded-lg border border-[#292929] bg-[#171717] px-3 py-2"
-                            : "mb-2 mr-2 flex-row items-center rounded-lg border border-gray-200 bg-white px-3 py-2"
+                            ? "ml-2 text-sm text-zinc-300"
+                            : "ml-2 text-sm text-gray-700"
                         }
                       >
-                        <Ionicons
-                          name="checkmark-circle-outline"
-                          size={18}
-                          color="#ef4444"
-                        />
-
-                        <Text
-                          className={
-                            isDark
-                              ? "ml-2 text-sm text-zinc-300"
-                              : "ml-2 text-sm text-gray-700"
-                          }
-                        >
-                          {value}
-                        </Text>
-                      </View>
-                    );
-                  },
-                )}
+                        {value}
+                      </Text>
+                    </View>
+                  );
+                })}
               </View>
             ) : (
               <View
@@ -2036,13 +1545,10 @@ export default function PropertyDetailsScreen() {
               >
                 <Text
                   className={
-                    isDark
-                      ? "text-sm text-zinc-500"
-                      : "text-sm text-gray-500"
+                    isDark ? "text-sm text-zinc-500" : "text-sm text-gray-500"
                   }
                 >
-                  No amenities listed for
-                  this property.
+                  No amenities listed for this property.
                 </Text>
               </View>
             )}
@@ -2067,15 +1573,10 @@ export default function PropertyDetailsScreen() {
               {videos.length > 0 ? (
                 <Text
                   className={
-                    isDark
-                      ? "text-sm text-zinc-500"
-                      : "text-sm text-gray-500"
+                    isDark ? "text-sm text-zinc-500" : "text-sm text-gray-500"
                   }
                 >
-                  {videos.length}{" "}
-                  {videos.length === 1
-                    ? "video"
-                    : "videos"}
+                  {videos.length} {videos.length === 1 ? "video" : "videos"}
                 </Text>
               ) : null}
             </View>
@@ -2088,10 +1589,7 @@ export default function PropertyDetailsScreen() {
                     : "items-center rounded-xl border border-gray-200 bg-white py-10"
                 }
               >
-                <ActivityIndicator
-                  size="small"
-                  color="#dc2626"
-                />
+                <ActivityIndicator size="small" color="#dc2626" />
 
                 <Text
                   className={
@@ -2103,19 +1601,11 @@ export default function PropertyDetailsScreen() {
                   Loading property videos...
                 </Text>
               </View>
-            ) : videos.length >
-              0 ? (
+            ) : videos.length > 0 ? (
               <View>
-                {videos.map(
-                  (video) => (
-                    <PropertyVideo
-                      key={String(
-                        video.id,
-                      )}
-                      video={video}
-                    />
-                  ),
-                )}
+                {videos.map((video) => (
+                  <PropertyVideo key={String(video.id)} video={video} />
+                ))}
               </View>
             ) : (
               <View
@@ -2128,11 +1618,7 @@ export default function PropertyDetailsScreen() {
                 <Ionicons
                   name="videocam-outline"
                   size={42}
-                  color={
-                    isDark
-                      ? "#555"
-                      : "#9ca3af"
-                  }
+                  color={isDark ? "#555" : "#9ca3af"}
                 />
 
                 <Text
@@ -2142,8 +1628,7 @@ export default function PropertyDetailsScreen() {
                       : "mt-3 text-sm text-gray-500"
                   }
                 >
-                  No property videos
-                  available.
+                  No property videos available.
                 </Text>
               </View>
             )}
@@ -2157,11 +1642,7 @@ export default function PropertyDetailsScreen() {
             onPress={handleMakeOffer}
             className="mt-8 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
           >
-            <Ionicons
-              name="pricetag-outline"
-              size={20}
-              color="#fff"
-            />
+            <Ionicons name="pricetag-outline" size={20} color="#fff" />
 
             <Text className="ml-2 text-base font-bold text-white">
               Make Offer
@@ -2192,11 +1673,7 @@ export default function PropertyDetailsScreen() {
             >
               {property.isOpenHouse ? (
                 <View className="flex-row items-center">
-                  <Ionicons
-                    name="calendar-outline"
-                    size={23}
-                    color="#ef4444"
-                  />
+                  <Ionicons name="calendar-outline" size={23} color="#ef4444" />
 
                   <Text
                     className={
@@ -2205,20 +1682,16 @@ export default function PropertyDetailsScreen() {
                         : "ml-3 text-sm text-gray-700"
                     }
                   >
-                    Open house available
-                    for this property.
+                    Open house available for this property.
                   </Text>
                 </View>
               ) : (
                 <Text
                   className={
-                    isDark
-                      ? "text-sm text-zinc-500"
-                      : "text-sm text-gray-500"
+                    isDark ? "text-sm text-zinc-500" : "text-sm text-gray-500"
                   }
                 >
-                  No open houses scheduled
-                  at this time.
+                  No open houses scheduled at this time.
                 </Text>
               )}
             </View>
@@ -2228,165 +1701,12 @@ export default function PropertyDetailsScreen() {
           {/* MAP */}
           {/* ================================================= */}
 
-          <View className="mt-8">
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text
-                className={
-                  isDark
-                    ? "text-xl font-bold text-white"
-                    : "text-xl font-bold text-black"
-                }
-              >
-                Property Location
-              </Text>
-
-              {coordinates ? (
-                <Ionicons
-                  name="location"
-                  size={22}
-                  color="#ef4444"
-                />
-              ) : null}
-            </View>
-
-            {coordinates ? (
-              <View
-                className={
-                  isDark
-                    ? "overflow-hidden rounded-xl border border-[#292929]"
-                    : "overflow-hidden rounded-xl border border-gray-200"
-                }
-              >
-                <MapView
-                  provider={PROVIDER_GOOGLE}
-                  style={{
-                    width: "100%",
-                    height: 280,
-                  }}
-                  initialRegion={{
-                    latitude:
-                      coordinates.latitude,
-                    longitude:
-                      coordinates.longitude,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                  showsCompass={false}
-                  zoomEnabled={false}
-                  scrollEnabled={false}
-                  rotateEnabled={false}
-                  pitchEnabled={false}
-                  toolbarEnabled={false}
-                >
-                  <Marker
-                    coordinate={coordinates}
-                    title={
-                      property.title ??
-                      "Property"
-                    }
-                    description={
-                      locationText ||
-                      "Property location"
-                    }
-                  />
-                </MapView>
-
-                <View
-                  className={
-                    isDark
-                      ? "border-t border-[#292929] bg-[#171717] px-4 py-3"
-                      : "border-t border-gray-200 bg-white px-4 py-3"
-                  }
-                >
-                  <View className="flex-row items-center">
-                    <Ionicons
-                      name="location-outline"
-                      size={18}
-                      color="#ef4444"
-                    />
-
-                    <Text
-                      className={
-                        isDark
-                          ? "ml-2 flex-1 text-sm text-zinc-300"
-                          : "ml-2 flex-1 text-sm text-gray-700"
-                      }
-                      numberOfLines={2}
-                    >
-                      {locationText ||
-                        "Property location"}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            ) : (
-              <View
-                className={
-                  isDark
-                    ? "items-center rounded-xl border border-[#292929] bg-[#171717] px-5 py-10"
-                    : "items-center rounded-xl border border-gray-200 bg-white px-5 py-10"
-                }
-              >
-                <Ionicons
-                  name="map-outline"
-                  size={50}
-                  color={
-                    isDark
-                      ? "#555"
-                      : "#9ca3af"
-                  }
-                />
-
-                <Text
-                  className={
-                    isDark
-                      ? "mt-3 text-center text-sm font-medium text-zinc-400"
-                      : "mt-3 text-center text-sm font-medium text-gray-600"
-                  }
-                >
-                  Property coordinates
-                  unavailable
-                </Text>
-
-                <Text
-                  className={
-                    isDark
-                      ? "mt-2 text-center text-xs leading-5 text-zinc-600"
-                      : "mt-2 text-center text-xs leading-5 text-gray-500"
-                  }
-                >
-                  This property does not
-                  currently have valid
-                  latitude and longitude
-                  coordinates.
-                </Text>
-
-                {locationText ? (
-                  <View className="mt-4 flex-row items-center">
-                    <Ionicons
-                      name="location-outline"
-                      size={16}
-                      color={
-                        isDark
-                          ? "#777"
-                          : "#6b7280"
-                      }
-                    />
-
-                    <Text
-                      className={
-                        isDark
-                          ? "ml-2 text-xs text-zinc-500"
-                          : "ml-2 text-xs text-gray-500"
-                      }
-                    >
-                      {locationText}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            )}
-          </View>
+          <PropertyLocationMap
+            coordinates={coordinates}
+            locationText={locationText}
+            propertyTitle={property.title}
+            isDark={isDark}
+          />
 
           {/* ================================================= */}
           {/* LISTING AGENT */}
@@ -2411,10 +1731,7 @@ export default function PropertyDetailsScreen() {
                     : "items-center rounded-xl border border-gray-200 bg-white py-10"
                 }
               >
-                <ActivityIndicator
-                  size="small"
-                  color="#dc2626"
-                />
+                <ActivityIndicator size="small" color="#dc2626" />
 
                 <Text
                   className={
@@ -2438,9 +1755,7 @@ export default function PropertyDetailsScreen() {
                 {/* AGENT PROFILE AREA */}
                 {/* ================================================= */}
 
-                <Pressable
-                  onPress={handleAgentPress}
-                >
+                <Pressable onPress={handleAgentPress}>
                   {/* ================================================= */}
                   {/* AGENT HEADER */}
                   {/* ================================================= */}
@@ -2465,11 +1780,7 @@ export default function PropertyDetailsScreen() {
                         <Ionicons
                           name="person-outline"
                           size={30}
-                          color={
-                            isDark
-                              ? "#777"
-                              : "#6b7280"
-                          }
+                          color={isDark ? "#777" : "#6b7280"}
                         />
                       </View>
                     )}
@@ -2484,27 +1795,20 @@ export default function PropertyDetailsScreen() {
                           }
                           numberOfLines={2}
                         >
-                          {listingAgent.name ||
-                            "Listing Agent"}
+                          {listingAgent.name || "Listing Agent"}
                         </Text>
 
                         <Ionicons
                           name="chevron-forward"
                           size={20}
-                          color={
-                            isDark
-                              ? "#777"
-                              : "#9ca3af"
-                          }
+                          color={isDark ? "#777" : "#9ca3af"}
                         />
                       </View>
 
                       {listingAgent.agentType ? (
                         <View className="mt-2 self-start rounded-full bg-red-600/15 px-3 py-1">
                           <Text className="text-xs font-semibold text-red-500">
-                            {
-                              listingAgent.agentType
-                            }
+                            {listingAgent.agentType}
                           </Text>
                         </View>
                       ) : null}
@@ -2524,10 +1828,7 @@ export default function PropertyDetailsScreen() {
                                 : "ml-1.5 text-xs text-gray-500"
                             }
                           >
-                            License:{" "}
-                            {
-                              listingAgent.licenseStatus
-                            }
+                            License: {listingAgent.licenseStatus}
                           </Text>
                         </View>
                       ) : null}
@@ -2580,9 +1881,7 @@ export default function PropertyDetailsScreen() {
                             }
                             numberOfLines={2}
                           >
-                            {
-                              listingAgent.email
-                            }
+                            {listingAgent.email}
                           </Text>
                         </View>
                       </View>
@@ -2591,9 +1890,7 @@ export default function PropertyDetailsScreen() {
                     {listingAgent.phone ? (
                       <View
                         className={`flex-row items-center ${
-                          listingAgent.email
-                            ? "mt-4"
-                            : ""
+                          listingAgent.email ? "mt-4" : ""
                         }`}
                       >
                         <View
@@ -2629,9 +1926,7 @@ export default function PropertyDetailsScreen() {
                             }
                             numberOfLines={2}
                           >
-                            {
-                              listingAgent.phone
-                            }
+                            {listingAgent.phone}
                           </Text>
                         </View>
                       </View>
@@ -2640,10 +1935,7 @@ export default function PropertyDetailsScreen() {
                     {listingAgent.specialization ? (
                       <View
                         className={`flex-row items-center ${
-                          listingAgent.email ||
-                          listingAgent.phone
-                            ? "mt-4"
-                            : ""
+                          listingAgent.email || listingAgent.phone ? "mt-4" : ""
                         }`}
                       >
                         <View
@@ -2679,9 +1971,7 @@ export default function PropertyDetailsScreen() {
                             }
                             numberOfLines={2}
                           >
-                            {
-                              listingAgent.specialization
-                            }
+                            {listingAgent.specialization}
                           </Text>
                         </View>
                       </View>
@@ -2730,9 +2020,7 @@ export default function PropertyDetailsScreen() {
                             }
                             numberOfLines={3}
                           >
-                            {
-                              listingAgent.address
-                            }
+                            {listingAgent.address}
                           </Text>
                         </View>
                       </View>
@@ -2750,29 +2038,7 @@ export default function PropertyDetailsScreen() {
                           ? "mt-5 border-t border-[#292929] pt-4"
                           : "mt-5 border-t border-gray-200 pt-4"
                       }
-                    >
-                      <Text
-                        className={
-                          isDark
-                            ? "text-xs font-semibold uppercase tracking-wide text-zinc-500"
-                            : "text-xs font-semibold uppercase tracking-wide text-gray-500"
-                        }
-                      >
-                        About the Agent
-                      </Text>
-
-                      <Text
-                        className={
-                          isDark
-                            ? "mt-2 text-sm leading-6 text-zinc-300"
-                            : "mt-2 text-sm leading-6 text-gray-700"
-                        }
-                      >
-                        {
-                          listingAgent.about
-                        }
-                      </Text>
-                    </View>
+                    ></View>
                   ) : null}
 
                   {/* ================================================= */}
@@ -2806,12 +2072,8 @@ export default function PropertyDetailsScreen() {
                 {/* ================================================= */}
 
                 <Pressable
-                  onPress={
-                    handleOpenMessage
-                  }
-                  disabled={
-                    sendingMessage
-                  }
+                  onPress={handleOpenMessage}
+                  disabled={sendingMessage}
                   className="mt-3 flex-row items-center justify-center rounded-lg bg-red-600 py-3.5 active:bg-red-700"
                 >
                   <Ionicons
@@ -2844,11 +2106,7 @@ export default function PropertyDetailsScreen() {
                     <Ionicons
                       name="person-outline"
                       size={28}
-                      color={
-                        isDark
-                          ? "#555"
-                          : "#9ca3af"
-                      }
+                      color={isDark ? "#555" : "#9ca3af"}
                     />
                   </View>
 
@@ -2869,9 +2127,7 @@ export default function PropertyDetailsScreen() {
                         : "mt-1 text-center text-sm leading-5 text-gray-500"
                     }
                   >
-                    No agent is currently
-                    associated with this
-                    property.
+                    No agent is currently associated with this property.
                   </Text>
                 </View>
               </View>
@@ -2888,23 +2144,13 @@ export default function PropertyDetailsScreen() {
         visible={messageModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={
-          handleCloseMessage
-        }
+        onRequestClose={handleCloseMessage}
       >
         <KeyboardAvoidingView
           className="flex-1"
-          behavior={
-            Platform.OS === "ios"
-              ? "padding"
-              : undefined
-        }
-        keyboardVerticalOffset={
-          Platform.OS === "ios"
-            ? 10
-            : 0
-        }
-      >
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
+        >
           <View className="flex-1 justify-end bg-black/60">
             <View
               className={
@@ -2937,18 +2183,13 @@ export default function PropertyDetailsScreen() {
                     }
                     numberOfLines={1}
                   >
-                    {listingAgent?.name ||
-                      "Listing Agent"}
+                    {listingAgent?.name || "Listing Agent"}
                   </Text>
                 </View>
 
                 <Pressable
-                  onPress={
-                    handleCloseMessage
-                  }
-                  disabled={
-                    sendingMessage
-                  }
+                  onPress={handleCloseMessage}
+                  disabled={sendingMessage}
                   className={
                     isDark
                       ? "h-10 w-10 items-center justify-center rounded-full bg-[#242424]"
@@ -2958,11 +2199,7 @@ export default function PropertyDetailsScreen() {
                   <Ionicons
                     name="close"
                     size={23}
-                    color={
-                      isDark
-                        ? "#fff"
-                        : "#000"
-                    }
+                    color={isDark ? "#fff" : "#000"}
                   />
                 </Pressable>
               </View>
@@ -2997,11 +2234,7 @@ export default function PropertyDetailsScreen() {
                     <Ionicons
                       name="person-outline"
                       size={23}
-                      color={
-                        isDark
-                          ? "#777"
-                          : "#6b7280"
-                      }
+                      color={isDark ? "#777" : "#6b7280"}
                     />
                   </View>
                 )}
@@ -3015,8 +2248,7 @@ export default function PropertyDetailsScreen() {
                     }
                     numberOfLines={1}
                   >
-                    {listingAgent?.name ||
-                      "Listing Agent"}
+                    {listingAgent?.name || "Listing Agent"}
                   </Text>
 
                   <Text
@@ -3048,20 +2280,12 @@ export default function PropertyDetailsScreen() {
 
                 <TextInput
                   value={messageText}
-                  onChangeText={
-                    setMessageText
-                  }
+                  onChangeText={setMessageText}
                   placeholder="Write a message to the agent..."
-                  placeholderTextColor={
-                    isDark
-                      ? "#666"
-                      : "#9ca3af"
-                  }
+                  placeholderTextColor={isDark ? "#666" : "#9ca3af"}
                   multiline
                   textAlignVertical="top"
-                  editable={
-                    !sendingMessage
-                  }
+                  editable={!sendingMessage}
                   maxLength={2000}
                   className={
                     isDark
@@ -3073,9 +2297,7 @@ export default function PropertyDetailsScreen() {
                 <View className="mt-2 flex-row justify-end">
                   <Text
                     className={
-                      isDark
-                        ? "text-xs text-zinc-600"
-                        : "text-xs text-gray-500"
+                      isDark ? "text-xs text-zinc-600" : "text-xs text-gray-500"
                     }
                   >
                     {messageText.length}/2000
@@ -3088,24 +2310,15 @@ export default function PropertyDetailsScreen() {
               {/* ================================================= */}
 
               <Pressable
-                onPress={
-                  handleSendMessage
-                }
-                disabled={
-                  sendingMessage
-                }
+                onPress={handleSendMessage}
+                disabled={sendingMessage}
                 className={`mt-4 flex-row items-center justify-center rounded-xl px-5 py-4 ${
-                  sendingMessage
-                    ? "bg-red-900"
-                    : "bg-red-600 active:bg-red-700"
+                  sendingMessage ? "bg-red-900" : "bg-red-600 active:bg-red-700"
                 }`}
               >
                 {sendingMessage ? (
                   <>
-                    <ActivityIndicator
-                      size="small"
-                      color="#fff"
-                    />
+                    <ActivityIndicator size="small" color="#fff" />
 
                     <Text className="ml-2 text-base font-bold text-white">
                       Sending...
@@ -3113,11 +2326,7 @@ export default function PropertyDetailsScreen() {
                   </>
                 ) : (
                   <>
-                    <Ionicons
-                      name="send-outline"
-                      size={19}
-                      color="#fff"
-                    />
+                    <Ionicons name="send-outline" size={19} color="#fff" />
 
                     <Text className="ml-2 text-base font-bold text-white">
                       Send Message
@@ -3133,8 +2342,7 @@ export default function PropertyDetailsScreen() {
                     : "mt-3 text-center text-xs leading-5 text-gray-500"
                 }
               >
-                Your message will be sent directly
-                to the listing agent.
+                Your message will be sent directly to the listing agent.
               </Text>
             </View>
           </View>
@@ -3145,12 +2353,7 @@ export default function PropertyDetailsScreen() {
       {/* SIDE MENU */}
       {/* ====================================================== */}
 
-      <SideMenu
-        visible={menuVisible}
-        onClose={() =>
-          setMenuVisible(false)
-        }
-      />
+      <SideMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -3160,9 +2363,7 @@ export default function PropertyDetailsScreen() {
 // ============================================================
 
 interface HighlightProps {
-  icon: React.ComponentProps<
-    typeof Ionicons
-  >["name"];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
 
   value: string;
 
@@ -3183,20 +2384,10 @@ function Highlight({
   return (
     <View
       className={`mb-2 mr-2 rounded-xl border px-3 py-3 ${
-        isDark
-          ? "border-[#292929] bg-[#171717]"
-          : "border-gray-200 bg-white"
-      } ${
-        wide
-          ? "flex-1"
-          : "min-w-[30%]"
-      }`}
+        isDark ? "border-[#292929] bg-[#171717]" : "border-gray-200 bg-white"
+      } ${wide ? "flex-1" : "min-w-[30%]"}`}
     >
-      <Ionicons
-        name={icon}
-        size={20}
-        color="#ef4444"
-      />
+      <Ionicons name={icon} size={20} color="#ef4444" />
 
       <Text
         className={
@@ -3212,9 +2403,7 @@ function Highlight({
       {label ? (
         <Text
           className={
-            isDark
-              ? "mt-1 text-xs text-zinc-500"
-              : "mt-1 text-xs text-gray-500"
+            isDark ? "mt-1 text-xs text-zinc-500" : "mt-1 text-xs text-gray-500"
           }
           numberOfLines={2}
         >
@@ -3230,9 +2419,7 @@ function Highlight({
 // ============================================================
 
 interface DetailRowProps {
-  icon: React.ComponentProps<
-    typeof Ionicons
-  >["name"];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
 
   label: string;
 
@@ -3267,11 +2454,7 @@ function DetailRow({
             : "h-9 w-9 items-center justify-center rounded-lg bg-gray-100"
         }
       >
-        <Ionicons
-          name={icon}
-          size={18}
-          color="#ef4444"
-        />
+        <Ionicons name={icon} size={18} color="#ef4444" />
       </View>
 
       <Text

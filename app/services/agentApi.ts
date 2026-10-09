@@ -1,5 +1,22 @@
 
-// app/services/agentApi.ts
+/*
+|--------------------------------------------------------------------------
+| Agent API Service
+|--------------------------------------------------------------------------
+*/
+
+import type {
+  Agent,
+  AgentUser,
+  ApiAgent,
+  CoverageArea,
+} from "@/app/types/agents/agent";
+
+/*
+|--------------------------------------------------------------------------
+| API CONFIGURATION
+|--------------------------------------------------------------------------
+*/
 
 const EXPO_PUBLIC_API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -9,173 +26,14 @@ if (!EXPO_PUBLIC_API_URL) {
   );
 }
 
-// ============================================================
-// AGENT MEDIA
-// ============================================================
-
-export interface AgentMediaImage {
-  id: number;
-  name: string;
-  created_at_fmt: string;
-  storage_url: string;
-  original: string;
-  file_size: number;
-}
-
-export interface AgentMedia {
-  images: AgentMediaImage[];
-}
-
-export interface AgentMedia {
-  images: AgentMediaImage[];
-}
-
-// ============================================================
-// AGENT USER
-// ============================================================
-
-export interface AgentUser {
-  id: number;
-  name: string;
-  email: string | null;
-  status: string;
-  email_verified_at: string | null;
-  phone: string | null;
-  password_last_updated_at: string | null;
-  financial_institution_id: string;
-  deleted_at: string | null;
-  created_at: string;
-  updated_at: string;
-  avatar_url: string | null;
-  signature: string;
-  media: AgentMedia;
-}
-
-// ============================================================
-// COVERAGE AREA
-// ============================================================
-
-export interface CoverageArea {
-  id: number;
-  region: string;
-  district_code: string;
-  district_name: string;
-  location_name: string;
-  location_code: string;
-  latitude: number | null;
-  longitude: number | null;
-  google_map_link: string | null;
-  last_sync_date: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-// ============================================================
-// API AGENT
-// ============================================================
-
-export interface ApiAgent {
-  id: number;
-
-  // The API can return null here.
-  user: AgentUser | null;
-
-  comps_count: number;
-
-  user_id: string;
-
-  phone_1: string | null;
-  phone_2: string | null;
-
-  headline1: string | null;
-  headline2: string | null;
-
-  bank_name: string | null;
-  account_number: string | null;
-  account_type: string | null;
-  account_branch: string | null;
-
-  phone: string | null;
-  email: string | null;
-
-  linkedin: string | null;
-  facebook: string | null;
-
-  address: string | null;
-
-  account_name: string | null;
-
-  is_agreement_signed: string;
-
-  agent_type: string;
-
-  about: string | null;
-
-  coverage_area:
-    | string
-    | CoverageArea[]
-    | null;
-
-  license_number: string | null;
-
-  license_status: string | null;
-
-  specialization: string | null;
-
-  created_at: string;
-
-  updated_at: string;
-
-  total_sales: number;
-}
-
-// ============================================================
-// APP AGENT TYPE
-// ============================================================
-
-export interface Agent {
-  id: string;
-
-  userId: string;
-
-  name: string;
-
-  email: string;
-
-  phone: string;
-
-  image: string | null;
-
-  agentType: string;
-
-  licenseStatus: string;
-
-  specialization: string;
-
-  address: string;
-
-  coverageAreas: CoverageArea[];
-
-  totalSales: number;
-
-  compsCount: number;
-
-  about: string;
-
-  linkedin: string | null;
-
-  facebook: string | null;
-}
-
-// ============================================================
-// PARSE COVERAGE AREAS
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| PARSE COVERAGE AREAS
+|--------------------------------------------------------------------------
+*/
 
 function parseCoverageAreas(
-  coverageArea:
-    | string
-    | CoverageArea[]
-    | null,
+  coverageArea: string | CoverageArea[] | null,
 ): CoverageArea[] {
   if (!coverageArea) {
     return [];
@@ -186,8 +44,7 @@ function parseCoverageAreas(
   }
 
   try {
-    const parsed: unknown =
-      JSON.parse(coverageArea);
+    const parsed: unknown = JSON.parse(coverageArea);
 
     return Array.isArray(parsed)
       ? (parsed as CoverageArea[])
@@ -197,62 +54,46 @@ function parseCoverageAreas(
   }
 }
 
-// ============================================================
-// GET AGENT IMAGE
-// ============================================================
-//
-// The API may return user: null.
-// Therefore this function must safely handle null/undefined.
-//
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| GET AGENT IMAGE
+|--------------------------------------------------------------------------
+|
+| The API may return user: null.
+| Therefore this function safely handles null or undefined.
+|
+*/
 
 function getAgentImage(
   user: AgentUser | null | undefined,
 ): string | null {
-  // ----------------------------------------------------------
   // No user information
-  // ----------------------------------------------------------
-
   if (!user) {
     return null;
   }
 
-  // ----------------------------------------------------------
   // Prefer the user's avatar
-  // ----------------------------------------------------------
-
   if (user.avatar_url) {
     return user.avatar_url;
   }
 
-  // ----------------------------------------------------------
   // Fall back to media images
-  // ----------------------------------------------------------
+  if (user.media?.images && user.media.images.length > 0) {
+    const firstImage = user.media.images[0];
 
-  if (
-    user.media?.images &&
-    user.media.images.length > 0
-  ) {
-    const firstImage =
-      user.media.images[0];
-
-    return (
-      firstImage.original ||
-      firstImage.storage_url ||
-      null
-    );
+    return firstImage.original || firstImage.storage_url || null;
   }
 
   return null;
 }
 
-// ============================================================
-// GET AGENT PHONE
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| GET AGENT PHONE
+|--------------------------------------------------------------------------
+*/
 
-function getAgentPhone(
-  apiAgent: ApiAgent,
-): string {
+function getAgentPhone(apiAgent: ApiAgent): string {
   return (
     apiAgent.phone ||
     apiAgent.phone_1 ||
@@ -262,162 +103,113 @@ function getAgentPhone(
   );
 }
 
-// ============================================================
-// GET AGENT EMAIL
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| GET AGENT EMAIL
+|--------------------------------------------------------------------------
+*/
 
-function getAgentEmail(
-  apiAgent: ApiAgent,
-): string {
-  return (
-    apiAgent.email ||
-    apiAgent.user?.email ||
-    ""
-  );
+function getAgentEmail(apiAgent: ApiAgent): string {
+  return apiAgent.email || apiAgent.user?.email || "";
 }
 
-// ============================================================
-// MAP API AGENT TO APP AGENT
-// ============================================================
-//
-// This function is exported because propertyApi.ts also
-// receives nested agents directly from the properties API.
-//
-// Example:
-//
-// property.agent
-//   -> ApiAgent
-//   -> mapApiAgent()
-//   -> Agent
-//
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| MAP API AGENT TO APP AGENT
+|--------------------------------------------------------------------------
+|
+| This function is exported because propertyApi.ts also receives
+| nested agents directly from the properties API.
+|
+| Example:
+| property.agent -> ApiAgent -> mapApiAgent() -> Agent
+|
+*/
 
-export function mapApiAgent(
-  apiAgent: ApiAgent,
-): Agent {
+export function mapApiAgent(apiAgent: ApiAgent): Agent {
   return {
     id: String(apiAgent.id),
 
-    userId: String(
-      apiAgent.user_id || "",
-    ),
+    userId: String(apiAgent.user_id || ""),
 
-    name:
-      apiAgent.user?.name ||
-      "Unknown Agent",
+    name: apiAgent.user?.name || "Unknown Agent",
 
-    email:
-      getAgentEmail(apiAgent),
+    email: getAgentEmail(apiAgent),
 
-    phone:
-      getAgentPhone(apiAgent),
+    phone: getAgentPhone(apiAgent),
 
-    image:
-      getAgentImage(
-        apiAgent.user,
-      ),
+    image: getAgentImage(apiAgent.user),
 
-    agentType:
-      apiAgent.agent_type || "",
+    agentType: apiAgent.agent_type || "",
 
-    licenseStatus:
-      apiAgent.license_status || "",
+    licenseStatus: apiAgent.license_status || "",
 
-    specialization:
-      apiAgent.specialization || "",
+    specialization: apiAgent.specialization || "",
 
-    address:
-      apiAgent.address || "",
+    address: apiAgent.address || "",
 
-    coverageAreas:
-      parseCoverageAreas(
-        apiAgent.coverage_area,
-      ),
+    coverageAreas: parseCoverageAreas(apiAgent.coverage_area),
 
-    totalSales:
-      Number(
-        apiAgent.total_sales || 0,
-      ),
+    totalSales: Number(apiAgent.total_sales || 0),
 
-    compsCount:
-      Number(
-        apiAgent.comps_count || 0,
-      ),
+    compsCount: Number(apiAgent.comps_count || 0),
 
-    about:
-      apiAgent.about || "",
+    about: apiAgent.about || "",
 
-    linkedin:
-      apiAgent.linkedin || null,
+    linkedin: apiAgent.linkedin || null,
 
-    facebook:
-      apiAgent.facebook || null,
+    facebook: apiAgent.facebook || null,
   };
 }
 
-// ============================================================
-// AGENTS CACHE
-// ============================================================
-//
-// The cache prevents every screen from making another
-// GET /agents request.
-//
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| AGENTS CACHE
+|--------------------------------------------------------------------------
+|
+| The cache prevents every screen from making another GET /agents
+| request.
+|
+*/
 
-let agentsCache: Agent[] | null =
-  null;
+let agentsCache: Agent[] | null = null;
 
-// ============================================================
-// ACTIVE AGENTS REQUEST
-// ============================================================
-//
-// If several screens request agents at the same time,
-// they can share the same request.
-//
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| ACTIVE AGENTS REQUEST
+|--------------------------------------------------------------------------
+|
+| If several screens request agents at the same time, they can
+| share the same request.
+|
+*/
 
-let agentsRequest:
-  | Promise<Agent[]>
-  | null = null;
+let agentsRequest: Promise<Agent[]> | null = null;
 
-// ============================================================
-// FETCH AGENTS
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| FETCH AGENTS
+|--------------------------------------------------------------------------
+*/
 
 export async function fetchAgents(
   forceRefresh = false,
 ): Promise<Agent[]> {
-  // ----------------------------------------------------------
   // Return cached agents when available
-  // ----------------------------------------------------------
-
-  if (
-    !forceRefresh &&
-    agentsCache
-  ) {
+  if (!forceRefresh && agentsCache) {
     return agentsCache;
   }
 
-  // ----------------------------------------------------------
   // Reuse an active request
-  // ----------------------------------------------------------
-
-  if (
-    !forceRefresh &&
-    agentsRequest
-  ) {
+  if (!forceRefresh && agentsRequest) {
     return agentsRequest;
   }
 
-  // ----------------------------------------------------------
   // Make API request
-  // ----------------------------------------------------------
-
   agentsRequest = (async () => {
-    const response =
-      await fetch(
-        `${EXPO_PUBLIC_API_URL}/v2/agents`,
-      );
+    const response = await fetch(
+      `${EXPO_PUBLIC_API_URL}/v2/agents`,
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -425,49 +217,30 @@ export async function fetchAgents(
       );
     }
 
-    const json: unknown =
-      await response.json();
+    const json: unknown = await response.json();
 
-    // --------------------------------------------------------
     // Validate API response
-    // --------------------------------------------------------
-
     if (
       !json ||
       typeof json !== "object" ||
       !("data" in json) ||
       !Array.isArray(json.data)
     ) {
-      throw new Error(
-        "Invalid agents API response.",
-      );
+      throw new Error("Invalid agents API response.");
     }
 
-    // --------------------------------------------------------
     // Map API agents
-    // --------------------------------------------------------
+    const agents = json.data.map((agent) =>
+      mapApiAgent(agent as ApiAgent),
+    );
 
-    const agents =
-      json.data.map(
-        (agent) =>
-          mapApiAgent(
-            agent as ApiAgent,
-          ),
-      );
-
-    // --------------------------------------------------------
     // Save in cache
-    // --------------------------------------------------------
-
     agentsCache = agents;
 
     return agents;
   })();
 
-  // ----------------------------------------------------------
   // Clear active request when complete
-  // ----------------------------------------------------------
-
   try {
     return await agentsRequest;
   } finally {
@@ -475,61 +248,46 @@ export async function fetchAgents(
   }
 }
 
-// ============================================================
-// CLEAR AGENTS CACHE
-// ============================================================
-//
-// Call this when agent information has changed and the next
-// fetch should retrieve fresh data from the API.
-//
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| CLEAR AGENTS CACHE
+|--------------------------------------------------------------------------
+|
+| Call this when agent information has changed and the next fetch
+| should retrieve fresh data from the API.
+|
+*/
 
 export function clearAgentsCache(): void {
   agentsCache = null;
 }
 
+/*
+|--------------------------------------------------------------------------
+| FETCH SINGLE AGENT WITH ASSOCIATED PROPERTIES
+|--------------------------------------------------------------------------
+|
+| Endpoint:
+| GET /v2/agents/{agent_id}
+|
+| The response contains:
+| {
+|   msg: "...",
+|   data: { ...agent },
+|   properties: [ ...properties ]
+| }
+|
+| The properties are returned as raw API properties.
+| AgentDetailsScreen maps them using mapApiProperty() from
+| propertyApi.ts.
+|
+*/
 
-
-
-
-// ============================================================
-// FETCH SINGLE AGENT WITH ASSOCIATED PROPERTIES
-// ============================================================
-//
-// Endpoint:
-//
-// GET /v2/agents/{agent_id}
-//
-// The response contains:
-//
-// {
-//   msg: "...",
-//   data: { ...agent },
-//   properties: [ ...properties ]
-// }
-//
-// The properties are returned as raw API properties.
-// AgentDetailsScreen maps them using mapApiProperty() from
-// propertyApi.ts.
-//
-// ============================================================
-
-export interface AgentDetailsApiResponse {
-  msg?: string;
-  data: ApiAgent;
-  properties?: unknown[];
-  
-}
-
-
-
-
-
-
-
-// ============================================================
-// FETCH AGENT DETAILS + ASSOCIATED PROPERTIES
-// ============================================================
+/*
+|--------------------------------------------------------------------------
+| FETCH AGENT DETAILS + ASSOCIATED PROPERTIES
+|--------------------------------------------------------------------------
+*/
 
 export async function fetchAgentDetails(
   agentId: string | number,
@@ -542,53 +300,41 @@ export async function fetchAgentDetails(
       String(agentId),
     )}`;
 
-  console.log(
-    "Fetching agent details from:",
-    endpoint,
-  );
+  console.log("Fetching agent details from:", endpoint);
 
-  const response = await fetch(
-    endpoint,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
+  const response = await fetch(endpoint, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
     },
-  );
+  });
 
   if (!response.ok) {
-    const errorText =
-      await response.text();
+    const errorText = await response.text();
 
     throw new Error(
       `Agent request failed (${response.status}): ${errorText}`,
     );
   }
 
-  const json: unknown =
-    await response.json();
+  const json: unknown = await response.json();
 
   if (
     typeof json !== "object" ||
     json === null ||
     !("data" in json)
   ) {
-    throw new Error(
-      "Invalid agent details response.",
-    );
+    throw new Error("Invalid agent details response.");
   }
 
-  const responseData =
-    json as {
-      data?: unknown;
-      properties?: unknown;
-    };
+  const responseData = json as {
+    data?: unknown;
+    properties?: unknown;
+  };
 
   if (
     !responseData.data ||
-    typeof responseData.data !==
-      "object"
+    typeof responseData.data !== "object"
   ) {
     throw new Error(
       "Agent details response does not contain valid agent data.",
@@ -596,15 +342,10 @@ export async function fetchAgentDetails(
   }
 
   return {
-    agent: mapApiAgent(
-      responseData.data as ApiAgent,
-    ),
+    agent: mapApiAgent(responseData.data as ApiAgent),
 
-    properties:
-      Array.isArray(
-        responseData.properties,
-      )
-        ? responseData.properties
-        : [],
+    properties: Array.isArray(responseData.properties)
+      ? responseData.properties
+      : [],
   };
 }
