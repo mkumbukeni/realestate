@@ -37,10 +37,10 @@ export default function PropertyImageGallery({
       : fallbackImage
         ? [
             {
-              id: "main",
-              url: fallbackImage,
-              description: null,
-              collection: "images",
+              id: 0,
+              name: "Property image",
+              original_url: fallbackImage,
+              preview_url: fallbackImage,
             },
           ]
         : [];
@@ -71,32 +71,26 @@ export default function PropertyImageGallery({
             showsHorizontalScrollIndicator={false}
             onMomentumScrollEnd={(event) => {
               const index = Math.round(
-                event.nativeEvent.contentOffset.x / SCREEN_WIDTH,
+                event.nativeEvent.contentOffset.x / SCREEN_WIDTH
               );
               onImageIndexChange(index);
             }}
           >
-            {displayImages.map((image) => (
+            {displayImages.map((image, index) => (
               <View
-                key={String(image.id)}
+                key={`${image.id}-${index}`}
                 style={{
                   width: SCREEN_WIDTH,
                   height: IMAGE_HEIGHT,
                 }}
               >
                 <Image
-                  source={{ uri: image.url }}
+                  source={{
+                    uri: image.original_url || image.preview_url,
+                  }}
                   className="h-full w-full"
                   resizeMode="cover"
                 />
-
-                {image.description ? (
-                  <View className="absolute bottom-0 left-0 right-0 bg-black/60 px-4 py-3">
-                    <Text className="text-sm text-white">
-                      {image.description}
-                    </Text>
-                  </View>
-                ) : null}
               </View>
             ))}
           </ScrollView>
@@ -112,7 +106,7 @@ export default function PropertyImageGallery({
             <View className="absolute bottom-3 left-0 right-0 flex-row items-center justify-center">
               {displayImages.map((image, index) => (
                 <View
-                  key={`dot-${String(image.id)}`}
+                  key={`dot-${image.id}-${index}`}
                   className={`mx-1 h-2 rounded-full ${
                     index === imageIndex
                       ? "w-5 bg-red-500"

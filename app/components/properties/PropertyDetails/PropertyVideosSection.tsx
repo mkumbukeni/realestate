@@ -2,6 +2,7 @@
 import React from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import type { PropertyMedia } from "@/app/types/properties/property";
+import type { PropertyMediaItem } from "@/app/types/properties/property";
 import PropertyVideo from "@/app/components/properties/PropertyDetails/PropertyVideo";
 
 interface PropertyVideosSectionProps {
@@ -15,6 +16,14 @@ export default function PropertyVideosSection({
   loading,
   isDark,
 }: PropertyVideosSectionProps) {
+  const videoItems: PropertyMediaItem[] = videos.map((video) => ({
+    id: video.id,
+    name: video.name,
+    url: video.original_url,
+    description: null,
+    collection: null,
+  }));
+
   return (
     <View className="mb-6">
       <Text
@@ -30,8 +39,8 @@ export default function PropertyVideosSection({
           size="small"
           color={isDark ? "#ef4444" : "#dc2626"}
         />
-      ) : videos.length > 0 ? (
-        videos.map((video, index) => (
+      ) : videoItems.length > 0 ? (
+        videoItems.map((video, index) => (
           <PropertyVideo
             key={String(video.id ?? index)}
             video={video}

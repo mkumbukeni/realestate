@@ -1,5 +1,5 @@
 
-import type { Property } from "@/app/services/propertyApi";
+import type { Property } from "@/app/types/properties/property";
 
 export type PropertyRecord = Record<string, unknown>;
 

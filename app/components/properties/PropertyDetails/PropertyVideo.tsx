@@ -1,13 +1,21 @@
 
 import React from "react";
-import { Dimensions, Text, View, useColorScheme } from "react-native";
+import {
+  Dimensions,
+  Text,
+  View,
+  useColorScheme,
+} from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
-import type { PropertyMedia } from "@/app/types/properties/property";
+import type { PropertyMediaItem } from "@/app/types/properties/property";
 
-const VIDEO_HEIGHT = Math.min(240,  Dimensions.get("window").width * 0.56);
+const VIDEO_HEIGHT = Math.min(
+  240,
+  Dimensions.get("window").width * 0.56
+);
 
 interface PropertyVideoProps {
-  video: PropertyMedia;
+  video: PropertyMediaItem;
 }
 
 export default function PropertyVideo({ video }: PropertyVideoProps) {
@@ -28,7 +36,10 @@ export default function PropertyVideo({ video }: PropertyVideoProps) {
     >
       <VideoView
         player={player}
-        style={{ width: "100%", height: VIDEO_HEIGHT }}
+        style={{
+          width: "100%",
+          height: VIDEO_HEIGHT,
+        }}
         nativeControls
         contentFit="contain"
       />
@@ -36,12 +47,16 @@ export default function PropertyVideo({ video }: PropertyVideoProps) {
       {video.description ? (
         <View
           className={
-            isDark ? "bg-[#171717] px-4 py-3" : "bg-gray-100 px-4 py-3"
+            isDark
+              ? "bg-[#171717] px-4 py-3"
+              : "bg-gray-100 px-4 py-3"
           }
         >
           <Text
             className={
-              isDark ? "text-sm text-zinc-300" : "text-sm text-gray-700"
+              isDark
+                ? "text-sm text-zinc-300"
+                : "text-sm text-gray-700"
             }
           >
             {video.description}
