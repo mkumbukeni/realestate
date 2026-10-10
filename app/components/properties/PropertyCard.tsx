@@ -144,7 +144,8 @@ const PropertyCard = ({
       accessibilityRole="button"
       accessibilityLabel={`View ${property.type} property in ${property.location}`}
       style={({ pressed }) => ({
-        width: isFullWidth ? "100%" : 280,
+        width: "100%",
+        alignSelf: "stretch",
         opacity: pressed ? 0.75 : 1,
         transform: [
           {
@@ -377,9 +378,6 @@ const PropertyCard = ({
               <View className="mr-2 flex-1 flex-row items-center" />
             </View>
           )}
-
-         
-          
         </View>
       </View>
     </Pressable>

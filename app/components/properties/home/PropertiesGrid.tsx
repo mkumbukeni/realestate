@@ -1,3 +1,4 @@
+
 import React, { useMemo } from "react";
 import { Pressable, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -90,22 +91,27 @@ export default function PropertiesGrid({
   }
 
   return (
-    <View>
+    <View className="w-full">
       {rows.map((row, rowIndex) => (
         <View
           key={`property-row-${rowIndex}`}
           className={
             numberOfColumns === 2
               ? "mb-5 flex-row gap-4"
-              : "mb-5"
+              : "mb-5 w-full"
           }
         >
           {row.map((property, propertyIndex) => (
             <View
               key={`${getPropertyId(property)}-${propertyIndex}`}
-              className={
-                numberOfColumns === 2 ? "flex-1" : "w-full"
-              }
+              style={{
+                width:
+                  numberOfColumns === 2 ? undefined : "94%",
+                flex: numberOfColumns === 2 ? 1 : undefined,
+                alignSelf:
+                  numberOfColumns === 2 ? undefined : "center",
+                minWidth: 0,
+              }}
             >
               <PropertyCard
                 property={property}
