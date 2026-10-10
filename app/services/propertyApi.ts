@@ -132,7 +132,6 @@ function getPropertyImage(
       property.media[0];
 
     if (
-      firstMedia &&
       typeof firstMedia.original_url === "string" &&
       firstMedia.original_url.trim() !== ""
     ) {
@@ -140,7 +139,6 @@ function getPropertyImage(
     }
 
     if (
-      firstMedia &&
       typeof firstMedia.preview_url === "string" &&
       firstMedia.preview_url.trim() !== ""
     ) {
@@ -374,6 +372,16 @@ export function mapApiProperty(
     isOpenHouse:
       Array.isArray(property.open_houses) &&
       property.open_houses.length > 0,
+
+    // --------------------------------------------------------
+    // Open House Dates
+    // --------------------------------------------------------
+
+    openHouseStartDate:
+      property.open_houses?.[0]?.start_date ?? null,
+
+    openHouseEndDate:
+      property.open_houses?.[0]?.end_date ?? null,
 
     latitude:
       latitude !== null &&

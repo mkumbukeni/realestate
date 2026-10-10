@@ -1,6 +1,4 @@
 
-// app/components/properties/PropertyCard.tsx
-
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import {
@@ -11,32 +9,134 @@ import {
   useColorScheme,
 } from "react-native";
 
-import type { Property } from "@/app/services/propertyApi";
+import type { Property } from "@/app/types/properties/property";
+
+export type PropertyStatusType =
+  | "featured"
+  | "new"
+  | "openHouse"
+  | "mostViewed";
 
 interface PropertyCardProps {
   property: Property;
   isFullWidth?: boolean;
   onPress: (property: Property) => void;
+  statusType?: PropertyStatusType;
 }
 
 const PropertyCard = ({
   property,
   isFullWidth = false,
   onPress,
+  statusType,
 }: PropertyCardProps) => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
 
-  /**
-   * Always send the property press to the parent.
-   *
-   * Authentication is handled by the parent screen
-   * so that logged-out users can see the authentication
-   * popup instead of having the press silently ignored.
-   */
   const handlePress = () => {
     onPress(property);
   };
+
+  // ==========================================================
+  // FORMAT PROPERTY STATUS BASED ON SECTION
+  // ==========================================================
+
+  const getPropertyStatus = (): string | null => {
+    switch (statusType) {
+      // Featured properties do not display a status.
+      case "featured":
+        return null;
+
+      // New to Market: calculate age from creation date.
+      case "new": {
+        if (!property.createdAt) {
+          return null;
+        }
+
+        const createdDate = new Date(property.createdAt);
+
+        if (Number.isNaN(createdDate.getTime())) {
+          return null;
+        }
+
+        const now = new Date();
+
+        const years =
+          now.getFullYear() - createdDate.getFullYear();
+
+        const months =
+          now.getMonth() - createdDate.getMonth();
+
+        const days =
+          now.getDate() - createdDate.getDate();
+
+        let totalMonths = years * 12 + months;
+
+        if (days < 0) {
+          totalMonths -= 1;
+        }
+
+        if (totalMonths < 1) {
+          return "Less than a month";
+        }
+
+        if (totalMonths < 12) {
+          return totalMonths === 1
+            ? "1 month ago"
+            : `${totalMonths} months ago`;
+        }
+
+        const totalYears = Math.floor(totalMonths / 12);
+
+        return totalYears === 1
+          ? "Over a year"
+          : `Over ${totalYears} years`;
+      }
+
+      // Open Houses: show the start date.
+      case "openHouse": {
+        if (!property.openHouseStartDate) {
+          return null;
+        }
+
+        const startDate = new Date(
+          property.openHouseStartDate,
+        );
+
+        if (Number.isNaN(startDate.getTime())) {
+          return null;
+        }
+
+        return startDate.toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+      }
+
+      // Most Viewed: show the number of views.
+      case "mostViewed": {
+        const views = property.views;
+
+        if (
+          typeof views !== "number" ||
+          !Number.isFinite(views)
+        ) {
+          return null;
+        }
+
+        return `${views.toLocaleString("en-US")} ${
+          views === 1 ? "view" : "views"
+        }`;
+      }
+
+      // Preserve the existing status for cards used elsewhere.
+      default:
+        return property.systemStatus || null;
+    }
+  };
+
+  const propertyStatus = getPropertyStatus();
 
   return (
     <Pressable
@@ -66,26 +166,40 @@ const PropertyCard = ({
 
         <View className="flex-row items-center justify-between px-3 py-3">
           <View className="mr-2 flex-1 flex-row items-center">
-            <View className="mr-2 h-2 w-2 rounded-full bg-red-500" />
+            <View className="mr-2 h-2 w-2 rounded-full" />
 
             <Text
-              className="flex-1 text-sm font-semibold text-red-400"
+              className="flex-1 text-sm font-semibold text-black dark:text-white"
               numberOfLines={1}
             >
               {property.tag}
             </Text>
           </View>
 
-          <Text
-            className={
-              isDark
-                ? "text-sm font-semibold text-gray-300"
-                : "text-sm font-semibold text-gray-700"
-            }
-            numberOfLines={1}
-          >
-            {property.systemStatus}
-          </Text>
+          {propertyStatus !== null && (
+            <View className="ml-2 flex-row items-center">
+              {/* Eye icon appears only in Most Viewed. */}
+              {statusType === "mostViewed" && (
+                <Ionicons
+                  name="eye-outline"
+                  size={16}
+                  color={isDark ? "#d1d1d1" : "#4b5563"}
+                  style={{ marginRight: 4 }}
+                />
+              )}
+
+              <Text
+                className={
+                  isDark
+                    ? "text-sm font-semibold text-gray-300"
+                    : "text-sm font-semibold text-gray-700"
+                }
+                numberOfLines={1}
+              >
+                {propertyStatus}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* ================================================== */}
@@ -292,4 +406,3 @@ const PropertyCard = ({
 };
 
 export default PropertyCard;
-

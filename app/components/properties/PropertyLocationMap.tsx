@@ -82,16 +82,22 @@ function createMapHtml(
           '<div style="padding:20px;color:${textColor};font-family:Arial">Unable to load map. Check your internet connection.</div>';
         return;
       }
+var map = L.map("map", {
+  zoomControl: false,
+  scrollWheelZoom: false,
+  doubleClickZoom: false,
+  touchZoom: false,
+  boxZoom: false,
+  keyboard: false,
+  dragging: false
+}).setView([lat, lng], 15);
 
-      var map = L.map("map", {
-        zoomControl: true,
-        scrollWheelZoom: false
-      }).setView([lat, lng], 15);
-
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(map);
+// Keep OpenStreetMap tiles enabled to show roads and place names.
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution:
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
 
       var icon = L.divIcon({
         className: "",

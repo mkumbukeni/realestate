@@ -27,22 +27,29 @@ import RegisterModal from "@/app/components/auth/RegisterModal";
 import NewsletterSubscribeModal from "@/app/components/newsletter/NewsletterSubscribeModal";
 import { useAuth } from "@/app/components/auth/AuthContext";
 
-import PropertyCard from "@/app/components/properties/PropertyCard";
+import PropertyCard, {
+  type PropertyStatusType,
+} from "@/app/components/properties/PropertyCard";
 import AgentCard from "@/app/components/agents/AgentCard";
 import AutoPropertySlider from "@/app/components/properties/AutoPropertySlider";
 
 import {
-  fetchProperties,
-  fetchFeaturedProperties,
-  fetchMostViewedProperties,
-  fetchNearbyProperties,
+ 
   type Property,
-} from "@/app/services/propertyApi";
+} from "@/app/types/properties/property";
 
 import {
-  fetchAgents,
+ 
   type Agent,
-} from "@/app/services/agentApi";
+} from "@/app/types/agents/agent";
+
+import { fetchAgents } from "@/app/services/agentApi";
+
+
+import { fetchProperties,
+  fetchFeaturedProperties,
+  fetchMostViewedProperties,
+  fetchNearbyProperties} from "@/app/services/propertyApi"
 
 /* ============================================================
    PROPERTY SECTION COMPONENT
@@ -54,6 +61,7 @@ interface PropertySectionProps {
   loading: boolean;
   parentScrollY: number;
   viewportHeight: number;
+  statusType: PropertyStatusType;
   onPropertyPress: (property: Property) => void;
   onViewAll: (title: string) => void;
 }
@@ -64,6 +72,7 @@ function PropertySection({
   loading,
   parentScrollY,
   viewportHeight,
+  statusType,
   onPropertyPress,
   onViewAll,
 }: PropertySectionProps) {
@@ -71,27 +80,17 @@ function PropertySection({
   const isDark = colorScheme !== "light";
 
   const [sectionY, setSectionY] = useState(0);
-  const [sectionHeight, setSectionHeight] =
-    useState(0);
+  const [sectionHeight, setSectionHeight] = useState(0);
 
   const isVisible = useMemo(() => {
-    if (
-      viewportHeight <= 0 ||
-      sectionHeight <= 0
-    ) {
+    if (viewportHeight <= 0 || sectionHeight <= 0) {
       return false;
     }
 
-    const sectionTop =
-      sectionY - parentScrollY;
+    const sectionTop = sectionY - parentScrollY;
+    const sectionBottom = sectionTop + sectionHeight;
 
-    const sectionBottom =
-      sectionTop + sectionHeight;
-
-    return (
-      sectionBottom > 0 &&
-      sectionTop < viewportHeight
-    );
+    return sectionBottom > 0 && sectionTop < viewportHeight;
   }, [
     sectionY,
     sectionHeight,
@@ -103,10 +102,7 @@ function PropertySection({
     <View
       className="mb-10"
       onLayout={(event) => {
-        const {
-          y,
-          height,
-        } = event.nativeEvent.layout;
+        const { y, height } = event.nativeEvent.layout;
 
         setSectionY(y);
         setSectionHeight(height);
@@ -134,9 +130,7 @@ function PropertySection({
           accessibilityRole="button"
           accessibilityLabel={`View all ${title}`}
           className="flex-row items-center"
-        >
-          
-        </Pressable>
+        />
       </View>
 
       {/* LOADING */}
@@ -149,10 +143,7 @@ function PropertySection({
               : "items-center rounded-2xl border border-gray-200 bg-white py-10"
           }
         >
-          <ActivityIndicator
-            size="large"
-            color="#ef4444"
-          />
+          <ActivityIndicator size="large" color="#ef4444" />
 
           <Text
             className={
@@ -177,11 +168,7 @@ function PropertySection({
           <Ionicons
             name="home-outline"
             size={44}
-            color={
-              isDark
-                ? "#444"
-                : "#9ca3af"
-            }
+            color={isDark ? "#444" : "#9ca3af"}
           />
 
           <Text
@@ -208,10 +195,9 @@ function PropertySection({
         <>
           <AutoPropertySlider
             properties={sectionProperties}
-            onPropertyPress={
-              onPropertyPress
-            }
+            onPropertyPress={onPropertyPress}
             isVisible={isVisible}
+            statusType={statusType}
           />
 
           <Pressable
@@ -221,7 +207,7 @@ function PropertySection({
             className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
           >
             <Text className="mr-2 text-base font-bold text-white">
-              View All Properties
+              View All {title}
             </Text>
 
             <Ionicons
@@ -264,30 +250,18 @@ function NearbyPropertySection({
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
 
-  const [sectionY, setSectionY] =
-    useState(0);
-
-  const [sectionHeight, setSectionHeight] =
-    useState(0);
+  const [sectionY, setSectionY] = useState(0);
+  const [sectionHeight, setSectionHeight] = useState(0);
 
   const isVisible = useMemo(() => {
-    if (
-      viewportHeight <= 0 ||
-      sectionHeight <= 0
-    ) {
+    if (viewportHeight <= 0 || sectionHeight <= 0) {
       return false;
     }
 
-    const sectionTop =
-      sectionY - parentScrollY;
+    const sectionTop = sectionY - parentScrollY;
+    const sectionBottom = sectionTop + sectionHeight;
 
-    const sectionBottom =
-      sectionTop + sectionHeight;
-
-    return (
-      sectionBottom > 0 &&
-      sectionTop < viewportHeight
-    );
+    return sectionBottom > 0 && sectionTop < viewportHeight;
   }, [
     sectionY,
     sectionHeight,
@@ -299,10 +273,7 @@ function NearbyPropertySection({
     <View
       className="mb-10"
       onLayout={(event) => {
-        const {
-          y,
-          height,
-        } = event.nativeEvent.layout;
+        const { y, height } = event.nativeEvent.layout;
 
         setSectionY(y);
         setSectionHeight(height);
@@ -351,10 +322,7 @@ function NearbyPropertySection({
       >
         {loadingNearby ? (
           <>
-            <ActivityIndicator
-              size="small"
-              color="#fff"
-            />
+            <ActivityIndicator size="small" color="#fff" />
 
             <Text className="ml-3 text-base font-bold text-white">
               Finding Properties...
@@ -362,11 +330,7 @@ function NearbyPropertySection({
           </>
         ) : (
           <>
-            <Ionicons
-              name="location"
-              size={21}
-              color="#fff"
-            />
+            <Ionicons name="location" size={21} color="#fff" />
 
             <Text className="ml-2 text-base font-bold text-white">
               Use My Location
@@ -377,47 +341,42 @@ function NearbyPropertySection({
 
       {/* INITIAL STATE */}
 
-      {!nearbyRequested &&
-        !loadingNearby && (
-          <View
+      {!nearbyRequested && !loadingNearby && (
+        <View
+          className={
+            isDark
+              ? "items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-8"
+              : "items-center rounded-2xl border border-gray-200 bg-white px-5 py-8"
+          }
+        >
+          <Ionicons
+            name="location-outline"
+            size={44}
+            color={isDark ? "#555" : "#9ca3af"}
+          />
+
+          <Text
             className={
               isDark
-                ? "items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-8"
-                : "items-center rounded-2xl border border-gray-200 bg-white px-5 py-8"
+                ? "mt-4 text-base font-semibold text-gray-400"
+                : "mt-4 text-base font-semibold text-gray-700"
             }
           >
-            <Ionicons
-              name="location-outline"
-              size={44}
-              color={
-                isDark
-                  ? "#555"
-                  : "#9ca3af"
-              }
-            />
+            Find properties near you
+          </Text>
 
-            <Text
-              className={
-                isDark
-                  ? "mt-4 text-base font-semibold text-gray-400"
-                  : "mt-4 text-base font-semibold text-gray-700"
-              }
-            >
-              Find properties near you
-            </Text>
-
-            <Text
-              className={
-                isDark
-                  ? "mt-1 text-center text-sm leading-5 text-gray-600"
-                  : "mt-1 text-center text-sm leading-5 text-gray-500"
-              }
-            >
-              Press "Use My Location" to discover
-              properties close to your current location.
-            </Text>
-          </View>
-        )}
+          <Text
+            className={
+              isDark
+                ? "mt-1 text-center text-sm leading-5 text-gray-600"
+                : "mt-1 text-center text-sm leading-5 text-gray-500"
+            }
+          >
+            Press "Use My Location" to discover properties close
+            to your current location.
+          </Text>
+        </View>
+      )}
 
       {/* LOADING */}
 
@@ -429,10 +388,7 @@ function NearbyPropertySection({
               : "items-center rounded-2xl border border-gray-200 bg-white py-10"
           }
         >
-          <ActivityIndicator
-            size="large"
-            color="#ef4444"
-          />
+          <ActivityIndicator size="large" color="#ef4444" />
 
           <Text
             className={
@@ -461,11 +417,7 @@ function NearbyPropertySection({
             <Ionicons
               name="location-outline"
               size={44}
-              color={
-                isDark
-                  ? "#444"
-                  : "#9ca3af"
-              }
+              color={isDark ? "#444" : "#9ca3af"}
             />
 
             <Text
@@ -485,43 +437,41 @@ function NearbyPropertySection({
                   : "mt-1 text-center text-sm leading-5 text-gray-500"
               }
             >
-              There are currently no properties
-              available within the nearby search radius.
+              There are currently no properties available within
+              the nearby search radius.
             </Text>
           </View>
         )}
 
       {/* RESULTS */}
 
-      {!loadingNearby &&
-        nearbyProperties.length > 0 && (
-          <>
-            <AutoPropertySlider
-              properties={nearbyProperties}
-              onPropertyPress={
-                onPropertyPress
-              }
-              isVisible={isVisible}
+      {!loadingNearby && nearbyProperties.length > 0 && (
+        <>
+          <AutoPropertySlider
+            properties={nearbyProperties}
+            onPropertyPress={onPropertyPress}
+            isVisible={isVisible}
+            statusType="featured"
+          />
+
+          <Pressable
+            onPress={onViewAll}
+            accessibilityRole="button"
+            accessibilityLabel="View all nearby properties"
+            className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
+          >
+            <Text className="mr-2 text-base font-bold text-white">
+              View All Properties
+            </Text>
+
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#fff"
             />
-
-            <Pressable
-              onPress={onViewAll}
-              accessibilityRole="button"
-              accessibilityLabel="View all nearby properties"
-              className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
-            >
-              <Text className="mr-2 text-base font-bold text-white">
-                View All Properties
-              </Text>
-
-              <Ionicons
-                name="arrow-forward"
-                size={20}
-                color="#fff"
-              />
-            </Pressable>
-          </>
-        )}
+          </Pressable>
+        </>
+      )}
     </View>
   );
 }
@@ -536,139 +486,74 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
 
-  const {
-    isLoggedIn,
-  } = useAuth();
+  const { isLoggedIn } = useAuth();
 
   // ============================================================
   // AUTHENTICATION STATE
   // ============================================================
 
-  const [
-    authModalVisible,
-    setAuthModalVisible,
-  ] = useState(false);
-
-  const [
-    loginVisible,
-    setLoginVisible,
-  ] = useState(false);
-
-  const [
-    registerVisible,
-    setRegisterVisible,
-  ] = useState(false);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [loginVisible, setLoginVisible] = useState(false);
+  const [registerVisible, setRegisterVisible] = useState(false);
 
   // ============================================================
   // NEWSLETTER SUBSCRIPTION MODAL STATE
   // ============================================================
 
-  const [
-    newsletterVisible,
-    setNewsletterVisible,
-  ] = useState(false);
-
-  const [
-    pendingProperty,
-    setPendingProperty,
-  ] = useState<Property | null>(
-    null,
-  );
+  const [newsletterVisible, setNewsletterVisible] = useState(false);
+  const [pendingProperty, setPendingProperty] =
+    useState<Property | null>(null);
 
   // ============================================================
   // GENERAL STATE
   // ============================================================
 
-  const [showWelcome, setShowWelcome] =
-    useState(true);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   // ============================================================
   // REFRESH STATE
   // ============================================================
 
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // ============================================================
   // MAIN SCROLL POSITION
   // ============================================================
 
-  const [parentScrollY, setParentScrollY] =
-    useState(0);
-
-  const [viewportHeight, setViewportHeight] =
-    useState(0);
+  const [parentScrollY, setParentScrollY] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
 
   // ============================================================
   // PROPERTY STATE
   // ============================================================
 
-  const [properties, setProperties] =
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [featuredProperties, setFeaturedProperties] =
     useState<Property[]>([]);
-
-  const [
-    featuredProperties,
-    setFeaturedProperties,
-  ] = useState<Property[]>([]);
-
-  const [
-    openHouseProperties,
-    setOpenHouseProperties,
-  ] = useState<Property[]>([]);
-
-  const [
-    mostViewedProperties,
-    setMostViewedProperties,
-  ] = useState<Property[]>([]);
-
-  const [
-    nearbyProperties,
-    setNearbyProperties,
-  ] = useState<Property[]>([]);
+  const [openHouseProperties, setOpenHouseProperties] =
+    useState<Property[]>([]);
+  const [mostViewedProperties, setMostViewedProperties] =
+    useState<Property[]>([]);
+  const [nearbyProperties, setNearbyProperties] =
+    useState<Property[]>([]);
 
   // ============================================================
   // LOADING STATE
   // ============================================================
 
-  const [
-    loadingProperties,
-    setLoadingProperties,
-  ] = useState(true);
-
-  const [
-    loadingFeatured,
-    setLoadingFeatured,
-  ] = useState(true);
-
-  const [
-    loadingOpenHouses,
-    setLoadingOpenHouses,
-  ] = useState(true);
-
-  const [
-    loadingMostViewed,
-    setLoadingMostViewed,
-  ] = useState(true);
-
-  const [
-    loadingNearby,
-    setLoadingNearby,
-  ] = useState(false);
-
-  const [
-    nearbyRequested,
-    setNearbyRequested,
-  ] = useState(false);
+  const [loadingProperties, setLoadingProperties] = useState(true);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
+  const [loadingOpenHouses, setLoadingOpenHouses] = useState(true);
+  const [loadingMostViewed, setLoadingMostViewed] = useState(true);
+  const [loadingNearby, setLoadingNearby] = useState(false);
+  const [nearbyRequested, setNearbyRequested] = useState(false);
 
   // ============================================================
   // AGENT STATE
   // ============================================================
 
-  const [agents, setAgents] =
-    useState<Agent[]>([]);
-
-  const [loadingAgents, setLoadingAgents] =
-    useState(true);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(true);
 
   // ============================================================
   // WELCOME SCREEN
@@ -679,37 +564,18 @@ export default function HomeScreen() {
       setShowWelcome(false);
     }, 3000);
 
-    return () =>
-      clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, []);
 
   // ============================================================
   // LOAD ALL HOME DATA
-  //
-  // This function is used both on initial load and when the
-  // user pulls the entire screen down to refresh.
-  //
-  // IMPORTANT:
-  // If one request fails because the network is down, the
-  // existing data is kept. This prevents a failed refresh from
-  // replacing working property sections with empty arrays.
   // ============================================================
 
-  const loadHomeData = async (
-    isRefresh = false,
-  ) => {
+  const loadHomeData = async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
     }
 
-    /*
-     * During a manual refresh we do not show the large loading
-     * placeholders inside every section. The pull-to-refresh
-     * indicator at the top is enough.
-     *
-     * On the first load, the individual section loaders remain
-     * visible.
-     */
     if (!isRefresh) {
       setLoadingProperties(true);
       setLoadingFeatured(true);
@@ -719,49 +585,27 @@ export default function HomeScreen() {
     }
 
     try {
-      /*
-       * Load all main home requests together.
-       *
-       * Promise.allSettled is intentional here.
-       *
-       * If the network is down and one endpoint fails, the
-       * successful sections still update instead of the entire
-       * refresh failing.
-       */
-      const results =
-        await Promise.allSettled([
-          fetchProperties(),
-          fetchFeaturedProperties(),
-          fetchMostViewedProperties(),
-          fetchAgents(),
-        ]);
+      const results = await Promise.allSettled([
+        fetchProperties(),
+        fetchFeaturedProperties(),
+        fetchMostViewedProperties(),
+        fetchAgents(),
+      ]);
 
-      // ========================================================
       // NEW TO MARKET + OPEN HOUSES
-      // ========================================================
 
-      const propertiesResult =
-        results[0];
+      const propertiesResult = results[0];
 
-      if (
-        propertiesResult.status ===
-        "fulfilled"
-      ) {
-        const result =
-          propertiesResult.value;
+      if (propertiesResult.status === "fulfilled") {
+        const result = propertiesResult.value;
 
         setProperties(result);
 
-        const openHouses =
-          result.filter(
-            (property) =>
-              property.isOpenHouse ===
-              true,
-          );
-
-        setOpenHouseProperties(
-          openHouses,
+        const openHouses = result.filter(
+          (property) => property.isOpenHouse === true,
         );
+
+        setOpenHouseProperties(openHouses);
       } else {
         console.error(
           "Failed to load properties:",
@@ -769,20 +613,12 @@ export default function HomeScreen() {
         );
       }
 
-      // ========================================================
       // FEATURED
-      // ========================================================
 
-      const featuredResult =
-        results[1];
+      const featuredResult = results[1];
 
-      if (
-        featuredResult.status ===
-        "fulfilled"
-      ) {
-        setFeaturedProperties(
-          featuredResult.value,
-        );
+      if (featuredResult.status === "fulfilled") {
+        setFeaturedProperties(featuredResult.value);
       } else {
         console.error(
           "Failed to load featured properties:",
@@ -790,20 +626,12 @@ export default function HomeScreen() {
         );
       }
 
-      // ========================================================
       // MOST VIEWED
-      // ========================================================
 
-      const mostViewedResult =
-        results[2];
+      const mostViewedResult = results[2];
 
-      if (
-        mostViewedResult.status ===
-        "fulfilled"
-      ) {
-        setMostViewedProperties(
-          mostViewedResult.value,
-        );
+      if (mostViewedResult.status === "fulfilled") {
+        setMostViewedProperties(mostViewedResult.value);
       } else {
         console.error(
           "Failed to load most viewed properties:",
@@ -811,20 +639,12 @@ export default function HomeScreen() {
         );
       }
 
-      // ========================================================
       // AGENTS
-      // ========================================================
 
-      const agentsResult =
-        results[3];
+      const agentsResult = results[3];
 
-      if (
-        agentsResult.status ===
-        "fulfilled"
-      ) {
-        setAgents(
-          agentsResult.value,
-        );
+      if (agentsResult.status === "fulfilled") {
+        setAgents(agentsResult.value);
       } else {
         console.error(
           "Failed to load home agents:",
@@ -832,15 +652,7 @@ export default function HomeScreen() {
         );
       }
     } catch (error) {
-      /*
-       * This is a final safety net.
-       *
-       * We intentionally do NOT clear existing data here.
-       */
-      console.error(
-        "Failed to refresh home data:",
-        error,
-      );
+      console.error("Failed to refresh home data:", error);
     } finally {
       if (!isRefresh) {
         setLoadingProperties(false);
@@ -866,9 +678,6 @@ export default function HomeScreen() {
 
   // ============================================================
   // PULL TO REFRESH
-  //
-  // Sliding down from the top of the ENTIRE screen triggers
-  // this function.
   // ============================================================
 
   const handleRefresh = async () => {
@@ -878,13 +687,6 @@ export default function HomeScreen() {
 
     await loadHomeData(true);
 
-    /*
-     * If the user has already used "Use My Location", refresh
-     * that section as well.
-     *
-     * We deliberately do this after the normal home requests so
-     * the standard property sections always reload.
-     */
     if (nearbyRequested) {
       try {
         const servicesEnabled =
@@ -894,7 +696,6 @@ export default function HomeScreen() {
           console.warn(
             "Location services are disabled while refreshing nearby properties.",
           );
-
           return;
         }
 
@@ -908,35 +709,23 @@ export default function HomeScreen() {
           console.warn(
             "Location permission is not granted while refreshing nearby properties.",
           );
-
           return;
         }
 
         const currentLocation =
-          await Location.getCurrentPositionAsync(
-            {
-              accuracy:
-                Location.Accuracy.Balanced,
-            },
-          );
+          await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
 
-        const {
+        const { latitude, longitude } = currentLocation.coords;
+
+        const result = await fetchNearbyProperties(
           latitude,
           longitude,
-        } = currentLocation.coords;
-
-        const result =
-          await fetchNearbyProperties(
-            latitude,
-            longitude,
-          );
+        );
 
         setNearbyProperties(result);
       } catch (error) {
-        /*
-         * Keep the previous nearby properties if the network
-         * is down during refresh.
-         */
         console.error(
           "Failed to refresh nearby properties:",
           error,
@@ -949,204 +738,155 @@ export default function HomeScreen() {
   // FIND PROPERTIES IN MY LOCATION
   // ============================================================
 
-  const handleUseMyLocation =
-    async () => {
-      if (loadingNearby) {
-        return;
-      }
+  const handleUseMyLocation = async () => {
+    if (loadingNearby) {
+      return;
+    }
 
-      try {
-        setLoadingNearby(true);
-        setNearbyRequested(true);
+    try {
+      setLoadingNearby(true);
+      setNearbyRequested(true);
 
-        const servicesEnabled =
-          await Location.hasServicesEnabledAsync();
+      const servicesEnabled =
+        await Location.hasServicesEnabledAsync();
 
-        if (!servicesEnabled) {
-          setNearbyProperties([]);
-
-          Alert.alert(
-            "Location Disabled",
-            "Please enable location services on your device and try again.",
-          );
-
-          return;
-        }
-
-        const permission =
-          await Location.requestForegroundPermissionsAsync();
-
-        if (
-          permission.status !==
-          Location.PermissionStatus.GRANTED
-        ) {
-          setNearbyProperties([]);
-
-          Alert.alert(
-            "Location Permission Required",
-            "Please allow location access to find properties near you.",
-          );
-
-          return;
-        }
-
-        const currentLocation =
-          await Location.getCurrentPositionAsync(
-            {
-              accuracy:
-                Location.Accuracy.Balanced,
-            },
-          );
-
-        const {
-          latitude,
-          longitude,
-        } = currentLocation.coords;
-
-        console.log(
-          "Current latitude:",
-          latitude,
-        );
-
-        console.log(
-          "Current longitude:",
-          longitude,
-        );
-
-        const result =
-          await fetchNearbyProperties(
-            latitude,
-            longitude,
-          );
-
-        setNearbyProperties(result);
-      } catch (error) {
-        console.error(
-          "Failed to load nearby properties:",
-          error,
-        );
-
+      if (!servicesEnabled) {
         setNearbyProperties([]);
 
         Alert.alert(
-          "Unable to Find Properties",
-          "We could not find properties near your current location. Please try again.",
+          "Location Disabled",
+          "Please enable location services on your device and try again.",
         );
-      } finally {
-        setLoadingNearby(false);
+
+        return;
       }
-    };
+
+      const permission =
+        await Location.requestForegroundPermissionsAsync();
+
+      if (
+        permission.status !==
+        Location.PermissionStatus.GRANTED
+      ) {
+        setNearbyProperties([]);
+
+        Alert.alert(
+          "Location Permission Required",
+          "Please allow location access to find properties near you.",
+        );
+
+        return;
+      }
+
+      const currentLocation =
+        await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+      const { latitude, longitude } = currentLocation.coords;
+
+      console.log("Current latitude:", latitude);
+      console.log("Current longitude:", longitude);
+
+      const result = await fetchNearbyProperties(
+        latitude,
+        longitude,
+      );
+
+      setNearbyProperties(result);
+    } catch (error) {
+      console.error("Failed to load nearby properties:", error);
+
+      setNearbyProperties([]);
+
+      Alert.alert(
+        "Unable to Find Properties",
+        "We could not find properties near your current location. Please try again.",
+      );
+    } finally {
+      setLoadingNearby(false);
+    }
+  };
 
   // ============================================================
   // PROPERTY PRESS
   // ============================================================
 
-  const handlePropertyPress =
-    (property: Property) => {
-      /*
-       * Logged-in users can open the property
-       * immediately.
-       */
-      if (isLoggedIn) {
-        router.push({
-          pathname:
-            "/(tabs)/properties/[id]",
-          params: {
-            id: property.id,
-          },
-        });
+  const handlePropertyPress = (property: Property) => {
+    if (isLoggedIn) {
+      router.push({
+        pathname: "/(tabs)/properties/[id]",
+        params: {
+          id: property.id,
+        },
+      });
 
-        return;
-      }
+      return;
+    }
 
-      /*
-       * Logged-out users must authenticate first.
-       */
-      setPendingProperty(property);
-      setAuthModalVisible(true);
-    };
+    setPendingProperty(property);
+    setAuthModalVisible(true);
+  };
 
   // ============================================================
   // AUTH REQUIRED -> LOGIN
   // ============================================================
 
-  const handleAuthRequiredLogin =
-    () => {
-      setAuthModalVisible(false);
-      setLoginVisible(true);
-    };
+  const handleAuthRequiredLogin = () => {
+    setAuthModalVisible(false);
+    setLoginVisible(true);
+  };
 
   // ============================================================
   // AUTH REQUIRED -> REGISTER
   // ============================================================
 
-  const handleAuthRequiredRegister =
-    () => {
-      setAuthModalVisible(false);
-      setRegisterVisible(true);
-    };
+  const handleAuthRequiredRegister = () => {
+    setAuthModalVisible(false);
+    setRegisterVisible(true);
+  };
 
   // ============================================================
   // LOGIN SUCCESS
   // ============================================================
 
-  const handleLoginSuccess =
-    (
-      _email: string,
-      _response: Record<
-        string,
-        unknown
-      >,
-    ) => {
-      setLoginVisible(false);
+  const handleLoginSuccess = (
+    _email: string,
+    _response: Record<string, unknown>,
+  ) => {
+    setLoginVisible(false);
 
-      /*
-       * AuthContext has already set isLoggedIn = true.
-       *
-       * Continue to the property the user originally
-       * selected.
-       */
-      if (pendingProperty) {
-        const propertyToOpen =
-          pendingProperty;
+    if (pendingProperty) {
+      const propertyToOpen = pendingProperty;
 
-        setPendingProperty(null);
+      setPendingProperty(null);
 
-        router.push({
-          pathname:
-            "/(tabs)/properties/[id]",
-          params: {
-            id: propertyToOpen.id,
-          },
-        });
-      }
-    };
+      router.push({
+        pathname: "/(tabs)/properties/[id]",
+        params: {
+          id: propertyToOpen.id,
+        },
+      });
+    }
+  };
 
   // ============================================================
   // REGISTRATION SUCCESS
   // ============================================================
 
-  const handleRegistrationComplete =
-    () => {
-      /*
-       * Keep pendingProperty.
-       *
-       * Registration itself does not necessarily log the
-       * user in, so we now allow the user to sign in.
-       */
-      setRegisterVisible(false);
-      setLoginVisible(true);
-    };
+  const handleRegistrationComplete = () => {
+    setRegisterVisible(false);
+    setLoginVisible(true);
+  };
 
   // ============================================================
   // CLOSE AUTH REQUIRED
   // ============================================================
 
-  const handleCloseAuthRequired =
-    () => {
-      setAuthModalVisible(false);
-      setPendingProperty(null);
-    };
+  const handleCloseAuthRequired = () => {
+    setAuthModalVisible(false);
+    setPendingProperty(null);
+  };
 
   // ============================================================
   // CLOSE LOGIN
@@ -1168,31 +908,27 @@ export default function HomeScreen() {
   // AGENT PRESS
   // ============================================================
 
-  const handleAgentPress =
-    (agent: Agent) => {
-      router.push({
-        pathname:
-          "/(tabs)/agents/[id]",
-        params: {
-          id: agent.id,
-        },
-      });
-    };
+  const handleAgentPress = (agent: Agent) => {
+    router.push({
+      pathname: "/(tabs)/agents/[id]",
+      params: {
+        id: agent.id,
+      },
+    });
+  };
 
   // ============================================================
   // VIEW ALL PROPERTIES
   // ============================================================
 
-  const handleViewAllProperties =
-    (title: string) => {
-      router.push({
-        pathname:
-          "/(tabs)/properties",
-        params: {
-          category: title,
-        },
-      });
-    };
+  const handleViewAllProperties = (title: string) => {
+    router.push({
+      pathname: "/(tabs)/properties",
+      params: {
+        category: title,
+      },
+    });
+  };
 
   // ============================================================
   // WELCOME SCREEN
@@ -1208,16 +944,8 @@ export default function HomeScreen() {
         }
       >
         <StatusBar
-          barStyle={
-            isDark
-              ? "light-content"
-              : "dark-content"
-          }
-          backgroundColor={
-            isDark
-              ? "#0d0d0d"
-              : "#ffffff"
-          }
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor={isDark ? "#0d0d0d" : "#ffffff"}
         />
 
         <View className="flex-1 items-center justify-center px-6">
@@ -1275,16 +1003,8 @@ export default function HomeScreen() {
       }
     >
       <StatusBar
-        barStyle={
-          isDark
-            ? "light-content"
-            : "dark-content"
-        }
-        backgroundColor={
-          isDark
-            ? "#0d0d0d"
-            : "#f9fafb"
-        }
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#0d0d0d" : "#f9fafb"}
       />
 
       {/* HEADER */}
@@ -1330,22 +1050,14 @@ export default function HomeScreen() {
             onRefresh={handleRefresh}
             tintColor="#ef4444"
             colors={["#ef4444"]}
-            progressBackgroundColor={
-              isDark
-                ? "#171717"
-                : "#ffffff"
-            }
+            progressBackgroundColor={isDark ? "#171717" : "#ffffff"}
           />
         }
         onScroll={(event) => {
-          setParentScrollY(
-            event.nativeEvent.contentOffset.y,
-          );
+          setParentScrollY(event.nativeEvent.contentOffset.y);
         }}
         onLayout={(event) => {
-          setViewportHeight(
-            event.nativeEvent.layout.height,
-          );
+          setViewportHeight(event.nativeEvent.layout.height);
         }}
         contentContainerStyle={{
           padding: 16,
@@ -1380,22 +1092,13 @@ export default function HomeScreen() {
 
         <PropertySection
           title="Featured Properties"
-          sectionProperties={
-            featuredProperties
-          }
+          sectionProperties={featuredProperties}
           loading={loadingFeatured}
-          parentScrollY={
-            parentScrollY
-          }
-          viewportHeight={
-            viewportHeight
-          }
-          onPropertyPress={
-            handlePropertyPress
-          }
-          onViewAll={
-            handleViewAllProperties
-          }
+          parentScrollY={parentScrollY}
+          viewportHeight={viewportHeight}
+          statusType="featured"
+          onPropertyPress={handlePropertyPress}
+          onViewAll={handleViewAllProperties}
         />
 
         {/* NEW TO MARKET */}
@@ -1404,93 +1107,50 @@ export default function HomeScreen() {
           title="New to Market"
           sectionProperties={properties}
           loading={loadingProperties}
-          parentScrollY={
-            parentScrollY
-          }
-          viewportHeight={
-            viewportHeight
-          }
-          onPropertyPress={
-            handlePropertyPress
-          }
-          onViewAll={
-            handleViewAllProperties
-          }
+          parentScrollY={parentScrollY}
+          viewportHeight={viewportHeight}
+          statusType="new"
+          onPropertyPress={handlePropertyPress}
+          onViewAll={handleViewAllProperties}
         />
 
         {/* OPEN HOUSES */}
 
         <PropertySection
           title="Open Houses"
-          sectionProperties={
-            openHouseProperties
-          }
+          sectionProperties={openHouseProperties}
           loading={loadingOpenHouses}
-          parentScrollY={
-            parentScrollY
-          }
-          viewportHeight={
-            viewportHeight
-          }
-          onPropertyPress={
-            handlePropertyPress
-          }
-          onViewAll={
-            handleViewAllProperties
-          }
+          parentScrollY={parentScrollY}
+          viewportHeight={viewportHeight}
+          statusType="openHouse"
+          onPropertyPress={handlePropertyPress}
+          onViewAll={handleViewAllProperties}
         />
 
         {/* MOST VIEWED */}
 
         <PropertySection
           title="Most Viewed"
-          sectionProperties={
-            mostViewedProperties
-          }
+          sectionProperties={mostViewedProperties}
           loading={loadingMostViewed}
-          parentScrollY={
-            parentScrollY
-          }
-          viewportHeight={
-            viewportHeight
-          }
-          onPropertyPress={
-            handlePropertyPress
-          }
-          onViewAll={
-            handleViewAllProperties
-          }
+          parentScrollY={parentScrollY}
+          viewportHeight={viewportHeight}
+          statusType="mostViewed"
+          onPropertyPress={handlePropertyPress}
+          onViewAll={handleViewAllProperties}
         />
 
         {/* NEARBY */}
 
         <NearbyPropertySection
-          nearbyProperties={
-            nearbyProperties
-          }
-          loadingNearby={
-            loadingNearby
-          }
-          nearbyRequested={
-            nearbyRequested
-          }
-          parentScrollY={
-            parentScrollY
-          }
-          viewportHeight={
-            viewportHeight
-          }
-          onPropertyPress={
-            handlePropertyPress
-          }
-          onUseMyLocation={
-            handleUseMyLocation
-          }
-          onViewAll={() =>
-            router.push(
-              "/(tabs)/properties",
-            )
-          }
+          nearbyProperties={nearbyProperties}
+          loadingNearby={loadingNearby}
+          nearbyRequested={nearbyRequested}
+          parentScrollY={parentScrollY}
+          viewportHeight={viewportHeight}
+          onPropertyPress={handlePropertyPress}
+          onUseMyLocation={handleUseMyLocation}
+          onViewAll={() => router.push("/(tabs)/properties")}
         />
 
         {/* AGENTS */}
@@ -1512,10 +1172,7 @@ export default function HomeScreen() {
 
           {loadingAgents ? (
             <View className="items-center py-10">
-              <ActivityIndicator
-                size="large"
-                color="#ef4444"
-              />
+              <ActivityIndicator size="large" color="#ef4444" />
 
               <Text
                 className={
@@ -1538,11 +1195,7 @@ export default function HomeScreen() {
               <Ionicons
                 name="people-outline"
                 size={48}
-                color={
-                  isDark
-                    ? "#444"
-                    : "#9ca3af"
-                }
+                color={isDark ? "#444" : "#9ca3af"}
               />
 
               <Text
@@ -1567,27 +1220,17 @@ export default function HomeScreen() {
             </View>
           ) : (
             <View>
-              {agents
-                .slice(0, 1)
-                .map((agent) => (
-                  <AgentCard
-                    key={agent.id}
-                    agent={agent}
-                    isFullWidth
-                    onPress={() =>
-                      handleAgentPress(
-                        agent,
-                      )
-                    }
-                  />
-                ))}
+              {agents.slice(0, 1).map((agent) => (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  isFullWidth
+                  onPress={() => handleAgentPress(agent)}
+                />
+              ))}
 
               <Pressable
-                onPress={() =>
-                  router.push(
-                    "/(tabs)/agents",
-                  )
-                }
+                onPress={() => router.push("/(tabs)/agents")}
                 accessibilityRole="button"
                 accessibilityLabel="View all agents"
                 className="mt-3 w-full flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-4 active:bg-red-700"
@@ -1626,11 +1269,7 @@ export default function HomeScreen() {
           {/* LIST PROPERTY */}
 
           <Pressable
-            onPress={() =>
-              router.push(
-                "/properties/list-property",
-              )
-            }
+            onPress={() => router.push("/properties/list-property")}
             accessibilityRole="button"
             accessibilityLabel="List your property"
             className={
@@ -1640,11 +1279,7 @@ export default function HomeScreen() {
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
-              <Ionicons
-                name="home-outline"
-                size={25}
-                color="#fff"
-              />
+              <Ionicons name="home-outline" size={25} color="#fff" />
             </View>
 
             <View className="flex-1">
@@ -1680,9 +1315,7 @@ export default function HomeScreen() {
 
           <Pressable
             onPress={() =>
-              router.push(
-                "/properties/special-property-request",
-              )
+              router.push("/properties/special-property-request")
             }
             accessibilityRole="button"
             accessibilityLabel="Special property request"
@@ -1693,11 +1326,7 @@ export default function HomeScreen() {
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
-              <Ionicons
-                name="search-outline"
-                size={25}
-                color="#fff"
-              />
+              <Ionicons name="search-outline" size={25} color="#fff" />
             </View>
 
             <View className="flex-1">
@@ -1729,7 +1358,7 @@ export default function HomeScreen() {
             />
           </Pressable>
 
-          {/* BLOGS */}
+          {/* NEWSLETTER */}
 
           <Pressable
             onPress={() => setNewsletterVisible(true)}
@@ -1780,63 +1409,41 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      {/* ========================================================
-          NEWSLETTER SUBSCRIPTION MODAL
-          ======================================================== */}
+      {/* NEWSLETTER SUBSCRIPTION MODAL */}
 
       <NewsletterSubscribeModal
         visible={newsletterVisible}
         onClose={() => setNewsletterVisible(false)}
       />
 
-      {/* ========================================================
-          AUTH REQUIRED MODAL
-          ======================================================== */}
+      {/* AUTH REQUIRED MODAL */}
 
       <AuthRequiredModal
         visible={authModalVisible}
-        onClose={
-          handleCloseAuthRequired
-        }
-        onLogin={
-          handleAuthRequiredLogin
-        }
-        onRegister={
-          handleAuthRequiredRegister
-        }
+        onClose={handleCloseAuthRequired}
+        onLogin={handleAuthRequiredLogin}
+        onRegister={handleAuthRequiredRegister}
       />
 
-      {/* ========================================================
-          LOGIN MODAL
-          ======================================================== */}
+      {/* LOGIN MODAL */}
 
       <LoginModal
         visible={loginVisible}
-        onClose={
-          handleCloseLogin
-        }
-        onLogin={
-          handleLoginSuccess
-        }
+        onClose={handleCloseLogin}
+        onLogin={handleLoginSuccess}
         onRegister={() => {
           setLoginVisible(false);
           setRegisterVisible(true);
         }}
       />
 
-      {/* ========================================================
-          REGISTER MODAL
-          ======================================================== */}
+      {/* REGISTER MODAL */}
 
       <RegisterModal
         visible={registerVisible}
-        onClose={
-          handleCloseRegister
-        }
-        onRegister={
-          handleRegistrationComplete
-        }
-        onLogin={() => {
+        onClose={handleCloseRegister}
+        onRegister={handleRegistrationComplete}
+        onSignIn={() => {
           setRegisterVisible(false);
           setLoginVisible(true);
         }}

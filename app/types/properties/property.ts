@@ -207,6 +207,10 @@ export interface Property {
   googleMapLink: string | null;
   createdAt: string;
   systemStatus: string;
+
+
+  openHouseStartDate: string | null;
+openHouseEndDate: string | null;
 }
 
 // ============================================================

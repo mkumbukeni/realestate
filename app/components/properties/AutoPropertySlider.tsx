@@ -7,40 +7,36 @@ import {
   View,
 } from "react-native";
 
-import PropertyCard from "@/app/components/properties/PropertyCard";
-import type { Property } from "@/app/services/propertyApi";
+import PropertyCard, {
+  type PropertyStatusType,
+} from "@/app/components/properties/PropertyCard";
+
+import type { Property } from "@/app/types/properties/property";
 
 interface AutoPropertySliderProps {
   properties: Property[];
   onPropertyPress: (property: Property) => void;
   isVisible?: boolean;
+  statusType?: PropertyStatusType;
 }
 
 const CARD_WIDTH = 320;
 const CARD_GAP = 20;
 const CARD_INTERVAL = CARD_WIDTH + CARD_GAP;
 
-// How long the current card stays still
 const WAIT_TIME = 5000;
-
-// How long it takes to slowly move to the next card
 const MOVE_DURATION = 4500;
 
 export default function AutoPropertySlider({
   properties,
   onPropertyPress,
+  statusType,
 }: AutoPropertySliderProps) {
   const scrollX = useRef(new Animated.Value(0)).current;
-
   const currentIndex = useRef(0);
-
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const isUserDragging = useRef(false);
 
-  /**
-   * Clear the current automatic-scroll timer.
-   */
   const clearTimer = useCallback(() => {
     if (timer.current !== null) {
       clearTimeout(timer.current);
@@ -48,24 +44,13 @@ export default function AutoPropertySlider({
     }
   }, []);
 
-  /**
-   * Slowly move to the next card.
-   */
   const moveNext = useCallback(() => {
-    if (properties.length <= 1) {
-      return;
-    }
-
-    if (isUserDragging.current) {
+    if (properties.length <= 1 || isUserDragging.current) {
       return;
     }
 
     const nextIndex = currentIndex.current + 1;
 
-    /*
-     * When we reach the final card,
-     * smoothly return to the first card.
-     */
     if (nextIndex >= properties.length) {
       currentIndex.current = 0;
 
@@ -82,17 +67,11 @@ export default function AutoPropertySlider({
 
     Animated.timing(scrollX, {
       toValue: nextIndex * CARD_INTERVAL,
-
-      // Slow, smooth movement
       duration: MOVE_DURATION,
-
       useNativeDriver: false,
     }).start();
   }, [properties.length, scrollX]);
 
-  /**
-   * Start the automatic slider.
-   */
   const startAutoScroll = useCallback(() => {
     clearTimer();
 
@@ -107,36 +86,23 @@ export default function AutoPropertySlider({
 
       startAutoScroll();
     }, WAIT_TIME + MOVE_DURATION);
-  }, [
-    clearTimer,
-    moveNext,
-    properties.length,
-  ]);
+  }, [clearTimer, moveNext, properties.length]);
 
-  /**
-   * Start automatic movement when properties are loaded.
-   */
   useEffect(() => {
     if (properties.length <= 1) {
+      scrollX.setValue(0);
       return;
     }
 
     currentIndex.current = 0;
-
     scrollX.setValue(0);
 
-    /*
-     * Give the user a few seconds to see
-     * the first card before movement starts.
-     */
     timer.current = setTimeout(() => {
       moveNext();
       startAutoScroll();
     }, WAIT_TIME);
 
-    return () => {
-      clearTimer();
-    };
+    return clearTimer;
   }, [
     properties.length,
     scrollX,
@@ -145,66 +111,34 @@ export default function AutoPropertySlider({
     clearTimer,
   ]);
 
-  /**
-   * Stop automatic movement while
-   * the user manually swipes.
-   */
   const handleScrollBeginDrag = useCallback(() => {
     isUserDragging.current = true;
-
     clearTimer();
   }, [clearTimer]);
 
-  /**
-   * Update the current card after
-   * the user's swipe has finished.
-   */
   const handleMomentumScrollEnd = useCallback(
-    (
-      event: NativeSyntheticEvent<NativeScrollEvent>,
-    ) => {
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
       const offset = event.nativeEvent.contentOffset.x;
-
-      const index = Math.round(
-        offset / CARD_INTERVAL,
-      );
+      const index = Math.round(offset / CARD_INTERVAL);
 
       currentIndex.current = Math.max(
         0,
-        Math.min(
-          index,
-          properties.length - 1,
-        ),
+        Math.min(index, properties.length - 1),
       );
 
       isUserDragging.current = false;
-
       startAutoScroll();
     },
-    [
-      properties.length,
-      startAutoScroll,
-    ],
+    [properties.length, startAutoScroll],
   );
 
-  /**
-   * Restart automatic movement after
-   * the user finishes dragging.
-   */
   const handleScrollEndDrag = useCallback(() => {
     isUserDragging.current = false;
-
     startAutoScroll();
   }, [startAutoScroll]);
 
-  /**
-   * Clean up the timer when the component
-   * is removed from the screen.
-   */
   useEffect(() => {
-    return () => {
-      clearTimer();
-    };
+    return clearTimer;
   }, [clearTimer]);
 
   if (properties.length === 0) {
@@ -224,13 +158,7 @@ export default function AutoPropertySlider({
       onScrollBeginDrag={handleScrollBeginDrag}
       onScrollEndDrag={handleScrollEndDrag}
       onMomentumScrollEnd={handleMomentumScrollEnd}
-      contentOffset={{
-        x: scrollX,
-        y: 0,
-      }}
-      contentContainerStyle={{
-        paddingRight: 8,
-      }}
+      contentContainerStyle={{ paddingRight: 8 }}
     >
       {properties.map((property, index) => (
         <View
@@ -238,14 +166,13 @@ export default function AutoPropertySlider({
           style={{
             width: CARD_WIDTH,
             marginRight:
-              index === properties.length - 1
-                ? 0
-                : CARD_GAP,
+              index === properties.length - 1 ? 0 : CARD_GAP,
           }}
         >
           <PropertyCard
             property={property}
             isFullWidth
+            statusType={statusType}
             onPress={onPropertyPress}
           />
         </View>
@@ -253,4 +180,3 @@ export default function AutoPropertySlider({
     </Animated.ScrollView>
   );
 }
-
