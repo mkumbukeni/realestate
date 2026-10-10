@@ -104,8 +104,8 @@ function GlobalMenuButton({
       "
     >
       <Ionicons
-        name="menu-outline"
-        size={24}
+        name="ellipsis-vertical"
+        size={22}
         color={
           isDark
             ? "white"
