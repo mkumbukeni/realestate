@@ -378,27 +378,8 @@ const PropertyCard = ({
             </View>
           )}
 
-          {/* ================================================= */}
-          {/* LOGIN REQUIRED INDICATOR */}
-          {/* ================================================= */}
-
-          <View className="mt-3 flex-row items-center">
-            <Ionicons
-              name="lock-closed-outline"
-              size={14}
-              color={isDark ? "#9ca3af" : "#6b7280"}
-            />
-
-            <Text
-              className={
-                isDark
-                  ? "ml-1 text-xs text-gray-400"
-                  : "ml-1 text-xs text-gray-600"
-              }
-            >
-              Sign in to view full details
-            </Text>
-          </View>
+         
+          
         </View>
       </View>
     </Pressable>
