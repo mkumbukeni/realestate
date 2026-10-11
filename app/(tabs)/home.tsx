@@ -930,65 +930,66 @@ export default function HomeScreen() {
     });
   };
 
-  // ============================================================
-  // WELCOME SCREEN
-  // ============================================================
+  
+// ============================================================
+// WELCOME SCREEN
+// ============================================================
 
-  if (showWelcome) {
-    return (
-      <SafeAreaView
-        className={
-          isDark
-            ? "flex-1 bg-[#0d0d0d]"
-            : "flex-1 bg-white"
-        }
-      >
-        <StatusBar
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor={isDark ? "#0d0d0d" : "#ffffff"}
+if (showWelcome) {
+  return (
+    <SafeAreaView
+      className={
+        isDark
+          ? "flex-1 bg-[#0d0d0d]"
+          : "flex-1 bg-white"
+      }
+    >
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#0d0d0d" : "#ffffff"}
+      />
+
+      <View className="flex-1 items-center justify-center px-6">
+        <Image
+          source={{
+            uri: "https://www.realestateafrica.mw/logo.png",
+          }}
+          className="h-32 w-64"
+          resizeMode="contain"
         />
 
-        <View className="flex-1 items-center justify-center px-6">
-          <Image
-            source={{
-              uri: "https://www.realestateafrica.mw/logo.png",
-            }}
-            className="h-32 w-64"
-            resizeMode="contain"
-          />
+        <View className="mt-8 w-full max-w-md items-center">
+          <Text className="text-center text-sm font-semibold uppercase tracking-[3px] text-red-500">
+            Welcome to Real Estate Africa
+          </Text>
 
-          <View className="mt-8 items-center">
-            <Text className="text-center text-sm font-semibold uppercase tracking-[3px] text-red-500">
-              Welcome to Real Estate Africa
-            </Text>
+          <Text
+            className={
+              isDark
+                ? "mt-3 text-center text-3xl font-bold leading-10 text-white"
+                : "mt-3 text-center text-3xl font-bold leading-10 text-black"
+            }
+          >
+            Your Next Property{"\n"}
+            Starts Here.
+          </Text>
 
-            <Text
-              className={
-                isDark
-                  ? "mt-3 text-center text-3xl font-bold leading-10 text-white"
-                  : "mt-3 text-center text-3xl font-bold leading-10 text-black"
-              }
-            >
-              Your next property{"\n"}
-              starts here.
-            </Text>
-
-            <Text
-              className={
-                isDark
-                  ? "mt-4 max-w-sm text-center text-base leading-6 text-gray-400"
-                  : "mt-4 max-w-sm text-center text-base leading-6 text-gray-600"
-              }
-            >
-              Discover homes, commercial properties,
-              rentals, and investment opportunities
-              across Malawi.
-            </Text>
-          </View>
+          <Text
+            className={
+              isDark
+                ? "mt-4 max-w-sm text-center text-base leading-7 text-gray-400"
+                : "mt-4 max-w-sm text-center text-base leading-7 text-gray-600"
+            }
+          >
+            Discover residential, commercial, industrial, and
+            agricultural properties for sale or rent across Malawi
+            with Real Estate Africa.
+          </Text>
         </View>
-      </SafeAreaView>
-    );
-  }
+      </View>
+    </SafeAreaView>
+  );
+}
 
   // ============================================================
   // HOME

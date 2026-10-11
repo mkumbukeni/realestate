@@ -15,6 +15,7 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { useAuth } from "./AuthContext";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 interface LoginModalProps {
   visible: boolean;
@@ -48,6 +49,8 @@ export default function LoginModal({
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [loginSuccessful, setLoginSuccessful] = useState(false);
+
+  const [forgotPasswordVisible, setForgotPasswordVisible] =useState(false);
 
   const resetMessages = () => {
     setError("");
@@ -135,14 +138,14 @@ export default function LoginModal({
     onRegister?.();
   };
 
-  const handleForgotPassword = () => {
-    if (loading) {
-      return;
-    }
+ const handleForgotPassword = () => {
+  if (loading) {
+    return;
+  }
 
-    resetMessages();
-    onForgotPassword?.();
-  };
+  resetMessages();
+  setForgotPasswordVisible(true);
+};
 
   return (
     <Modal
@@ -175,20 +178,14 @@ export default function LoginModal({
             >
               <View className="flex-1">
                 <Text
-                  className={`text-xl font-bold ${
+                  className={`text-xl font-bold text-center ${
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  Welcome Back
+                  Sign In
                 </Text>
 
-                <Text
-                  className={`mt-1 text-sm ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Sign in to continue
-                </Text>
+                
               </View>
 
               <Pressable
@@ -435,6 +432,20 @@ export default function LoginModal({
           </View>
         </View>
       </KeyboardAvoidingView>
+
+
+
+      <ForgotPasswordModal
+  visible={forgotPasswordVisible}
+  initialEmail={email}
+  onClose={() => setForgotPasswordVisible(false)}
+  onSuccess={(recoveredEmail) => {
+    setEmail(recoveredEmail);
+    setPassword("");
+    setShowPassword(false);
+    resetMessages();
+  }}
+/>
     </Modal>
   );
 }

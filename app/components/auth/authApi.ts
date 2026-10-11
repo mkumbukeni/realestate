@@ -452,3 +452,95 @@ export const loginUser = async (
         : undefined,
   };
 };
+
+
+
+
+
+/**
+ * Update password after successful OTP verification.
+ *
+ * Endpoint:
+ * POST /v1/update-password
+ *
+ * Request:
+ * {
+ *   email: string,
+ *   password: string,
+ *   password_confirmation: string
+ * }
+ */
+export const updatePassword = async (data: {
+  email: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<{ message?: string }> => {
+  const url = `${API_BASE_URL}/v1/update-password`;
+
+  const requestData = {
+    email: data.email.trim().toLowerCase(),
+    password: data.password,
+    password_confirmation: data.password_confirmation,
+  };
+
+  if (!requestData.email) {
+    throw new Error("Email address is required.");
+  }
+
+  if (!requestData.password) {
+    throw new Error("Please enter your new password.");
+  }
+
+  if (
+    requestData.password !==
+    requestData.password_confirmation
+  ) {
+    throw new Error("The passwords do not match.");
+  }
+
+  let response: Response;
+
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(requestData),
+    });
+  } catch (error) {
+    console.error("Update password network error:", error);
+
+    throw new Error(
+      "Unable to connect to the server. Please check your internet connection.",
+    );
+  }
+
+  const result = await parseResponse(response);
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        result,
+        `Failed to update password: ${response.status}`,
+      ),
+    );
+  }
+
+  if (typeof result === "object" && result !== null) {
+    const responseData = result as Record<string, unknown>;
+
+    return {
+      message:
+        typeof responseData.message === "string"
+          ? responseData.message
+          : undefined,
+    };
+  }
+
+  return {
+    message: typeof result === "string" ? result : undefined,
+  };
+};
+

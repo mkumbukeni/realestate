@@ -1,3 +1,4 @@
+
 import React, {
   useEffect,
   useRef,
@@ -17,10 +18,10 @@ import { useRouter } from "expo-router";
 
 import RegisterModal from "@/app/components/auth/RegisterModal";
 import LoginModal from "@/app/components/auth/LoginModal";
+import { useAuth } from "@/app/components/auth/AuthContext";
 import { useTheme } from "@/app/components/theme/ThemeContext";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
-
 const MENU_WIDTH = SCREEN_WIDTH * 0.58;
 
 export type SideMenuItem = {
@@ -77,21 +78,26 @@ const SideMenu = ({
   items = DEFAULT_MENU_ITEMS,
 }: SideMenuProps) => {
   const router = useRouter();
-
   const { isDark, theme } = useTheme();
+  const { isLoggedIn } = useAuth();
 
-  const [
-    registerVisible,
-    setRegisterVisible,
-  ] = useState(false);
+  const [registerVisible, setRegisterVisible] = useState(false);
+  const [loginVisible, setLoginVisible] = useState(false);
 
-  const [
-    loginVisible,
-    setLoginVisible,
-  ] = useState(false);
+  /*
+   * Hide authentication menu items when the user
+   * is already signed in.
+   */
+  const visibleMenuItems = isLoggedIn
+    ? items.filter(
+        (item) =>
+          item.label !== "Sign In" &&
+          item.label !== "Register",
+      )
+    : items;
 
   /* ==========================================================
-     START OFF-SCREEN TO THE LEFT
+     ANIMATIONS
      ========================================================== */
 
   const slideAnim = useRef(
@@ -118,7 +124,6 @@ const SideMenu = ({
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
-
         Animated.timing(backdropAnim, {
           toValue: 1,
           duration: 280,
@@ -127,11 +132,7 @@ const SideMenu = ({
         }),
       ]).start();
     }
-  }, [
-    visible,
-    slideAnim,
-    backdropAnim,
-  ]);
+  }, [visible, slideAnim, backdropAnim]);
 
   /* ==========================================================
      CLOSE SIDE MENU
@@ -145,7 +146,6 @@ const SideMenu = ({
         easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }),
-
       Animated.timing(backdropAnim, {
         toValue: 0,
         duration: 240,
@@ -162,6 +162,8 @@ const SideMenu = ({
      ========================================================== */
 
   const openRegisterModal = () => {
+    if (isLoggedIn) return;
+
     setLoginVisible(false);
 
     setTimeout(() => {
@@ -174,6 +176,8 @@ const SideMenu = ({
      ========================================================== */
 
   const openLoginModal = () => {
+    if (isLoggedIn) return;
+
     setRegisterVisible(false);
 
     setTimeout(() => {
@@ -185,16 +189,14 @@ const SideMenu = ({
      HANDLE MENU ITEM
      ========================================================== */
 
-  const handleMenuPress = (
-    item: SideMenuItem,
-  ) => {
+  const handleMenuPress = (item: SideMenuItem) => {
     /*
      * SIGN IN
-     *
-     * Sign In is a modal, not a route.
      */
     if (item.label === "Sign In") {
       closeMenu();
+
+      if (isLoggedIn) return;
 
       setTimeout(() => {
         openLoginModal();
@@ -205,11 +207,11 @@ const SideMenu = ({
 
     /*
      * REGISTER
-     *
-     * Register is a modal, not a route.
      */
     if (item.label === "Register") {
       closeMenu();
+
+      if (isLoggedIn) return;
 
       setTimeout(() => {
         openRegisterModal();
@@ -223,9 +225,7 @@ const SideMenu = ({
      */
     closeMenu();
 
-    if (!item.route) {
-      return;
-    }
+    if (!item.route) return;
 
     setTimeout(() => {
       router.push(item.route as never);
@@ -236,42 +236,31 @@ const SideMenu = ({
    * Keep the component mounted while either
    * authentication modal is open.
    */
-  if (
-    !visible &&
-    !registerVisible &&
-    !loginVisible
-  ) {
+  if (!visible && !registerVisible && !loginVisible) {
     return null;
   }
 
   return (
     <View
       className="absolute inset-0 z-50"
-      style={{
-        elevation: 20,
-      }}
+      style={{ elevation: 20 }}
     >
-      {/* ======================================================
-          BACKDROP
-          ====================================================== */}
+      {/* BACKDROP */}
 
       {visible ? (
         <Animated.View
-          pointerEvents="box-none"
+          pointerEvents="none"
           className="absolute inset-0 bg-black"
           style={{
-            opacity:
-              backdropAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, 0.65],
-              }),
+            opacity: backdropAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.65],
+            }),
           }}
         />
       ) : null}
 
-      {/* ======================================================
-          BACKDROP PRESS AREA
-          ====================================================== */}
+      {/* BACKDROP PRESS AREA */}
 
       {visible ? (
         <Pressable
@@ -282,9 +271,7 @@ const SideMenu = ({
         />
       ) : null}
 
-      {/* ======================================================
-          SLIDING DRAWER
-          ====================================================== */}
+      {/* SLIDING DRAWER */}
 
       {visible ? (
         <Animated.View
@@ -294,19 +281,11 @@ const SideMenu = ({
             top: 0,
             bottom: 0,
             width: MENU_WIDTH,
-            transform: [
-              {
-                translateX: slideAnim,
-              },
-            ],
+            transform: [{ translateX: slideAnim }],
             backgroundColor: theme.background,
           }}
         >
-          {/* ==================================================
-              FIXED MENU HEADER
-
-              This section DOES NOT scroll.
-              ================================================== */}
+          {/* FIXED MENU HEADER */}
 
           <View
             className="px-5 pb-5 pt-12"
@@ -319,24 +298,18 @@ const SideMenu = ({
               <View>
                 <Text
                   className="text-xl font-bold"
-                  style={{
-                    color: theme.text,
-                  }}
+                  style={{ color: theme.text }}
                 >
                   Menu
                 </Text>
 
                 <Text
                   className="mt-1 text-xs"
-                  style={{
-                    color: theme.textMuted,
-                  }}
+                  style={{ color: theme.textMuted }}
                 >
                   Real Estate
                 </Text>
               </View>
-
-              {/* FIXED CLOSE BUTTON */}
 
               <Pressable
                 onPress={closeMenu}
@@ -357,13 +330,7 @@ const SideMenu = ({
             </View>
           </View>
 
-          {/* ==================================================
-              SCROLLABLE MENU ITEMS
-
-              ONLY THIS SECTION SCROLLS.
-
-              The header and close button remain fixed.
-              ================================================== */}
+          {/* SCROLLABLE MENU ITEMS */}
 
           <ScrollView
             className="flex-1"
@@ -373,15 +340,13 @@ const SideMenu = ({
               paddingBottom: 30,
             }}
             showsVerticalScrollIndicator={false}
-            bounces={true}
-            nestedScrollEnabled={true}
+            bounces
+            nestedScrollEnabled
           >
-            {items.map((item) => (
+            {visibleMenuItems.map((item) => (
               <Pressable
                 key={item.label}
-                onPress={() =>
-                  handleMenuPress(item)
-                }
+                onPress={() => handleMenuPress(item)}
                 accessibilityRole="button"
                 accessibilityLabel={item.label}
                 style={({ pressed }) => ({
@@ -415,9 +380,7 @@ const SideMenu = ({
 
                 <Text
                   className="ml-3 flex-1 text-sm font-semibold"
-                  style={{
-                    color: theme.text,
-                  }}
+                  style={{ color: theme.text }}
                   numberOfLines={2}
                 >
                   {item.label}
@@ -436,16 +399,14 @@ const SideMenu = ({
         </Animated.View>
       ) : null}
 
-      {/* ======================================================
-          LOGIN MODAL
-          ====================================================== */}
+      {/* LOGIN MODAL */}
 
       <LoginModal
-        visible={loginVisible}
-        onClose={() =>
-          setLoginVisible(false)
-        }
+        visible={loginVisible && !isLoggedIn}
+        onClose={() => setLoginVisible(false)}
         onRegister={() => {
+          if (isLoggedIn) return;
+
           setLoginVisible(false);
 
           setTimeout(() => {
@@ -454,16 +415,14 @@ const SideMenu = ({
         }}
       />
 
-      {/* ======================================================
-          REGISTER MODAL
-          ====================================================== */}
+      {/* REGISTER MODAL */}
 
       <RegisterModal
-        visible={registerVisible}
-        onClose={() =>
-          setRegisterVisible(false)
-        }
+        visible={registerVisible && !isLoggedIn}
+        onClose={() => setRegisterVisible(false)}
         onSignIn={() => {
+          if (isLoggedIn) return;
+
           setRegisterVisible(false);
 
           setTimeout(() => {

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Tabs, useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -32,52 +33,37 @@ export default function TabLayout() {
 
         tabBarStyle: {
           backgroundColor: isDark ? "#171717" : "#ffffff",
-
-          borderTopColor: isDark
-            ? "#2a2a2a"
-            : "#e5e5e5",
-
+          borderTopColor: isDark ? "#2a2a2a" : "#e5e5e5",
           borderTopWidth: 1,
-
           height: 70 + insets.bottom,
-
           paddingTop: 5,
           paddingBottom: 8 + insets.bottom,
-
           elevation: 0,
         },
       }}
     >
-      {/* HOME */}
       <Tabs.Screen
         name="home"
         options={{
           title: "Home",
-
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? "home" : "home-outline"}
-              size={22}
+              size={size}
               color={color}
             />
           ),
         }}
       />
 
-      {/* PROPERTIES */}
       <Tabs.Screen
         name="properties"
         options={{
           title: "Properties",
-
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={
-                focused
-                  ? "business"
-                  : "business-outline"
-              }
-              size={22}
+              name={focused ? "business" : "business-outline"}
+              size={size}
               color={color}
             />
           ),
@@ -85,26 +71,19 @@ export default function TabLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-
             router.replace("/(tabs)/properties");
           },
         }}
       />
 
-      {/* AGENTS */}
       <Tabs.Screen
         name="agents"
         options={{
           title: "Agents",
-
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={
-                focused
-                  ? "people"
-                  : "people-outline"
-              }
-              size={23}
+              name={focused ? "people" : "people-outline"}
+              size={size}
               color={color}
             />
           ),
@@ -112,46 +91,37 @@ export default function TabLayout() {
         listeners={{
           tabPress: (event) => {
             event.preventDefault();
-
             router.replace("/(tabs)/agents");
           },
         }}
       />
 
-      {/* PAYMENTS */}
       <Tabs.Screen
         name="payments"
         options={{
           title: "Payments",
-
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={
-                focused
-                  ? "card"
-                  : "card-outline"
-              }
-              size={24}
+              name={focused ? "card" : "card-outline"}
+              size={size}
               color={color}
             />
           ),
         }}
       />
 
-      {/* OTHERS */}
       <Tabs.Screen
         name="others"
         options={{
           title: "Others",
-
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={
                 focused
-                  ? "ellipsis-horizontal"
-                  : "ellipsis-horizontal-outline"
+                  ? "ellipsis-horizontal-circle"
+                  : "ellipsis-horizontal-circle-outline"
               }
-              size={24}
+              size={size}
               color={color}
             />
           ),
