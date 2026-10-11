@@ -1,3 +1,4 @@
+
 import {
   DarkTheme,
   DefaultTheme,
@@ -87,8 +88,7 @@ function GlobalMenuButton({
 }: {
   onPress: () => void;
 }) {
-  const { isDark } =
-    useTheme();
+  const { isDark } = useTheme();
 
   return (
     <Pressable
@@ -129,8 +129,7 @@ function GlobalAuthButton({
   isLoggedIn: boolean;
   firstLetter?: string;
 }) {
-  const { isDark } =
-    useTheme();
+  const { isDark } = useTheme();
 
   return (
     <Pressable
@@ -156,8 +155,7 @@ function GlobalAuthButton({
         }
       `}
     >
-      {isLoggedIn &&
-      firstLetter ? (
+      {isLoggedIn && firstLetter ? (
         <Text
           className={`
             text-sm
@@ -190,6 +188,9 @@ function GlobalAuthButton({
   );
 }
 
+
+
+
 /* ============================================================
    GLOBAL HEADER
    ============================================================ */
@@ -205,14 +206,13 @@ function GlobalHeader({
   isLoggedIn: boolean;
   firstLetter?: string;
 }) {
-  const { isDark } =
-    useTheme();
+  const { isDark } = useTheme();
 
   return (
     <View
       className={`
         absolute
-        left-0
+        left-3
         right-0
         top-0
         z-50
@@ -220,7 +220,8 @@ function GlobalHeader({
         flex-row
         items-center
         border-b
-        px-5
+        pl-5
+        pr-2
         pt-[38px]
         ${
           isDark
@@ -230,24 +231,14 @@ function GlobalHeader({
       `}
     >
       {/* ======================================================
-          LEFT - MENU
+          LEFT - TITLE
           ====================================================== */}
 
-      <View className="w-[20%] items-start justify-center">
-        <GlobalMenuButton
-          onPress={onMenuPress}
-        />
-      </View>
-
-      {/* ======================================================
-          CENTER - TITLE
-          ====================================================== */}
-
-      <View className="flex-1 items-center justify-center">
+      <View className="flex-1 items-start justify-center">
         <Text
           numberOfLines={1}
           className="
-            text-center
+            text-left
             text-xl
             font-bold
             text-red-500
@@ -258,16 +249,20 @@ function GlobalHeader({
       </View>
 
       {/* ======================================================
-          RIGHT - THEME + AUTH
+          RIGHT - THEME + AUTH + THREE DOTS
           ====================================================== */}
 
-      <View className="w-[25%] flex-row items-center justify-end gap-4">
+      <View className="flex-row items-center justify-end gap-4">
         <ThemeToggleButton />
 
         <GlobalAuthButton
           onPress={onAuthPress}
           isLoggedIn={isLoggedIn}
           firstLetter={firstLetter}
+        />
+
+        <GlobalMenuButton
+          onPress={onMenuPress}
         />
       </View>
     </View>
@@ -289,8 +284,7 @@ function AccountDropdown({
   onLogout: () => void;
   onClose: () => void;
 }) {
-  const { isDark } =
-    useTheme();
+  const { isDark } = useTheme();
 
   if (!visible) {
     return null;
@@ -447,8 +441,7 @@ function AuthDropdown({
   onRegister: () => void;
   onClose: () => void;
 }) {
-  const { isDark } =
-    useTheme();
+  const { isDark } = useTheme();
 
   if (!visible) {
     return null;
@@ -647,8 +640,7 @@ function RootContent() {
     logout,
   } = useAuth();
 
-  const router =
-    useRouter();
+  const router = useRouter();
 
   const [
     menuVisible,
@@ -680,8 +672,7 @@ function RootContent() {
      ========================================================== */
 
   const firstLetter =
-    isLoggedIn &&
-    user?.name
+    isLoggedIn && user?.name
       ? String(user.name)
           .trim()
           .charAt(0)
@@ -690,126 +681,111 @@ function RootContent() {
 
   /* ==========================================================
      AUTH BUTTON
-
-     LOGGED OUT:
-     Open Login/Register dropdown.
-
-     LOGGED IN:
-     Open Profile/Logout dropdown.
      ========================================================== */
 
-  const handleAuthPress =
-    () => {
-      if (isLoggedIn) {
-        setAuthDropdownVisible(false);
+  const handleAuthPress = () => {
+    if (isLoggedIn) {
+      setAuthDropdownVisible(false);
 
-        setAccountMenuVisible(
-          (visible) => !visible,
-        );
-
-        return;
-      }
-
-      setAccountMenuVisible(false);
-
-      setAuthDropdownVisible(
+      setAccountMenuVisible(
         (visible) => !visible,
       );
-    };
+
+      return;
+    }
+
+    setAccountMenuVisible(false);
+
+    setAuthDropdownVisible(
+      (visible) => !visible,
+    );
+  };
 
   /* ==========================================================
      LOGIN FROM LOGGED-OUT DROPDOWN
      ========================================================== */
 
-  const handleOpenLogin =
-    () => {
-      setAuthDropdownVisible(false);
-      setLoginVisible(true);
-    };
+  const handleOpenLogin = () => {
+    setAuthDropdownVisible(false);
+    setLoginVisible(true);
+  };
 
   /* ==========================================================
      REGISTER FROM LOGGED-OUT DROPDOWN
      ========================================================== */
 
-  const handleOpenRegister =
-    () => {
-      setAuthDropdownVisible(false);
-      setRegisterVisible(true);
-    };
+  const handleOpenRegister = () => {
+    setAuthDropdownVisible(false);
+    setRegisterVisible(true);
+  };
 
   /* ==========================================================
      PROFILE
      ========================================================== */
 
-  const handleProfile =
-    () => {
-      setAccountMenuVisible(false);
+  const handleProfile = () => {
+    setAccountMenuVisible(false);
 
-      router.push(
-        "/others/profile/profile",
-      );
-    };
+    router.push(
+      "/others/profile/profile",
+    );
+  };
 
   /* ==========================================================
      LOGOUT
      ========================================================== */
 
-  const handleLogout =
-    async () => {
-      try {
-        setAccountMenuVisible(false);
-        setAuthDropdownVisible(false);
-        setMenuVisible(false);
-        setLoginVisible(false);
-        setRegisterVisible(false);
+  const handleLogout = async () => {
+    try {
+      setAccountMenuVisible(false);
+      setAuthDropdownVisible(false);
+      setMenuVisible(false);
+      setLoginVisible(false);
+      setRegisterVisible(false);
 
-        await logout();
+      await logout();
 
-        router.replace(
-          "/(tabs)/home",
-        );
-      } catch (error) {
-        console.error(
-          "Logout failed:",
-          error,
-        );
+      router.replace(
+        "/(tabs)/home",
+      );
+    } catch (error) {
+      console.error(
+        "Logout failed:",
+        error,
+      );
 
-        setAccountMenuVisible(false);
-        setAuthDropdownVisible(false);
-        setMenuVisible(false);
-      }
-    };
+      setAccountMenuVisible(false);
+      setAuthDropdownVisible(false);
+      setMenuVisible(false);
+    }
+  };
 
   /* ==========================================================
      LOGIN SUCCESS
      ========================================================== */
 
-  const handleLoginSuccess =
-    (
-      _email: string,
-      _response: Record<
-        string,
-        unknown
-      >,
-    ) => {
-      /*
-       * AuthContext has already updated
-       * isLoggedIn and user.
-       *
-       * The firstLetter value above
-       * automatically updates from user.name.
-       */
-      setLoginVisible(false);
-    };
+  const handleLoginSuccess = (
+    _email: string,
+    _response: Record<string, unknown>,
+  ) => {
+    /*
+     * AuthContext has already updated
+     * isLoggedIn and user.
+     *
+     * The firstLetter value above
+     * automatically updates from user.name.
+     */
+
+    setLoginVisible(false);
+  };
 
   /* ==========================================================
      REGISTER CLOSE
      ========================================================== */
 
-  const handleRegisterClose =
-    () => {
-      setRegisterVisible(false);
-    };
+  const handleRegisterClose = () => {
+    setRegisterVisible(false);
+  };
 
   return (
     <ThemeProvider
@@ -819,32 +795,22 @@ function RootContent() {
               ...DarkTheme,
               colors: {
                 ...DarkTheme.colors,
-                background:
-                  theme.background,
-                card:
-                  theme.card,
-                text:
-                  theme.text,
-                border:
-                  theme.border,
-                primary:
-                  theme.accent,
+                background: theme.background,
+                card: theme.card,
+                text: theme.text,
+                border: theme.border,
+                primary: theme.accent,
               },
             }
           : {
               ...DefaultTheme,
               colors: {
                 ...DefaultTheme.colors,
-                background:
-                  theme.background,
-                card:
-                  theme.card,
-                text:
-                  theme.text,
-                border:
-                  theme.border,
-                primary:
-                  theme.accent,
+                background: theme.background,
+                card: theme.card,
+                text: theme.text,
+                border: theme.border,
+                primary: theme.accent,
               },
             }
       }
@@ -870,9 +836,7 @@ function RootContent() {
             setAuthDropdownVisible(false);
             setMenuVisible(true);
           }}
-          onAuthPress={
-            handleAuthPress
-          }
+          onAuthPress={handleAuthPress}
           isLoggedIn={isLoggedIn}
           firstLetter={firstLetter}
         />
@@ -899,16 +863,10 @@ function RootContent() {
             isLoggedIn &&
             accountMenuVisible
           }
-          onProfile={
-            handleProfile
-          }
-          onLogout={
-            handleLogout
-          }
+          onProfile={handleProfile}
+          onLogout={handleLogout}
           onClose={() =>
-            setAccountMenuVisible(
-              false,
-            )
+            setAccountMenuVisible(false)
           }
         />
 
@@ -921,16 +879,10 @@ function RootContent() {
             !isLoggedIn &&
             authDropdownVisible
           }
-          onLogin={
-            handleOpenLogin
-          }
-          onRegister={
-            handleOpenRegister
-          }
+          onLogin={handleOpenLogin}
+          onRegister={handleOpenRegister}
           onClose={() =>
-            setAuthDropdownVisible(
-              false,
-            )
+            setAuthDropdownVisible(false)
           }
         />
 
@@ -954,9 +906,7 @@ function RootContent() {
           onClose={() =>
             setLoginVisible(false)
           }
-          onLogin={
-            handleLoginSuccess
-          }
+          onLogin={handleLoginSuccess}
           onRegister={() => {
             setLoginVisible(false);
             setRegisterVisible(true);
@@ -969,9 +919,7 @@ function RootContent() {
 
         <RegisterModal
           visible={registerVisible}
-          onClose={
-            handleRegisterClose
-          }
+          onClose={handleRegisterClose}
         />
 
         {/* ====================================================

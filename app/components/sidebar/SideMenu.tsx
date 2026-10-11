@@ -65,6 +65,12 @@ const DEFAULT_MENU_ITEMS: SideMenuItem[] = [
     icon: "search-circle-outline",
     route: "/special-property-request",
   },
+
+  {
+    label: "Payment Plans",
+    icon: "card-outline",
+    route: "/payments",
+  },
   {
     label: "Blogs",
     icon: "newspaper-outline",
@@ -100,8 +106,9 @@ const SideMenu = ({
      ANIMATIONS
      ========================================================== */
 
+  // Positive value positions the drawer off-screen to the right.
   const slideAnim = useRef(
-    new Animated.Value(-MENU_WIDTH),
+    new Animated.Value(MENU_WIDTH),
   ).current;
 
   const backdropAnim = useRef(
@@ -114,7 +121,7 @@ const SideMenu = ({
 
   useEffect(() => {
     if (visible) {
-      slideAnim.setValue(-MENU_WIDTH);
+      slideAnim.setValue(MENU_WIDTH);
       backdropAnim.setValue(0);
 
       Animated.parallel([
@@ -141,7 +148,7 @@ const SideMenu = ({
   const closeMenu = () => {
     Animated.parallel([
       Animated.timing(slideAnim, {
-        toValue: -MENU_WIDTH,
+        toValue: MENU_WIDTH,
         duration: 240,
         easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
@@ -271,13 +278,13 @@ const SideMenu = ({
         />
       ) : null}
 
-      {/* SLIDING DRAWER */}
+      {/* SLIDING DRAWER — FROM THE RIGHT */}
 
       {visible ? (
         <Animated.View
           style={{
             position: "absolute",
-            left: 0,
+            right: 0,
             top: 0,
             bottom: 0,
             width: MENU_WIDTH,
