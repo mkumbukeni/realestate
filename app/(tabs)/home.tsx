@@ -1,14 +1,8 @@
 
-import React, {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   Image,
   Pressable,
   RefreshControl,
@@ -29,19 +23,13 @@ import RegisterModal from "@/app/components/auth/RegisterModal";
 import NewsletterSubscribeModal from "@/app/components/newsletter/NewsletterSubscribeModal";
 import { useAuth } from "@/app/components/auth/AuthContext";
 
-import {
-  type PropertyStatusType,
-} from "@/app/components/properties/PropertyCard";
+import { type PropertyStatusType } from "@/app/components/properties/PropertyCard";
 import AgentCard from "@/app/components/agents/AgentCard";
 import AutoPropertySlider from "@/app/components/properties/AutoPropertySlider";
+import MotivationalMessage from "@/app/components/home/MotivationalMessage";
 
-import {
-  type Property,
-} from "@/app/types/properties/property";
-
-import {
-  type Agent,
-} from "@/app/types/agents/agent";
+import { type Property } from "@/app/types/properties/property";
+import { type Agent } from "@/app/types/agents/agent";
 
 import { fetchAgents } from "@/app/services/agentApi";
 
@@ -92,19 +80,13 @@ function PropertySection({
     const sectionBottom = sectionTop + sectionHeight;
 
     return sectionBottom > 0 && sectionTop < viewportHeight;
-  }, [
-    sectionY,
-    sectionHeight,
-    parentScrollY,
-    viewportHeight,
-  ]);
+  }, [sectionY, sectionHeight, parentScrollY, viewportHeight]);
 
   return (
     <View
       className="mb-10"
       onLayout={(event) => {
         const { y, height } = event.nativeEvent.layout;
-
         setSectionY(y);
         setSectionHeight(height);
       }}
@@ -112,7 +94,6 @@ function PropertySection({
       <View className="mb-4 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
-
           <Text
             className={
               isDark
@@ -141,7 +122,6 @@ function PropertySection({
           }
         >
           <ActivityIndicator size="large" color="#ef4444" />
-
           <Text
             className={
               isDark
@@ -165,7 +145,6 @@ function PropertySection({
             size={44}
             color={isDark ? "#444" : "#9ca3af"}
           />
-
           <Text
             className={
               isDark
@@ -175,7 +154,6 @@ function PropertySection({
           >
             No {title.toLowerCase()} available
           </Text>
-
           <Text
             className={
               isDark
@@ -204,12 +182,7 @@ function PropertySection({
             <Text className="mr-2 text-base font-bold text-white">
               View All {title}
             </Text>
-
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color="#fff"
-            />
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
           </Pressable>
         </>
       )}
@@ -257,26 +230,19 @@ function NearbyPropertySection({
     const sectionBottom = sectionTop + sectionHeight;
 
     return sectionBottom > 0 && sectionTop < viewportHeight;
-  }, [
-    sectionY,
-    sectionHeight,
-    parentScrollY,
-    viewportHeight,
-  ]);
+  }, [sectionY, sectionHeight, parentScrollY, viewportHeight]);
 
   return (
     <View
       className="mb-10"
       onLayout={(event) => {
         const { y, height } = event.nativeEvent.layout;
-
         setSectionY(y);
         setSectionHeight(height);
       }}
     >
       <View className="mb-4 flex-row items-center">
         <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
-
         <View>
           <Text
             className={
@@ -287,7 +253,6 @@ function NearbyPropertySection({
           >
             Properties in My Location
           </Text>
-
           <Text
             className={
               isDark
@@ -306,15 +271,12 @@ function NearbyPropertySection({
         accessibilityRole="button"
         accessibilityLabel="Use my location to find nearby properties"
         className={`mb-4 w-full flex-row items-center justify-center rounded-xl px-5 py-4 ${
-          loadingNearby
-            ? "bg-red-900"
-            : "bg-red-600 active:bg-red-700"
+          loadingNearby ? "bg-red-900" : "bg-red-600 active:bg-red-700"
         }`}
       >
         {loadingNearby ? (
           <>
             <ActivityIndicator size="small" color="#fff" />
-
             <Text className="ml-3 text-base font-bold text-white">
               Finding Properties...
             </Text>
@@ -322,7 +284,6 @@ function NearbyPropertySection({
         ) : (
           <>
             <Ionicons name="location" size={21} color="#fff" />
-
             <Text className="ml-2 text-base font-bold text-white">
               Use My Location
             </Text>
@@ -343,7 +304,6 @@ function NearbyPropertySection({
             size={44}
             color={isDark ? "#555" : "#9ca3af"}
           />
-
           <Text
             className={
               isDark
@@ -353,7 +313,6 @@ function NearbyPropertySection({
           >
             Find properties near you
           </Text>
-
           <Text
             className={
               isDark
@@ -376,7 +335,6 @@ function NearbyPropertySection({
           }
         >
           <ActivityIndicator size="large" color="#ef4444" />
-
           <Text
             className={
               isDark
@@ -404,7 +362,6 @@ function NearbyPropertySection({
               size={44}
               color={isDark ? "#444" : "#9ca3af"}
             />
-
             <Text
               className={
                 isDark
@@ -414,7 +371,6 @@ function NearbyPropertySection({
             >
               No nearby properties found
             </Text>
-
             <Text
               className={
                 isDark
@@ -445,312 +401,10 @@ function NearbyPropertySection({
             <Text className="mr-2 text-base font-bold text-white">
               View All Properties
             </Text>
-
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color="#fff"
-            />
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
           </Pressable>
         </>
       )}
-    </View>
-  );
-}
-
-/* ============================================================
-   RANDOM MOTIVATIONAL MESSAGES AND ANIMATIONS
-   ============================================================ */
-
-const MOTIVATIONAL_MESSAGES = [
-  "Find a home in a country you love.",
-  "Your dream home is closer than you think.",
-  "Discover a place where life feels right.",
-  "Your next chapter starts with the right property.",
-  "Find your place. Build your future.",
-  "Every great journey begins at home.",
-  "A better tomorrow begins with the right home.",
-  "Discover a place to call your own.",
-  "Your perfect property could be waiting for you.",
-  "Make room for your next big dream.",
-  "Find a space that matches your ambition.",
-  "Great memories start with a place called home.",
-  "Explore possibilities. Find your future.",
-  "Your next investment could start right here.",
-  "There is a place for every dream.",
-  "Find your dream home with Real Estate Africa.",
-  "Real Estate Africa — where your next chapter begins.",
-  "Discover more. Dream bigger. Choose Real Estate Africa.",
-  "Real Estate Africa: Your home, your future.",
-  "Your property journey starts with Real Estate Africa.",
-  "Find the right property with Real Estate Africa.",
-  "Real Estate Africa — connecting you to your next home.",
-  "Build your future with Real Estate Africa.",
-];
-
-type MessageAnimation = "fade" | "slide" | "zoom" | "bounce";
-
-function MotivationalMessage() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme !== "light";
-
-  const [messageIndex, setMessageIndex] = useState(() =>
-    Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)
-  );
-
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateX = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const previousMessageIndex = useRef(messageIndex);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isMounted = useRef(true);
-
-  useEffect(() => {
-    isMounted.current = true;
-
-    const getRandomMessageIndex = () => {
-      if (MOTIVATIONAL_MESSAGES.length < 2) {
-        return 0;
-      }
-
-      let nextIndex = previousMessageIndex.current;
-
-      while (nextIndex === previousMessageIndex.current) {
-        nextIndex = Math.floor(
-          Math.random() * MOTIVATIONAL_MESSAGES.length
-        );
-      }
-
-      previousMessageIndex.current = nextIndex;
-      return nextIndex;
-    };
-
-    const getRandomAnimation = (): MessageAnimation => {
-      const animations: MessageAnimation[] = [
-        "fade",
-        "slide",
-        "zoom",
-        "bounce",
-      ];
-
-      return animations[
-        Math.floor(Math.random() * animations.length)
-      ];
-    };
-
-    const resetValues = (type: MessageAnimation) => {
-      opacity.setValue(0);
-      translateX.setValue(0);
-      translateY.setValue(0);
-      scale.setValue(1);
-
-      switch (type) {
-        case "fade":
-          translateY.setValue(10);
-          break;
-        case "slide":
-          translateX.setValue(Math.random() < 0.5 ? -55 : 55);
-          break;
-        case "zoom":
-          scale.setValue(0.7);
-          break;
-        case "bounce":
-          translateY.setValue(28);
-          scale.setValue(0.85);
-          break;
-      }
-    };
-
-    const animateMessage = (type: MessageAnimation) => {
-      if (!isMounted.current) {
-        return;
-      }
-
-      resetValues(type);
-
-      let entrance: Animated.CompositeAnimation;
-
-      switch (type) {
-        case "fade":
-          entrance = Animated.parallel([
-            Animated.timing(opacity, {
-              toValue: 1,
-              duration: 700,
-              useNativeDriver: true,
-            }),
-            Animated.timing(translateY, {
-              toValue: 0,
-              duration: 700,
-              useNativeDriver: true,
-            }),
-          ]);
-          break;
-
-        case "slide":
-          entrance = Animated.parallel([
-            Animated.timing(opacity, {
-              toValue: 1,
-              duration: 550,
-              useNativeDriver: true,
-            }),
-            Animated.spring(translateX, {
-              toValue: 0,
-              damping: 15,
-              stiffness: 115,
-              mass: 0.8,
-              useNativeDriver: true,
-            }),
-          ]);
-          break;
-
-        case "zoom":
-          entrance = Animated.parallel([
-            Animated.timing(opacity, {
-              toValue: 1,
-              duration: 600,
-              useNativeDriver: true,
-            }),
-            Animated.spring(scale, {
-              toValue: 1,
-              damping: 12,
-              stiffness: 120,
-              mass: 0.8,
-              useNativeDriver: true,
-            }),
-          ]);
-          break;
-
-        case "bounce":
-          entrance = Animated.parallel([
-            Animated.timing(opacity, {
-              toValue: 1,
-              duration: 450,
-              useNativeDriver: true,
-            }),
-            Animated.spring(translateY, {
-              toValue: 0,
-              damping: 7,
-              stiffness: 140,
-              mass: 0.8,
-              useNativeDriver: true,
-            }),
-            Animated.spring(scale, {
-              toValue: 1,
-              damping: 7,
-              stiffness: 140,
-              mass: 0.8,
-              useNativeDriver: true,
-            }),
-          ]);
-          break;
-      }
-
-      entrance.start(({ finished }) => {
-        if (!finished || !isMounted.current) {
-          return;
-        }
-
-        timeoutRef.current = setTimeout(() => {
-          if (!isMounted.current) {
-            return;
-          }
-
-          Animated.timing(opacity, {
-            toValue: 0,
-            duration: 350,
-            useNativeDriver: true,
-          }).start(({ finished: fadeFinished }) => {
-            if (!fadeFinished || !isMounted.current) {
-              return;
-            }
-
-            const nextIndex = getRandomMessageIndex();
-            setMessageIndex(nextIndex);
-
-            timeoutRef.current = setTimeout(() => {
-              if (isMounted.current) {
-                animateMessage(getRandomAnimation());
-              }
-            }, 100);
-          });
-        }, 2600);
-      });
-    };
-
-    animateMessage(getRandomAnimation());
-
-    return () => {
-      isMounted.current = false;
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-
-      opacity.stopAnimation();
-      translateX.stopAnimation();
-      translateY.stopAnimation();
-      scale.stopAnimation();
-    };
-  }, [opacity, translateX, translateY, scale]);
-
-  const message = MOTIVATIONAL_MESSAGES[messageIndex];
-  const companyName = "Real Estate Africa";
-  const companyNameIndex = message.indexOf(companyName);
-
-  return (
-    <View
-      className={
-        isDark
-          ? "mb-7 overflow-hidden rounded-2xl border border-none bg-transparent px-5 py-6"
-          : "mb-7 overflow-hidden rounded-2xl border border-transparent bg-transparent px-5 py-6"
-      }
-    >
-      <View className="mb-3 flex-row items-center">
-        <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-red-600">
-          <Ionicons name="heart" size={16} color="#ffffff" />
-        </View>
-
-        <Text className="text-xs font-bold uppercase tracking-[2px] text-red-500">
-          Your next chapter
-        </Text>
-      </View>
-
-      <Animated.View
-        style={{
-          opacity,
-          transform: [
-            { translateX },
-            { translateY },
-            { scale },
-          ],
-          minHeight: 84,
-          justifyContent: "center",
-        }}
-      >
-        <Text
-          accessibilityLiveRegion="polite"
-          className={
-            isDark
-              ? "text-2xl font-bold leading-9 text-white"
-              : "text-2xl font-bold leading-9 text-gray-900"
-          }
-        >
-          {companyNameIndex === -1 ? (
-            message
-          ) : (
-            <>
-              {message.slice(0, companyNameIndex)}
-              <Text style={{ color: "#ef4444" }}>
-                {companyName}
-              </Text>
-              {message.slice(companyNameIndex + companyName.length)}
-            </>
-          )}
-        </Text>
-      </Animated.View>
     </View>
   );
 }
@@ -774,8 +428,7 @@ export default function HomeScreen() {
 
   // NEWSLETTER SUBSCRIPTION MODAL STATE
   const [newsletterVisible, setNewsletterVisible] = useState(false);
-  const [pendingProperty, setPendingProperty] =
-    useState<Property | null>(null);
+  const [pendingProperty, setPendingProperty] = useState<Property | null>(null);
 
   // GENERAL STATE
   const [showWelcome, setShowWelcome] = useState(true);
@@ -789,12 +442,9 @@ export default function HomeScreen() {
 
   // PROPERTY STATE
   const [properties, setProperties] = useState<Property[]>([]);
-  const [featuredProperties, setFeaturedProperties] =
-    useState<Property[]>([]);
-  const [openHouseProperties, setOpenHouseProperties] =
-    useState<Property[]>([]);
-  const [mostViewedProperties, setMostViewedProperties] =
-    useState<Property[]>([]);
+  const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
+  const [openHouseProperties, setOpenHouseProperties] = useState<Property[]>([]);
+  const [mostViewedProperties, setMostViewedProperties] = useState<Property[]>([]);
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
 
   // LOADING STATE
@@ -845,7 +495,6 @@ export default function HomeScreen() {
 
       if (propertiesResult.status === "fulfilled") {
         const result = propertiesResult.value;
-
         setProperties(result);
 
         const openHouses = result.filter(
@@ -854,10 +503,7 @@ export default function HomeScreen() {
 
         setOpenHouseProperties(openHouses);
       } else {
-        console.error(
-          "Failed to load properties:",
-          propertiesResult.reason
-        );
+        console.error("Failed to load properties:", propertiesResult.reason);
       }
 
       // FEATURED
@@ -890,10 +536,7 @@ export default function HomeScreen() {
       if (agentsResult.status === "fulfilled") {
         setAgents(agentsResult.value);
       } else {
-        console.error(
-          "Failed to load home agents:",
-          agentsResult.reason
-        );
+        console.error("Failed to load home agents:", agentsResult.reason);
       }
     } catch (error) {
       console.error("Failed to refresh home data:", error);
@@ -927,8 +570,7 @@ export default function HomeScreen() {
 
     if (nearbyRequested) {
       try {
-        const servicesEnabled =
-          await Location.hasServicesEnabledAsync();
+        const servicesEnabled = await Location.hasServicesEnabledAsync();
 
         if (!servicesEnabled) {
           console.warn(
@@ -937,36 +579,25 @@ export default function HomeScreen() {
           return;
         }
 
-        const permission =
-          await Location.getForegroundPermissionsAsync();
+        const permission = await Location.getForegroundPermissionsAsync();
 
-        if (
-          permission.status !== Location.PermissionStatus.GRANTED
-        ) {
+        if (permission.status !== Location.PermissionStatus.GRANTED) {
           console.warn(
             "Location permission is not granted while refreshing nearby properties."
           );
           return;
         }
 
-        const currentLocation =
-          await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          });
+        const currentLocation = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
 
         const { latitude, longitude } = currentLocation.coords;
-
-        const result = await fetchNearbyProperties(
-          latitude,
-          longitude
-        );
+        const result = await fetchNearbyProperties(latitude, longitude);
 
         setNearbyProperties(result);
       } catch (error) {
-        console.error(
-          "Failed to refresh nearby properties:",
-          error
-        );
+        console.error("Failed to refresh nearby properties:", error);
       }
     }
   };
@@ -981,8 +612,7 @@ export default function HomeScreen() {
       setLoadingNearby(true);
       setNearbyRequested(true);
 
-      const servicesEnabled =
-        await Location.hasServicesEnabledAsync();
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
 
       if (!servicesEnabled) {
         setNearbyProperties([]);
@@ -995,12 +625,9 @@ export default function HomeScreen() {
         return;
       }
 
-      const permission =
-        await Location.requestForegroundPermissionsAsync();
+      const permission = await Location.requestForegroundPermissionsAsync();
 
-      if (
-        permission.status !== Location.PermissionStatus.GRANTED
-      ) {
+      if (permission.status !== Location.PermissionStatus.GRANTED) {
         setNearbyProperties([]);
 
         Alert.alert(
@@ -1011,25 +638,20 @@ export default function HomeScreen() {
         return;
       }
 
-      const currentLocation =
-        await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
 
       const { latitude, longitude } = currentLocation.coords;
 
       console.log("Current latitude:", latitude);
       console.log("Current longitude:", longitude);
 
-      const result = await fetchNearbyProperties(
-        latitude,
-        longitude
-      );
+      const result = await fetchNearbyProperties(latitude, longitude);
 
       setNearbyProperties(result);
     } catch (error) {
       console.error("Failed to load nearby properties:", error);
-
       setNearbyProperties([]);
 
       Alert.alert(
@@ -1046,9 +668,7 @@ export default function HomeScreen() {
     if (isLoggedIn) {
       router.push({
         pathname: "/(tabs)/properties/[id]",
-        params: {
-          id: property.id,
-        },
+        params: { id: property.id },
       });
 
       return;
@@ -1079,14 +699,11 @@ export default function HomeScreen() {
 
     if (pendingProperty) {
       const propertyToOpen = pendingProperty;
-
       setPendingProperty(null);
 
       router.push({
         pathname: "/(tabs)/properties/[id]",
-        params: {
-          id: propertyToOpen.id,
-        },
+        params: { id: propertyToOpen.id },
       });
     }
   };
@@ -1117,9 +734,7 @@ export default function HomeScreen() {
   const handleAgentPress = (agent: Agent) => {
     router.push({
       pathname: "/(tabs)/agents/[id]",
-      params: {
-        id: agent.id,
-      },
+      params: { id: agent.id },
     });
   };
 
@@ -1127,9 +742,7 @@ export default function HomeScreen() {
   const handleViewAllProperties = (title: string) => {
     router.push({
       pathname: "/(tabs)/properties",
-      params: {
-        category: title,
-      },
+      params: { category: title },
     });
   };
 
@@ -1137,11 +750,7 @@ export default function HomeScreen() {
   if (showWelcome) {
     return (
       <SafeAreaView
-        className={
-          isDark
-            ? "flex-1 bg-[#0d0d0d]"
-            : "flex-1 bg-white"
-        }
+        className={isDark ? "flex-1 bg-[#0d0d0d]" : "flex-1 bg-white"}
       >
         <StatusBar
           barStyle={isDark ? "light-content" : "dark-content"}
@@ -1150,9 +759,7 @@ export default function HomeScreen() {
 
         <View className="flex-1 items-center justify-center px-6">
           <Image
-            source={{
-              uri: "https://www.realestateafrica.mw/logo.png",
-            }}
+            source={{ uri: "https://www.realestateafrica.mw/logo.png" }}
             className="h-32 w-64"
             resizeMode="contain"
           />
@@ -1193,11 +800,7 @@ export default function HomeScreen() {
   // HOME
   return (
     <SafeAreaView
-      className={
-        isDark
-          ? "flex-1 bg-[#0d0d0d]"
-          : "flex-1 bg-gray-50"
-      }
+      className={isDark ? "flex-1 bg-[#0d0d0d]" : "flex-1 bg-gray-50"}
     >
       <StatusBar
         barStyle={isDark ? "light-content" : "dark-content"}
@@ -1245,9 +848,7 @@ export default function HomeScreen() {
             onRefresh={handleRefresh}
             tintColor="#ef4444"
             colors={["#ef4444"]}
-            progressBackgroundColor={
-              isDark ? "#171717" : "#ffffff"
-            }
+            progressBackgroundColor={isDark ? "#171717" : "#ffffff"}
           />
         }
         onScroll={(event) => {
@@ -1351,7 +952,6 @@ export default function HomeScreen() {
         <View className="mt-2">
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
-
             <Text
               className={
                 isDark
@@ -1366,7 +966,6 @@ export default function HomeScreen() {
           {loadingAgents ? (
             <View className="items-center py-10">
               <ActivityIndicator size="large" color="#ef4444" />
-
               <Text
                 className={
                   isDark
@@ -1390,7 +989,6 @@ export default function HomeScreen() {
                 size={48}
                 color={isDark ? "#444" : "#9ca3af"}
               />
-
               <Text
                 className={
                   isDark
@@ -1400,7 +998,6 @@ export default function HomeScreen() {
               >
                 No agents available
               </Text>
-
               <Text
                 className={
                   isDark
@@ -1431,12 +1028,7 @@ export default function HomeScreen() {
                 <Text className="mr-2 text-base font-bold text-white">
                   View All Agents
                 </Text>
-
-                <Ionicons
-                  name="arrow-forward"
-                  size={20}
-                  color="#fff"
-                />
+                <Ionicons name="arrow-forward" size={20} color="#fff" />
               </Pressable>
             </View>
           )}
@@ -1446,7 +1038,6 @@ export default function HomeScreen() {
         <View className="mt-10">
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
-
             <Text
               className={
                 isDark
@@ -1470,11 +1061,7 @@ export default function HomeScreen() {
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
-              <Ionicons
-                name="home-outline"
-                size={25}
-                color="#fff"
-              />
+              <Ionicons name="home-outline" size={25} color="#fff" />
             </View>
 
             <View className="flex-1">
@@ -1487,7 +1074,6 @@ export default function HomeScreen() {
               >
                 List Property
               </Text>
-
               <Text
                 className={
                   isDark
@@ -1499,11 +1085,7 @@ export default function HomeScreen() {
               </Text>
             </View>
 
-            <Ionicons
-              name="chevron-forward"
-              size={22}
-              color="#ef4444"
-            />
+            <Ionicons name="chevron-forward" size={22} color="#ef4444" />
           </Pressable>
 
           {/* SPECIAL PROPERTY REQUEST */}
@@ -1520,11 +1102,7 @@ export default function HomeScreen() {
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
-              <Ionicons
-                name="search-outline"
-                size={25}
-                color="#fff"
-              />
+              <Ionicons name="search-outline" size={25} color="#fff" />
             </View>
 
             <View className="flex-1">
@@ -1537,7 +1115,6 @@ export default function HomeScreen() {
               >
                 Special Property Request
               </Text>
-
               <Text
                 className={
                   isDark
@@ -1549,11 +1126,7 @@ export default function HomeScreen() {
               </Text>
             </View>
 
-            <Ionicons
-              name="chevron-forward"
-              size={22}
-              color="#ef4444"
-            />
+            <Ionicons name="chevron-forward" size={22} color="#ef4444" />
           </Pressable>
 
           {/* NEWSLETTER */}
@@ -1568,11 +1141,7 @@ export default function HomeScreen() {
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
-              <Ionicons
-                name="newspaper-outline"
-                size={25}
-                color="#fff"
-              />
+              <Ionicons name="newspaper-outline" size={25} color="#fff" />
             </View>
 
             <View className="flex-1">
@@ -1585,7 +1154,6 @@ export default function HomeScreen() {
               >
                 Subscribe to our newsletter
               </Text>
-
               <Text
                 className={
                   isDark
@@ -1597,11 +1165,7 @@ export default function HomeScreen() {
               </Text>
             </View>
 
-            <Ionicons
-              name="chevron-forward"
-              size={22}
-              color="#ef4444"
-            />
+            <Ionicons name="chevron-forward" size={22} color="#ef4444" />
           </Pressable>
         </View>
       </ScrollView>
