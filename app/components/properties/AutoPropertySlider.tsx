@@ -1,114 +1,109 @@
 
-import React, { useCallback, useEffect, useRef } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import {
-  Animated,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  ScrollView,
   View,
 } from "react-native";
 
 import PropertyCard, {
   type PropertyStatusType,
 } from "@/app/components/properties/PropertyCard";
-
 import type { Property } from "@/app/types/properties/property";
 
 interface AutoPropertySliderProps {
   properties: Property[];
   onPropertyPress: (property: Property) => void;
-  isVisible?: boolean;
   statusType?: PropertyStatusType;
+   isVisible?: boolean;
 }
 
 const CARD_WIDTH = 320;
 const CARD_GAP = 20;
-const CARD_INTERVAL = CARD_WIDTH + CARD_GAP;
 
-const WAIT_TIME = 5000;
-const MOVE_DURATION = 4500;
+// Slow automatic sliding.
+const SLIDE_STEP = 1;
+const SLIDE_INTERVAL = 40;
 
-export default function AutoPropertySlider({
+const AutoPropertySlider: React.FC<AutoPropertySliderProps> = ({
   properties,
   onPropertyPress,
   statusType,
-}: AutoPropertySliderProps) {
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const currentIndex = useRef(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+}) => {
+  const scrollRef = useRef<ScrollView>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const offsetRef = useRef(0);
   const isUserDragging = useRef(false);
 
+  // Only Featured Properties should slide automatically.
+  const shouldAutoSlide = statusType === "featured";
+
+  const maxOffset = Math.max(
+    0,
+    properties.length * (CARD_WIDTH + CARD_GAP) - CARD_GAP
+  );
+
   const clearTimer = useCallback(() => {
-    if (timer.current !== null) {
-      clearTimeout(timer.current);
-      timer.current = null;
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
   }, []);
-
-  const moveNext = useCallback(() => {
-    if (properties.length <= 1 || isUserDragging.current) {
-      return;
-    }
-
-    const nextIndex = currentIndex.current + 1;
-
-    if (nextIndex >= properties.length) {
-      currentIndex.current = 0;
-
-      Animated.timing(scrollX, {
-        toValue: 0,
-        duration: MOVE_DURATION,
-        useNativeDriver: false,
-      }).start();
-
-      return;
-    }
-
-    currentIndex.current = nextIndex;
-
-    Animated.timing(scrollX, {
-      toValue: nextIndex * CARD_INTERVAL,
-      duration: MOVE_DURATION,
-      useNativeDriver: false,
-    }).start();
-  }, [properties.length, scrollX]);
 
   const startAutoScroll = useCallback(() => {
     clearTimer();
 
-    if (properties.length <= 1) {
+    if (
+      !shouldAutoSlide ||
+      properties.length <= 1 ||
+      isUserDragging.current
+    ) {
       return;
     }
 
-    timer.current = setTimeout(() => {
-      if (!isUserDragging.current) {
-        moveNext();
+    timerRef.current = setTimeout(() => {
+      if (isUserDragging.current) {
+        return;
       }
 
+      // Return to the beginning when the end is reached.
+      if (offsetRef.current >= maxOffset) {
+        offsetRef.current = 0;
+
+        scrollRef.current?.scrollTo({
+          x: 0,
+          animated: false,
+        });
+
+        startAutoScroll();
+        return;
+      }
+
+      // Move slowly, one pixel at a time.
+      offsetRef.current = Math.min(
+        offsetRef.current + SLIDE_STEP,
+        maxOffset
+      );
+
+      scrollRef.current?.scrollTo({
+        x: offsetRef.current,
+        animated: false,
+      });
+
       startAutoScroll();
-    }, WAIT_TIME + MOVE_DURATION);
-  }, [clearTimer, moveNext, properties.length]);
-
-  useEffect(() => {
-    if (properties.length <= 1) {
-      scrollX.setValue(0);
-      return;
-    }
-
-    currentIndex.current = 0;
-    scrollX.setValue(0);
-
-    timer.current = setTimeout(() => {
-      moveNext();
-      startAutoScroll();
-    }, WAIT_TIME);
-
-    return clearTimer;
+    }, SLIDE_INTERVAL);
   }, [
-    properties.length,
-    scrollX,
-    moveNext,
-    startAutoScroll,
     clearTimer,
+    maxOffset,
+    properties.length,
+    shouldAutoSlide,
   ]);
 
   const handleScrollBeginDrag = useCallback(() => {
@@ -116,29 +111,62 @@ export default function AutoPropertySlider({
     clearTimer();
   }, [clearTimer]);
 
-  const handleMomentumScrollEnd = useCallback(
+  const handleScrollEndDrag = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const offset = event.nativeEvent.contentOffset.x;
-      const index = Math.round(offset / CARD_INTERVAL);
-
-      currentIndex.current = Math.max(
+      offsetRef.current = Math.max(
         0,
-        Math.min(index, properties.length - 1),
+        event.nativeEvent.contentOffset.x
       );
 
       isUserDragging.current = false;
-      startAutoScroll();
+
+      if (shouldAutoSlide) {
+        startAutoScroll();
+      }
     },
-    [properties.length, startAutoScroll],
+    [shouldAutoSlide, startAutoScroll]
   );
 
-  const handleScrollEndDrag = useCallback(() => {
-    isUserDragging.current = false;
-    startAutoScroll();
-  }, [startAutoScroll]);
+  const handleMomentumScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      offsetRef.current = Math.max(
+        0,
+        event.nativeEvent.contentOffset.x
+      );
+
+      if (shouldAutoSlide && !isUserDragging.current) {
+        startAutoScroll();
+      }
+    },
+    [shouldAutoSlide, startAutoScroll]
+  );
 
   useEffect(() => {
+    clearTimer();
+    offsetRef.current = 0;
+    isUserDragging.current = false;
+
+    scrollRef.current?.scrollTo({
+      x: 0,
+      animated: false,
+    });
+
+    if (shouldAutoSlide && properties.length > 1) {
+      startAutoScroll();
+    }
+
     return clearTimer;
+  }, [
+    clearTimer,
+    properties.length,
+    shouldAutoSlide,
+    startAutoScroll,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      clearTimer();
+    };
   }, [clearTimer]);
 
   if (properties.length === 0) {
@@ -146,37 +174,42 @@ export default function AutoPropertySlider({
   }
 
   return (
-    <Animated.ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      scrollEventThrottle={16}
-      directionalLockEnabled
-      decelerationRate="fast"
-      snapToInterval={CARD_INTERVAL}
-      snapToAlignment="start"
-      disableIntervalMomentum={false}
-      onScrollBeginDrag={handleScrollBeginDrag}
-      onScrollEndDrag={handleScrollEndDrag}
-      onMomentumScrollEnd={handleMomentumScrollEnd}
-      contentContainerStyle={{ paddingRight: 8 }}
-    >
-      {properties.map((property, index) => (
-        <View
-          key={`${property.id}-${index}`}
-          style={{
-            width: CARD_WIDTH,
-            marginRight:
-              index === properties.length - 1 ? 0 : CARD_GAP,
-          }}
-        >
-          <PropertyCard
-            property={property}
-            isFullWidth
-            statusType={statusType}
-            onPress={onPropertyPress}
-          />
-        </View>
-      ))}
-    </Animated.ScrollView>
+    <View className="w-full">
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        decelerationRate="normal"
+        onScrollBeginDrag={handleScrollBeginDrag}
+        onScrollEndDrag={handleScrollEndDrag}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: 8,
+        }}
+      >
+        {properties.map((property, index) => (
+          <View
+            key={`property-${String(property.id ?? "unknown")}-${index}`}
+            style={{
+              width: CARD_WIDTH,
+              marginRight:
+                index === properties.length - 1
+                  ? 0
+                  : CARD_GAP,
+            }}
+          >
+            <PropertyCard
+              property={property}
+              onPress={onPropertyPress}
+              statusType={statusType}
+            />
+          </View>
+        ))}
+      </ScrollView>
+    </View>
   );
-}
+};
+
+export default AutoPropertySlider;

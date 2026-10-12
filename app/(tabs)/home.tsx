@@ -2,11 +2,13 @@
 import React, {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   Pressable,
   RefreshControl,
@@ -27,29 +29,28 @@ import RegisterModal from "@/app/components/auth/RegisterModal";
 import NewsletterSubscribeModal from "@/app/components/newsletter/NewsletterSubscribeModal";
 import { useAuth } from "@/app/components/auth/AuthContext";
 
-import PropertyCard, {
+import {
   type PropertyStatusType,
 } from "@/app/components/properties/PropertyCard";
 import AgentCard from "@/app/components/agents/AgentCard";
 import AutoPropertySlider from "@/app/components/properties/AutoPropertySlider";
 
 import {
- 
   type Property,
 } from "@/app/types/properties/property";
 
 import {
- 
   type Agent,
 } from "@/app/types/agents/agent";
 
 import { fetchAgents } from "@/app/services/agentApi";
 
-
-import { fetchProperties,
+import {
+  fetchProperties,
   fetchFeaturedProperties,
   fetchMostViewedProperties,
-  fetchNearbyProperties} from "@/app/services/propertyApi"
+  fetchNearbyProperties,
+} from "@/app/services/propertyApi";
 
 /* ============================================================
    PROPERTY SECTION COMPONENT
@@ -108,8 +109,6 @@ function PropertySection({
         setSectionHeight(height);
       }}
     >
-      {/* SECTION HEADER */}
-
       <View className="mb-4 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
@@ -133,8 +132,6 @@ function PropertySection({
         />
       </View>
 
-      {/* LOADING */}
-
       {loading ? (
         <View
           className={
@@ -156,8 +153,6 @@ function PropertySection({
           </Text>
         </View>
       ) : sectionProperties.length === 0 ? (
-        /* EMPTY */
-
         <View
           className={
             isDark
@@ -279,8 +274,6 @@ function NearbyPropertySection({
         setSectionHeight(height);
       }}
     >
-      {/* SECTION HEADER */}
-
       <View className="mb-4 flex-row items-center">
         <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
 
@@ -306,8 +299,6 @@ function NearbyPropertySection({
           </Text>
         </View>
       </View>
-
-      {/* LOCATION BUTTON */}
 
       <Pressable
         onPress={onUseMyLocation}
@@ -338,8 +329,6 @@ function NearbyPropertySection({
           </>
         )}
       </Pressable>
-
-      {/* INITIAL STATE */}
 
       {!nearbyRequested && !loadingNearby && (
         <View
@@ -378,8 +367,6 @@ function NearbyPropertySection({
         </View>
       )}
 
-      {/* LOADING */}
-
       {loadingNearby && (
         <View
           className={
@@ -401,8 +388,6 @@ function NearbyPropertySection({
           </Text>
         </View>
       )}
-
-      {/* NO RESULTS */}
 
       {nearbyRequested &&
         !loadingNearby &&
@@ -443,15 +428,12 @@ function NearbyPropertySection({
           </View>
         )}
 
-      {/* RESULTS */}
-
       {!loadingNearby && nearbyProperties.length > 0 && (
         <>
           <AutoPropertySlider
             properties={nearbyProperties}
             onPropertyPress={onPropertyPress}
             isVisible={isVisible}
-            statusType="featured"
           />
 
           <Pressable
@@ -477,6 +459,303 @@ function NearbyPropertySection({
 }
 
 /* ============================================================
+   RANDOM MOTIVATIONAL MESSAGES AND ANIMATIONS
+   ============================================================ */
+
+const MOTIVATIONAL_MESSAGES = [
+  "Find a home in a country you love.",
+  "Your dream home is closer than you think.",
+  "Discover a place where life feels right.",
+  "Your next chapter starts with the right property.",
+  "Find your place. Build your future.",
+  "Every great journey begins at home.",
+  "A better tomorrow begins with the right home.",
+  "Discover a place to call your own.",
+  "Your perfect property could be waiting for you.",
+  "Make room for your next big dream.",
+  "Find a space that matches your ambition.",
+  "Great memories start with a place called home.",
+  "Explore possibilities. Find your future.",
+  "Your next investment could start right here.",
+  "There is a place for every dream.",
+  "Find your dream home with Real Estate Africa.",
+  "Real Estate Africa — where your next chapter begins.",
+  "Discover more. Dream bigger. Choose Real Estate Africa.",
+  "Real Estate Africa: Your home, your future.",
+  "Your property journey starts with Real Estate Africa.",
+  "Find the right property with Real Estate Africa.",
+  "Real Estate Africa — connecting you to your next home.",
+  "Build your future with Real Estate Africa.",
+];
+
+type MessageAnimation = "fade" | "slide" | "zoom" | "bounce";
+
+function MotivationalMessage() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme !== "light";
+
+  const [messageIndex, setMessageIndex] = useState(() =>
+    Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)
+  );
+
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const previousMessageIndex = useRef(messageIndex);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+
+    const getRandomMessageIndex = () => {
+      if (MOTIVATIONAL_MESSAGES.length < 2) {
+        return 0;
+      }
+
+      let nextIndex = previousMessageIndex.current;
+
+      while (nextIndex === previousMessageIndex.current) {
+        nextIndex = Math.floor(
+          Math.random() * MOTIVATIONAL_MESSAGES.length
+        );
+      }
+
+      previousMessageIndex.current = nextIndex;
+      return nextIndex;
+    };
+
+    const getRandomAnimation = (): MessageAnimation => {
+      const animations: MessageAnimation[] = [
+        "fade",
+        "slide",
+        "zoom",
+        "bounce",
+      ];
+
+      return animations[
+        Math.floor(Math.random() * animations.length)
+      ];
+    };
+
+    const resetValues = (type: MessageAnimation) => {
+      opacity.setValue(0);
+      translateX.setValue(0);
+      translateY.setValue(0);
+      scale.setValue(1);
+
+      switch (type) {
+        case "fade":
+          translateY.setValue(10);
+          break;
+        case "slide":
+          translateX.setValue(Math.random() < 0.5 ? -55 : 55);
+          break;
+        case "zoom":
+          scale.setValue(0.7);
+          break;
+        case "bounce":
+          translateY.setValue(28);
+          scale.setValue(0.85);
+          break;
+      }
+    };
+
+    const animateMessage = (type: MessageAnimation) => {
+      if (!isMounted.current) {
+        return;
+      }
+
+      resetValues(type);
+
+      let entrance: Animated.CompositeAnimation;
+
+      switch (type) {
+        case "fade":
+          entrance = Animated.parallel([
+            Animated.timing(opacity, {
+              toValue: 1,
+              duration: 700,
+              useNativeDriver: true,
+            }),
+            Animated.timing(translateY, {
+              toValue: 0,
+              duration: 700,
+              useNativeDriver: true,
+            }),
+          ]);
+          break;
+
+        case "slide":
+          entrance = Animated.parallel([
+            Animated.timing(opacity, {
+              toValue: 1,
+              duration: 550,
+              useNativeDriver: true,
+            }),
+            Animated.spring(translateX, {
+              toValue: 0,
+              damping: 15,
+              stiffness: 115,
+              mass: 0.8,
+              useNativeDriver: true,
+            }),
+          ]);
+          break;
+
+        case "zoom":
+          entrance = Animated.parallel([
+            Animated.timing(opacity, {
+              toValue: 1,
+              duration: 600,
+              useNativeDriver: true,
+            }),
+            Animated.spring(scale, {
+              toValue: 1,
+              damping: 12,
+              stiffness: 120,
+              mass: 0.8,
+              useNativeDriver: true,
+            }),
+          ]);
+          break;
+
+        case "bounce":
+          entrance = Animated.parallel([
+            Animated.timing(opacity, {
+              toValue: 1,
+              duration: 450,
+              useNativeDriver: true,
+            }),
+            Animated.spring(translateY, {
+              toValue: 0,
+              damping: 7,
+              stiffness: 140,
+              mass: 0.8,
+              useNativeDriver: true,
+            }),
+            Animated.spring(scale, {
+              toValue: 1,
+              damping: 7,
+              stiffness: 140,
+              mass: 0.8,
+              useNativeDriver: true,
+            }),
+          ]);
+          break;
+      }
+
+      entrance.start(({ finished }) => {
+        if (!finished || !isMounted.current) {
+          return;
+        }
+
+        timeoutRef.current = setTimeout(() => {
+          if (!isMounted.current) {
+            return;
+          }
+
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 350,
+            useNativeDriver: true,
+          }).start(({ finished: fadeFinished }) => {
+            if (!fadeFinished || !isMounted.current) {
+              return;
+            }
+
+            const nextIndex = getRandomMessageIndex();
+            setMessageIndex(nextIndex);
+
+            timeoutRef.current = setTimeout(() => {
+              if (isMounted.current) {
+                animateMessage(getRandomAnimation());
+              }
+            }, 100);
+          });
+        }, 2600);
+      });
+    };
+
+    animateMessage(getRandomAnimation());
+
+    return () => {
+      isMounted.current = false;
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      opacity.stopAnimation();
+      translateX.stopAnimation();
+      translateY.stopAnimation();
+      scale.stopAnimation();
+    };
+  }, [opacity, translateX, translateY, scale]);
+
+  const message = MOTIVATIONAL_MESSAGES[messageIndex];
+  const companyName = "Real Estate Africa";
+  const companyNameIndex = message.indexOf(companyName);
+
+  return (
+    <View
+      className={
+        isDark
+          ? "mb-7 overflow-hidden rounded-2xl border border-none bg-transparent px-5 py-6"
+          : "mb-7 overflow-hidden rounded-2xl border border-transparent bg-transparent px-5 py-6"
+      }
+    >
+      <View className="mb-3 flex-row items-center">
+        <View className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-red-600">
+          <Ionicons name="heart" size={16} color="#ffffff" />
+        </View>
+
+        <Text className="text-xs font-bold uppercase tracking-[2px] text-red-500">
+          Your next chapter
+        </Text>
+      </View>
+
+      <Animated.View
+        style={{
+          opacity,
+          transform: [
+            { translateX },
+            { translateY },
+            { scale },
+          ],
+          minHeight: 84,
+          justifyContent: "center",
+        }}
+      >
+        <Text
+          accessibilityLiveRegion="polite"
+          className={
+            isDark
+              ? "text-2xl font-bold leading-9 text-white"
+              : "text-2xl font-bold leading-9 text-gray-900"
+          }
+        >
+          {companyNameIndex === -1 ? (
+            message
+          ) : (
+            <>
+              {message.slice(0, companyNameIndex)}
+              <Text style={{ color: "#ef4444" }}>
+                {companyName}
+              </Text>
+              {message.slice(companyNameIndex + companyName.length)}
+            </>
+          )}
+        </Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+/* ============================================================
    HOME SCREEN
    ============================================================ */
 
@@ -488,45 +767,27 @@ export default function HomeScreen() {
 
   const { isLoggedIn } = useAuth();
 
-  // ============================================================
   // AUTHENTICATION STATE
-  // ============================================================
-
   const [authModalVisible, setAuthModalVisible] = useState(false);
   const [loginVisible, setLoginVisible] = useState(false);
   const [registerVisible, setRegisterVisible] = useState(false);
 
-  // ============================================================
   // NEWSLETTER SUBSCRIPTION MODAL STATE
-  // ============================================================
-
   const [newsletterVisible, setNewsletterVisible] = useState(false);
   const [pendingProperty, setPendingProperty] =
     useState<Property | null>(null);
 
-  // ============================================================
   // GENERAL STATE
-  // ============================================================
-
   const [showWelcome, setShowWelcome] = useState(true);
 
-  // ============================================================
   // REFRESH STATE
-  // ============================================================
-
   const [refreshing, setRefreshing] = useState(false);
 
-  // ============================================================
   // MAIN SCROLL POSITION
-  // ============================================================
-
   const [parentScrollY, setParentScrollY] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
 
-  // ============================================================
   // PROPERTY STATE
-  // ============================================================
-
   const [properties, setProperties] = useState<Property[]>([]);
   const [featuredProperties, setFeaturedProperties] =
     useState<Property[]>([]);
@@ -534,13 +795,9 @@ export default function HomeScreen() {
     useState<Property[]>([]);
   const [mostViewedProperties, setMostViewedProperties] =
     useState<Property[]>([]);
-  const [nearbyProperties, setNearbyProperties] =
-    useState<Property[]>([]);
+  const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
 
-  // ============================================================
   // LOADING STATE
-  // ============================================================
-
   const [loadingProperties, setLoadingProperties] = useState(true);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
   const [loadingOpenHouses, setLoadingOpenHouses] = useState(true);
@@ -548,17 +805,11 @@ export default function HomeScreen() {
   const [loadingNearby, setLoadingNearby] = useState(false);
   const [nearbyRequested, setNearbyRequested] = useState(false);
 
-  // ============================================================
   // AGENT STATE
-  // ============================================================
-
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(true);
 
-  // ============================================================
   // WELCOME SCREEN
-  // ============================================================
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowWelcome(false);
@@ -567,10 +818,7 @@ export default function HomeScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  // ============================================================
   // LOAD ALL HOME DATA
-  // ============================================================
-
   const loadHomeData = async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -593,7 +841,6 @@ export default function HomeScreen() {
       ]);
 
       // NEW TO MARKET + OPEN HOUSES
-
       const propertiesResult = results[0];
 
       if (propertiesResult.status === "fulfilled") {
@@ -602,19 +849,18 @@ export default function HomeScreen() {
         setProperties(result);
 
         const openHouses = result.filter(
-          (property) => property.isOpenHouse === true,
+          (property) => property.isOpenHouse === true
         );
 
         setOpenHouseProperties(openHouses);
       } else {
         console.error(
           "Failed to load properties:",
-          propertiesResult.reason,
+          propertiesResult.reason
         );
       }
 
       // FEATURED
-
       const featuredResult = results[1];
 
       if (featuredResult.status === "fulfilled") {
@@ -622,12 +868,11 @@ export default function HomeScreen() {
       } else {
         console.error(
           "Failed to load featured properties:",
-          featuredResult.reason,
+          featuredResult.reason
         );
       }
 
       // MOST VIEWED
-
       const mostViewedResult = results[2];
 
       if (mostViewedResult.status === "fulfilled") {
@@ -635,12 +880,11 @@ export default function HomeScreen() {
       } else {
         console.error(
           "Failed to load most viewed properties:",
-          mostViewedResult.reason,
+          mostViewedResult.reason
         );
       }
 
       // AGENTS
-
       const agentsResult = results[3];
 
       if (agentsResult.status === "fulfilled") {
@@ -648,7 +892,7 @@ export default function HomeScreen() {
       } else {
         console.error(
           "Failed to load home agents:",
-          agentsResult.reason,
+          agentsResult.reason
         );
       }
     } catch (error) {
@@ -668,18 +912,12 @@ export default function HomeScreen() {
     }
   };
 
-  // ============================================================
   // INITIAL LOAD
-  // ============================================================
-
   useEffect(() => {
     void loadHomeData(false);
   }, []);
 
-  // ============================================================
   // PULL TO REFRESH
-  // ============================================================
-
   const handleRefresh = async () => {
     if (refreshing) {
       return;
@@ -694,7 +932,7 @@ export default function HomeScreen() {
 
         if (!servicesEnabled) {
           console.warn(
-            "Location services are disabled while refreshing nearby properties.",
+            "Location services are disabled while refreshing nearby properties."
           );
           return;
         }
@@ -703,11 +941,10 @@ export default function HomeScreen() {
           await Location.getForegroundPermissionsAsync();
 
         if (
-          permission.status !==
-          Location.PermissionStatus.GRANTED
+          permission.status !== Location.PermissionStatus.GRANTED
         ) {
           console.warn(
-            "Location permission is not granted while refreshing nearby properties.",
+            "Location permission is not granted while refreshing nearby properties."
           );
           return;
         }
@@ -721,23 +958,20 @@ export default function HomeScreen() {
 
         const result = await fetchNearbyProperties(
           latitude,
-          longitude,
+          longitude
         );
 
         setNearbyProperties(result);
       } catch (error) {
         console.error(
           "Failed to refresh nearby properties:",
-          error,
+          error
         );
       }
     }
   };
 
-  // ============================================================
   // FIND PROPERTIES IN MY LOCATION
-  // ============================================================
-
   const handleUseMyLocation = async () => {
     if (loadingNearby) {
       return;
@@ -755,7 +989,7 @@ export default function HomeScreen() {
 
         Alert.alert(
           "Location Disabled",
-          "Please enable location services on your device and try again.",
+          "Please enable location services on your device and try again."
         );
 
         return;
@@ -765,14 +999,13 @@ export default function HomeScreen() {
         await Location.requestForegroundPermissionsAsync();
 
       if (
-        permission.status !==
-        Location.PermissionStatus.GRANTED
+        permission.status !== Location.PermissionStatus.GRANTED
       ) {
         setNearbyProperties([]);
 
         Alert.alert(
           "Location Permission Required",
-          "Please allow location access to find properties near you.",
+          "Please allow location access to find properties near you."
         );
 
         return;
@@ -790,7 +1023,7 @@ export default function HomeScreen() {
 
       const result = await fetchNearbyProperties(
         latitude,
-        longitude,
+        longitude
       );
 
       setNearbyProperties(result);
@@ -801,17 +1034,14 @@ export default function HomeScreen() {
 
       Alert.alert(
         "Unable to Find Properties",
-        "We could not find properties near your current location. Please try again.",
+        "We could not find properties near your current location. Please try again."
       );
     } finally {
       setLoadingNearby(false);
     }
   };
 
-  // ============================================================
   // PROPERTY PRESS
-  // ============================================================
-
   const handlePropertyPress = (property: Property) => {
     if (isLoggedIn) {
       router.push({
@@ -828,31 +1058,22 @@ export default function HomeScreen() {
     setAuthModalVisible(true);
   };
 
-  // ============================================================
   // AUTH REQUIRED -> LOGIN
-  // ============================================================
-
   const handleAuthRequiredLogin = () => {
     setAuthModalVisible(false);
     setLoginVisible(true);
   };
 
-  // ============================================================
   // AUTH REQUIRED -> REGISTER
-  // ============================================================
-
   const handleAuthRequiredRegister = () => {
     setAuthModalVisible(false);
     setRegisterVisible(true);
   };
 
-  // ============================================================
   // LOGIN SUCCESS
-  // ============================================================
-
   const handleLoginSuccess = (
     _email: string,
-    _response: Record<string, unknown>,
+    _response: Record<string, unknown>
   ) => {
     setLoginVisible(false);
 
@@ -870,44 +1091,29 @@ export default function HomeScreen() {
     }
   };
 
-  // ============================================================
   // REGISTRATION SUCCESS
-  // ============================================================
-
   const handleRegistrationComplete = () => {
     setRegisterVisible(false);
     setLoginVisible(true);
   };
 
-  // ============================================================
   // CLOSE AUTH REQUIRED
-  // ============================================================
-
   const handleCloseAuthRequired = () => {
     setAuthModalVisible(false);
     setPendingProperty(null);
   };
 
-  // ============================================================
   // CLOSE LOGIN
-  // ============================================================
-
   const handleCloseLogin = () => {
     setLoginVisible(false);
   };
 
-  // ============================================================
   // CLOSE REGISTER
-  // ============================================================
-
   const handleCloseRegister = () => {
     setRegisterVisible(false);
   };
 
-  // ============================================================
   // AGENT PRESS
-  // ============================================================
-
   const handleAgentPress = (agent: Agent) => {
     router.push({
       pathname: "/(tabs)/agents/[id]",
@@ -917,10 +1123,7 @@ export default function HomeScreen() {
     });
   };
 
-  // ============================================================
   // VIEW ALL PROPERTIES
-  // ============================================================
-
   const handleViewAllProperties = (title: string) => {
     router.push({
       pathname: "/(tabs)/properties",
@@ -930,71 +1133,64 @@ export default function HomeScreen() {
     });
   };
 
-  
-// ============================================================
-// WELCOME SCREEN
-// ============================================================
-
-if (showWelcome) {
-  return (
-    <SafeAreaView
-      className={
-        isDark
-          ? "flex-1 bg-[#0d0d0d]"
-          : "flex-1 bg-white"
-      }
-    >
-      <StatusBar
-        barStyle={isDark ? "light-content" : "dark-content"}
-        backgroundColor={isDark ? "#0d0d0d" : "#ffffff"}
-      />
-
-      <View className="flex-1 items-center justify-center px-6">
-        <Image
-          source={{
-            uri: "https://www.realestateafrica.mw/logo.png",
-          }}
-          className="h-32 w-64"
-          resizeMode="contain"
+  // WELCOME SCREEN
+  if (showWelcome) {
+    return (
+      <SafeAreaView
+        className={
+          isDark
+            ? "flex-1 bg-[#0d0d0d]"
+            : "flex-1 bg-white"
+        }
+      >
+        <StatusBar
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor={isDark ? "#0d0d0d" : "#ffffff"}
         />
 
-        <View className="mt-8 w-full max-w-md items-center">
-          <Text className="text-center text-sm font-semibold uppercase tracking-[3px] text-red-500">
-            Welcome to Real Estate Africa
-          </Text>
+        <View className="flex-1 items-center justify-center px-6">
+          <Image
+            source={{
+              uri: "https://www.realestateafrica.mw/logo.png",
+            }}
+            className="h-32 w-64"
+            resizeMode="contain"
+          />
 
-          <Text
-            className={
-              isDark
-                ? "mt-3 text-center text-3xl font-bold leading-10 text-white"
-                : "mt-3 text-center text-3xl font-bold leading-10 text-black"
-            }
-          >
-            Your Next Property{"\n"}
-            Starts Here.
-          </Text>
+          <View className="mt-8 w-full max-w-md items-center">
+            <Text className="text-center text-sm font-semibold uppercase tracking-[3px] text-red-500">
+              Welcome to Real Estate Africa
+            </Text>
 
-          <Text
-            className={
-              isDark
-                ? "mt-4 max-w-sm text-center text-base leading-7 text-gray-400"
-                : "mt-4 max-w-sm text-center text-base leading-7 text-gray-600"
-            }
-          >
-            Discover residential, commercial, industrial, and
-            agricultural properties for sale or rent across Malawi
-            with Real Estate Africa.
-          </Text>
+            <Text
+              className={
+                isDark
+                  ? "mt-3 text-center text-3xl font-bold leading-10 text-white"
+                  : "mt-3 text-center text-3xl font-bold leading-10 text-black"
+              }
+            >
+              Your Next Property{"\n"}
+              Starts Here.
+            </Text>
+
+            <Text
+              className={
+                isDark
+                  ? "mt-4 max-w-sm text-center text-base leading-7 text-gray-400"
+                  : "mt-4 max-w-sm text-center text-base leading-7 text-gray-600"
+              }
+            >
+              Discover residential, commercial, industrial, and
+              agricultural properties for sale or rent across Malawi
+              with Real Estate Africa.
+            </Text>
+          </View>
         </View>
-      </View>
-    </SafeAreaView>
-  );
-}
+      </SafeAreaView>
+    );
+  }
 
-  // ============================================================
   // HOME
-  // ============================================================
-
   return (
     <SafeAreaView
       className={
@@ -1009,7 +1205,6 @@ if (showWelcome) {
       />
 
       {/* HEADER */}
-
       <View
         className={
           isDark
@@ -1041,7 +1236,6 @@ if (showWelcome) {
       </View>
 
       {/* CONTENT */}
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={100}
@@ -1051,7 +1245,9 @@ if (showWelcome) {
             onRefresh={handleRefresh}
             tintColor="#ef4444"
             colors={["#ef4444"]}
-            progressBackgroundColor={isDark ? "#171717" : "#ffffff"}
+            progressBackgroundColor={
+              isDark ? "#171717" : "#ffffff"
+            }
           />
         }
         onScroll={(event) => {
@@ -1066,7 +1262,6 @@ if (showWelcome) {
         }}
       >
         {/* INTRO */}
-
         <View className="mb-6">
           <Text
             className={
@@ -1089,8 +1284,10 @@ if (showWelcome) {
           </Text>
         </View>
 
-        {/* FEATURED */}
+        {/* RANDOM ANIMATED MOTIVATIONAL MESSAGES */}
+        <MotivationalMessage />
 
+        {/* FEATURED */}
         <PropertySection
           title="Featured Properties"
           sectionProperties={featuredProperties}
@@ -1103,7 +1300,6 @@ if (showWelcome) {
         />
 
         {/* NEW TO MARKET */}
-
         <PropertySection
           title="New to Market"
           sectionProperties={properties}
@@ -1116,7 +1312,6 @@ if (showWelcome) {
         />
 
         {/* OPEN HOUSES */}
-
         <PropertySection
           title="Open Houses"
           sectionProperties={openHouseProperties}
@@ -1129,7 +1324,6 @@ if (showWelcome) {
         />
 
         {/* MOST VIEWED */}
-
         <PropertySection
           title="Most Viewed"
           sectionProperties={mostViewedProperties}
@@ -1142,7 +1336,6 @@ if (showWelcome) {
         />
 
         {/* NEARBY */}
-
         <NearbyPropertySection
           nearbyProperties={nearbyProperties}
           loadingNearby={loadingNearby}
@@ -1155,7 +1348,6 @@ if (showWelcome) {
         />
 
         {/* AGENTS */}
-
         <View className="mt-2">
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
@@ -1251,7 +1443,6 @@ if (showWelcome) {
         </View>
 
         {/* QUICK ACTIONS */}
-
         <View className="mt-10">
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
@@ -1268,7 +1459,6 @@ if (showWelcome) {
           </View>
 
           {/* LIST PROPERTY */}
-
           <Pressable
             onPress={() => router.push("/properties/list-property")}
             accessibilityRole="button"
@@ -1280,7 +1470,11 @@ if (showWelcome) {
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
-              <Ionicons name="home-outline" size={25} color="#fff" />
+              <Ionicons
+                name="home-outline"
+                size={25}
+                color="#fff"
+              />
             </View>
 
             <View className="flex-1">
@@ -1313,7 +1507,6 @@ if (showWelcome) {
           </Pressable>
 
           {/* SPECIAL PROPERTY REQUEST */}
-
           <Pressable
             onPress={() =>
               router.push("/properties/special-property-request")
@@ -1327,7 +1520,11 @@ if (showWelcome) {
             }
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-red-600">
-              <Ionicons name="search-outline" size={25} color="#fff" />
+              <Ionicons
+                name="search-outline"
+                size={25}
+                color="#fff"
+              />
             </View>
 
             <View className="flex-1">
@@ -1360,7 +1557,6 @@ if (showWelcome) {
           </Pressable>
 
           {/* NEWSLETTER */}
-
           <Pressable
             onPress={() => setNewsletterVisible(true)}
             accessibilityRole="button"
@@ -1411,14 +1607,12 @@ if (showWelcome) {
       </ScrollView>
 
       {/* NEWSLETTER SUBSCRIPTION MODAL */}
-
       <NewsletterSubscribeModal
         visible={newsletterVisible}
         onClose={() => setNewsletterVisible(false)}
       />
 
       {/* AUTH REQUIRED MODAL */}
-
       <AuthRequiredModal
         visible={authModalVisible}
         onClose={handleCloseAuthRequired}
@@ -1427,7 +1621,6 @@ if (showWelcome) {
       />
 
       {/* LOGIN MODAL */}
-
       <LoginModal
         visible={loginVisible}
         onClose={handleCloseLogin}
@@ -1439,7 +1632,6 @@ if (showWelcome) {
       />
 
       {/* REGISTER MODAL */}
-
       <RegisterModal
         visible={registerVisible}
         onClose={handleCloseRegister}
@@ -1452,4 +1644,3 @@ if (showWelcome) {
     </SafeAreaView>
   );
 }
-
