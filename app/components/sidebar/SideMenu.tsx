@@ -314,7 +314,7 @@ const SideMenu = ({
                   className="mt-1 text-xs"
                   style={{ color: theme.textMuted }}
                 >
-                  Real Estate
+                  Real Estate Africa
                 </Text>
               </View>
 

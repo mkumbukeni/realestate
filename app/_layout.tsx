@@ -150,8 +150,8 @@ function GlobalAuthButton({
         shadow-lg
         ${
           isDark
-            ? "border-[#292929] bg-[#171717]"
-            : "border-gray-200 bg-white"
+            ? "border-none bg-transparent"
+            : "border border-white bg-transparent"
         }
       `}
     >
