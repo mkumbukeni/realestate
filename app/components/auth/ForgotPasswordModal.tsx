@@ -43,15 +43,12 @@ export default function ForgotPasswordModal({
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-
   const [verifiedEmail, setVerifiedEmail] = useState("");
 
   useEffect(() => {
@@ -87,7 +84,7 @@ export default function ForgotPasswordModal({
     onClose();
   };
 
-  // Stage 1: Generate OTP.
+  // Step 1: Generate OTP.
   const handleGenerateOtp = async () => {
     clearMessages();
 
@@ -121,12 +118,12 @@ export default function ForgotPasswordModal({
     }
   };
 
-  // Stage 2: Verify OTP.
+  // Step 2: Verify OTP.
   const handleVerifyOtp = async () => {
     clearMessages();
 
     if (!otp.trim()) {
-      setError("Please enter the verification code.");
+      setError(`Please enter the verification code sent to ${email.trim().toLowerCase()}.`);
       return;
     }
 
@@ -138,9 +135,7 @@ export default function ForgotPasswordModal({
       setVerifiedEmail(email.trim().toLowerCase());
       setOtp("");
       setStep("password");
-      setSuccessMessage(
-        "Your verification code has been confirmed.",
-      );
+      setSuccessMessage("Verification successful.");
     } catch (err) {
       setError(
         err instanceof Error
@@ -162,7 +157,7 @@ export default function ForgotPasswordModal({
       await generateOtp(email.trim().toLowerCase());
 
       setOtp("");
-      setSuccessMessage("A new verification code has been sent.");
+      setSuccessMessage("Verification code resent.");
     } catch (err) {
       setError(
         err instanceof Error
@@ -174,7 +169,7 @@ export default function ForgotPasswordModal({
     }
   };
 
-  // Stage 3: Update password.
+  // Step 3: Update password.
   const handleUpdatePassword = async () => {
     clearMessages();
 
@@ -185,12 +180,12 @@ export default function ForgotPasswordModal({
     }
 
     if (password.length < 8) {
-      setError("Your password must contain at least 8 characters.");
+      setError("Password must contain at least 8 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("The passwords do not match.");
+      setError("Passwords do not match.");
       return;
     }
 
@@ -208,8 +203,9 @@ export default function ForgotPasswordModal({
       setShowPassword(false);
       setShowConfirmPassword(false);
       setStep("success");
+
       setSuccessMessage(
-        result.message || "Your password has been updated successfully.",
+        result.message || "Password updated successfully.",
       );
     } catch (err) {
       setError(
@@ -223,9 +219,7 @@ export default function ForgotPasswordModal({
   };
 
   const handleFinish = () => {
-    const recoveredEmail = verifiedEmail || email.trim().toLowerCase();
-
-    onSuccess?.(recoveredEmail);
+    onSuccess?.(verifiedEmail || email.trim().toLowerCase());
     onClose();
   };
 
@@ -233,19 +227,19 @@ export default function ForgotPasswordModal({
     step === "email"
       ? "Account Recovery"
       : step === "otp"
-        ? "Verify Your Email"
+        ? "Verify Email"
         : step === "password"
           ? "Reset Password"
           : "Password Updated";
 
-  const subtitle =
+  const instruction =
     step === "email"
-      ? "Enter the email address associated with your account."
+      ? "Enter your registered email address."
       : step === "otp"
         ? "Enter the verification code sent to your email."
         : step === "password"
-          ? "Choose a new password for your account."
-          : "You can now sign in using your new password.";
+          ? "Enter and confirm your new password."
+          : "Your password has been updated. You can now sign in.";
 
   const primaryText = isDark ? "text-white" : "text-gray-900";
   const secondaryText = isDark ? "text-gray-400" : "text-gray-600";
@@ -264,7 +258,6 @@ export default function ForgotPasswordModal({
     options: {
       secureTextEntry?: boolean;
       keyboardType?: "default" | "email-address" | "number-pad";
-      autoCapitalize?: "none" | "sentences";
       rightIcon?: React.ReactNode;
       maxLength?: number;
     } = {},
@@ -281,15 +274,15 @@ export default function ForgotPasswordModal({
 
         <TextInput
           value={value}
-          onChangeText={(value) => {
-            onChangeText(value);
+          onChangeText={(text) => {
+            onChangeText(text);
             clearMessages();
           }}
           placeholder={placeholder}
           placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
           secureTextEntry={options.secureTextEntry}
           keyboardType={options.keyboardType || "default"}
-          autoCapitalize={options.autoCapitalize || "none"}
+          autoCapitalize="none"
           autoCorrect={false}
           editable={!loading}
           maxLength={options.maxLength}
@@ -373,8 +366,10 @@ export default function ForgotPasswordModal({
       onRequestClose={handleClose}
     >
       <KeyboardAvoidingView
-        className="flex-1 justify-end"
+        style={{ flex: 1 }}
+        className="justify-end"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={0}
       >
         <Pressable
           className="absolute inset-0 bg-black/70"
@@ -383,7 +378,7 @@ export default function ForgotPasswordModal({
         />
 
         <View
-          className={`max-h-[92%] w-full rounded-t-3xl border-t ${
+          className={`max-h-[88%] w-full flex-shrink rounded-t-3xl border-t ${
             isDark
               ? "border-[#292929] bg-[#111111]"
               : "border-gray-200 bg-white"
@@ -402,17 +397,20 @@ export default function ForgotPasswordModal({
             keyboardDismissMode={
               Platform.OS === "ios" ? "interactive" : "on-drag"
             }
+            automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 32 }}
+            contentContainerStyle={{ paddingBottom: 20 }}
           >
             <View className="px-6 pb-4 pt-3">
-              <View className="mb-6 flex-row items-center justify-between">
+              {/* Title and instructions remain above the steps */}
+              <View className="mb-5 flex-row items-center justify-between">
                 <View className="flex-1">
                   <Text className={`text-2xl font-bold ${primaryText}`}>
                     {title}
                   </Text>
+
                   <Text className={`mt-1 text-sm ${secondaryText}`}>
-                    {subtitle}
+                    {instruction}
                   </Text>
                 </View>
 
@@ -433,10 +431,17 @@ export default function ForgotPasswordModal({
                 </Pressable>
               </View>
 
+              {/* Progress indicator */}
               <View className="mb-5 flex-row items-center justify-center">
                 {(["email", "otp", "password", "success"] as const).map(
                   (item, index) => {
-                    const steps = ["email", "otp", "password", "success"];
+                    const steps = [
+                      "email",
+                      "otp",
+                      "password",
+                      "success",
+                    ] as const;
+
                     const activeIndex = steps.indexOf(step);
                     const completed = index < activeIndex;
                     const active = index === activeIndex;
@@ -494,6 +499,7 @@ export default function ForgotPasswordModal({
                 )}
               </View>
 
+              {/* Error notification */}
               {error ? (
                 <View
                   className={`mb-4 flex-row items-start rounded-xl border px-4 py-3 ${
@@ -507,6 +513,7 @@ export default function ForgotPasswordModal({
                     size={20}
                     color="#ef4444"
                   />
+
                   <Text
                     className={`ml-2 flex-1 text-sm ${
                       isDark ? "text-red-400" : "text-red-600"
@@ -517,6 +524,7 @@ export default function ForgotPasswordModal({
                 </View>
               ) : null}
 
+              {/* Success notification */}
               {successMessage ? (
                 <View
                   className={`mb-4 flex-row items-start rounded-xl border px-4 py-3 ${
@@ -530,6 +538,7 @@ export default function ForgotPasswordModal({
                     size={20}
                     color="#22c55e"
                   />
+
                   <Text
                     className={`ml-2 flex-1 text-sm ${
                       isDark ? "text-green-400" : "text-green-700"
@@ -540,24 +549,9 @@ export default function ForgotPasswordModal({
                 </View>
               ) : null}
 
+              {/* Step 1: Email */}
               {step === "email" ? (
                 <>
-                  <View className="mb-5 items-center">
-                    <View className="h-16 w-16 items-center justify-center rounded-full bg-red-600/10">
-                      <Ionicons
-                        name="mail-outline"
-                        size={30}
-                        color="#ef4444"
-                      />
-                    </View>
-                    <Text className={`mt-4 text-center text-lg font-bold ${primaryText}`}>
-                      Recover Your Account
-                    </Text>
-                    <Text className={`mt-2 text-center text-sm leading-5 ${secondaryText}`}>
-                      We will send a one-time verification code to your email.
-                    </Text>
-                  </View>
-
                   {renderInput(
                     "Email Address",
                     email,
@@ -576,42 +570,19 @@ export default function ForgotPasswordModal({
                 </>
               ) : null}
 
+              {/* Step 2: OTP */}
               {step === "otp" ? (
                 <>
-                  <View
-                    className={`mb-5 rounded-2xl border p-5 ${
-                      isDark
-                        ? "border-neutral-800 bg-[#171717]"
-                        : "border-gray-200 bg-gray-50"
-                    }`}
-                  >
-                    <View className="items-center">
-                      <View className="h-14 w-14 items-center justify-center rounded-full bg-red-600/10">
-                        <Ionicons
-                          name="mail-open-outline"
-                          size={28}
-                          color="#ef4444"
-                        />
-                      </View>
-                      <Text className={`mt-3 text-base font-semibold ${primaryText}`}>
-                        Check Your Email
-                      </Text>
-                      <Text className={`mt-2 text-center text-sm ${secondaryText}`}>
-                        Verification code sent to
-                      </Text>
-                      <Text className={`mt-1 text-center text-sm font-semibold ${primaryText}`}>
-                        {email}
-                      </Text>
-                    </View>
-                  </View>
-
                   {renderInput(
                     "Verification Code",
                     otp,
                     (value) => setOtp(value.replace(/[^0-9]/g, "")),
                     "Enter OTP",
                     "keypad-outline",
-                    { keyboardType: "number-pad", maxLength: 8 },
+                    {
+                      keyboardType: "number-pad",
+                      maxLength: 8,
+                    },
                   )}
 
                   {renderButton(
@@ -621,15 +592,11 @@ export default function ForgotPasswordModal({
                     "shield-checkmark-outline",
                   )}
 
-                  <View className="mt-5 items-center">
-                    <Text className={`text-sm ${secondaryText}`}>
-                      Didn't receive the code?
-                    </Text>
-
+                  <View className="mt-4 items-center">
                     <Pressable
                       onPress={handleResendOtp}
                       disabled={resendLoading || loading}
-                      className="mt-2"
+                      accessibilityRole="button"
                     >
                       {resendLoading ? (
                         <ActivityIndicator color="#ef4444" />
@@ -648,6 +615,7 @@ export default function ForgotPasswordModal({
                       }}
                       disabled={loading || resendLoading}
                       className="mt-4"
+                      accessibilityRole="button"
                     >
                       <Text className={`text-sm ${secondaryText}`}>
                         Use a different email
@@ -657,32 +625,9 @@ export default function ForgotPasswordModal({
                 </>
               ) : null}
 
+              {/* Step 3: New password */}
               {step === "password" ? (
                 <>
-                  <View
-                    className={`mb-5 rounded-xl border p-4 ${
-                      isDark
-                        ? "border-green-900 bg-green-950/20"
-                        : "border-green-200 bg-green-50"
-                    }`}
-                  >
-                    <View className="flex-row items-center">
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={23}
-                        color="#22c55e"
-                      />
-                      <View className="ml-3 flex-1">
-                        <Text className="font-semibold text-green-600">
-                          Email Verified
-                        </Text>
-                        <Text className={`mt-1 text-xs ${secondaryText}`}>
-                          {verifiedEmail}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
                   {renderPasswordInput(
                     "New Password",
                     password,
@@ -693,7 +638,7 @@ export default function ForgotPasswordModal({
                   )}
 
                   <Text className={`-mt-2 mb-4 text-xs ${secondaryText}`}>
-                    Use at least 8 characters.
+                    Minimum 8 characters.
                   </Text>
 
                   {renderPasswordInput(
@@ -721,6 +666,7 @@ export default function ForgotPasswordModal({
                             : "#ef4444"
                         }
                       />
+
                       <Text
                         className={`ml-2 text-xs ${
                           password === confirmPassword
@@ -751,6 +697,7 @@ export default function ForgotPasswordModal({
                     }}
                     disabled={loading}
                     className="mt-4 items-center"
+                    accessibilityRole="button"
                   >
                     <Text className={`text-sm ${secondaryText}`}>
                       Back to OTP verification
@@ -759,39 +706,25 @@ export default function ForgotPasswordModal({
                 </>
               ) : null}
 
+              {/* Step 4: Success */}
               {step === "success" ? (
                 <>
-                  <View
-                    className={`items-center rounded-2xl border p-6 ${
-                      isDark
-                        ? "border-green-900 bg-green-950/20"
-                        : "border-green-200 bg-green-50"
-                    }`}
-                  >
-                    <View className="h-20 w-20 items-center justify-center rounded-full bg-green-600/10">
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={54}
-                        color="#22c55e"
-                      />
-                    </View>
+                  <View className="items-center py-5">
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={48}
+                      color="#22c55e"
+                    />
 
-                    <Text className={`mt-5 text-center text-xl font-bold ${primaryText}`}>
-                      Password Reset Successful
-                    </Text>
-
-                    <Text className={`mt-2 text-center text-sm leading-5 ${secondaryText}`}>
-                      Your password has been updated. Sign in using your new password.
-                    </Text>
-
-                    <Text className="mt-3 text-center text-sm font-semibold text-green-500">
+                    <Text className={`mt-3 text-sm ${secondaryText}`}>
                       {verifiedEmail}
                     </Text>
                   </View>
 
                   <Pressable
                     onPress={handleFinish}
-                    className="mt-5 min-h-14 items-center justify-center rounded-xl bg-red-600 px-4 py-4"
+                    className="mt-2 min-h-14 items-center justify-center rounded-xl bg-red-600 px-4 py-4"
+                    accessibilityRole="button"
                   >
                     <Text className="text-[15px] font-bold text-white">
                       Return to Sign In
@@ -805,9 +738,10 @@ export default function ForgotPasswordModal({
                   onPress={handleClose}
                   disabled={loading || resendLoading}
                   className="mt-5 items-center py-2"
+                  accessibilityRole="button"
                 >
                   <Text className={`text-sm ${secondaryText}`}>
-                    Cancel and return to sign in
+                    Cancel
                   </Text>
                 </Pressable>
               ) : null}
