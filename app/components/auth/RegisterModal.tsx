@@ -29,16 +29,22 @@ interface RegisterModalProps {
     confirmPassword: string,
   ) => void;
   onSignIn?: () => void;
+  onLogin?: () => void;
   onClose: () => void;
 }
 
-type RegistrationStep = "generateOtp" | "verifyOtp" | "details" | "success";
+type RegistrationStep =
+  | "generateOtp"
+  | "verifyOtp"
+  | "details"
+  | "success";
 
 export default function RegisterModal({
   visible,
   onClose,
   onRegister,
   onSignIn,
+  onLogin,
 }: RegisterModalProps) {
   const isDark = useColorScheme() !== "light";
 
@@ -80,6 +86,7 @@ export default function RegisterModal({
 
   const emailFormValid = isEmailValid(email);
   const otpFormValid = otp.trim().length > 0;
+
   const detailsFormValid =
     fullName.trim().length > 0 &&
     phoneNumber.trim().length > 0 &&
@@ -104,13 +111,16 @@ export default function RegisterModal({
 
     try {
       setLoading(true);
+
       await generateOtp(trimmedEmail);
 
       setEmail(trimmedEmail);
       setOtp("");
       setVerifiedEmail("");
       setStep("verifyOtp");
-      setSuccessMessage(`Verification code sent to ${trimmedEmail}.`);
+      setSuccessMessage(
+        `Verification code sent to ${trimmedEmail}.`,
+      );
     } catch (err) {
       setError(
         err instanceof Error
@@ -134,6 +144,7 @@ export default function RegisterModal({
       setLoading(true);
 
       const normalizedEmail = email.trim().toLowerCase();
+
       await verifyOtp(normalizedEmail, otp.trim());
 
       setVerifiedEmail(normalizedEmail);
@@ -156,12 +167,15 @@ export default function RegisterModal({
 
     try {
       setResendLoading(true);
+
       await generateOtp(email.trim().toLowerCase());
 
       setOtp("");
       setVerifiedEmail("");
       setStep("verifyOtp");
-      setSuccessMessage("A new verification code has been sent.");
+      setSuccessMessage(
+        "A new verification code has been sent.",
+      );
     } catch (err) {
       setError(
         err instanceof Error
@@ -186,7 +200,10 @@ export default function RegisterModal({
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    if (!verifiedEmail || normalizedEmail !== verifiedEmail) {
+    if (
+      !verifiedEmail ||
+      normalizedEmail !== verifiedEmail
+    ) {
       setVerifiedEmail("");
       setOtp("");
       setStep("generateOtp");
@@ -222,10 +239,12 @@ export default function RegisterModal({
       });
 
       setStep("success");
-      setSuccessMessage("Your account has been created successfully.");
+      setSuccessMessage(
+        "Your account has been created successfully.",
+      );
 
-      // Preserve the existing parent callback signature.
       // The registration API does not accept a password.
+      // Keep the existing parent callback signature.
       onRegister?.(
         fullName.trim(),
         verifiedEmail,
@@ -247,11 +266,18 @@ export default function RegisterModal({
   const handleSignIn = () => {
     if (loading || resendLoading) return;
 
-    onClose();
+    // Support both callback names used by existing callers.
+    const openLogin = onSignIn ?? onLogin;
 
-    if (onSignIn) {
-      setTimeout(onSignIn, 250);
+    if (openLogin) {
+      openLogin();
+      return;
     }
+
+    console.warn(
+      "RegisterModal: No onSignIn/onLogin callback was provided. " +
+        "The parent component must open the login modal.",
+    );
   };
 
   const handleClose = () => {
@@ -286,12 +312,30 @@ export default function RegisterModal({
           ? "Enter your details to complete registration."
           : "Your account has been created successfully.";
 
-  const primaryText = isDark ? "text-white" : "text-gray-900";
-  const secondaryText = isDark ? "text-gray-400" : "text-gray-600";
-  const labelText = isDark ? "text-gray-300" : "text-gray-700";
-  const inputText = isDark ? "text-white" : "text-gray-900";
-  const inputBackground = isDark ? "bg-[#1b1b1b]" : "bg-gray-50";
-  const inputBorder = isDark ? "border-[#303030]" : "border-gray-300";
+  const primaryText = isDark
+    ? "text-white"
+    : "text-gray-900";
+
+  const secondaryText = isDark
+    ? "text-gray-400"
+    : "text-gray-600";
+
+  const labelText = isDark
+    ? "text-gray-300"
+    : "text-gray-700";
+
+  const inputText = isDark
+    ? "text-white"
+    : "text-gray-900";
+
+  const inputBackground = isDark
+    ? "bg-[#1b1b1b]"
+    : "bg-gray-50";
+
+  const inputBorder = isDark
+    ? "border-[#303030]"
+    : "border-gray-300";
+
   const iconColor = isDark ? "#9ca3af" : "#6b7280";
 
   const renderInput = (
@@ -301,8 +345,16 @@ export default function RegisterModal({
     placeholder: string,
     icon: React.ComponentProps<typeof Ionicons>["name"],
     options: {
-      keyboardType?: "default" | "email-address" | "phone-pad" | "number-pad";
-      autoCapitalize?: "none" | "sentences" | "words" | "characters";
+      keyboardType?:
+        | "default"
+        | "email-address"
+        | "phone-pad"
+        | "number-pad";
+      autoCapitalize?:
+        | "none"
+        | "sentences"
+        | "words"
+        | "characters";
       multiline?: boolean;
       maxLength?: number;
     } = {},
@@ -319,7 +371,11 @@ export default function RegisterModal({
           name={icon}
           size={20}
           color={iconColor}
-          style={options.multiline ? { marginTop: 14 } : undefined}
+          style={
+            options.multiline
+              ? { marginTop: 14 }
+              : undefined
+          }
         />
 
         <TextInput
@@ -329,14 +385,20 @@ export default function RegisterModal({
             clearMessages();
           }}
           placeholder={placeholder}
-          placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
+          placeholderTextColor={
+            isDark ? "#6b7280" : "#9ca3af"
+          }
           keyboardType={options.keyboardType ?? "default"}
-          autoCapitalize={options.autoCapitalize ?? "sentences"}
+          autoCapitalize={
+            options.autoCapitalize ?? "sentences"
+          }
           autoCorrect={false}
           multiline={options.multiline}
           maxLength={options.maxLength}
           editable={!loading}
-          textAlignVertical={options.multiline ? "top" : "center"}
+          textAlignVertical={
+            options.multiline ? "top" : "center"
+          }
           className={`ml-3 flex-1 py-4 text-[15px] ${inputText} ${
             options.multiline ? "min-h-[90px]" : ""
           }`}
@@ -349,7 +411,8 @@ export default function RegisterModal({
     label: string,
     onPress: () => void,
     disabled = false,
-    icon: React.ComponentProps<typeof Ionicons>["name"] = "arrow-forward",
+    icon: React.ComponentProps<typeof Ionicons>["name"] =
+      "arrow-forward",
   ) => (
     <Pressable
       onPress={onPress}
@@ -363,7 +426,11 @@ export default function RegisterModal({
         <ActivityIndicator color="#ffffff" />
       ) : (
         <>
-          <Ionicons name={icon} size={20} color="#ffffff" />
+          <Ionicons
+            name={icon}
+            size={20}
+            color="#ffffff"
+          />
           <Text className="ml-2 text-[15px] font-bold text-white">
             {label}
           </Text>
@@ -409,19 +476,26 @@ export default function RegisterModal({
           <ScrollView
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={
-              Platform.OS === "ios" ? "interactive" : "on-drag"
+              Platform.OS === "ios"
+                ? "interactive"
+                : "on-drag"
             }
-            automaticallyAdjustKeyboardInsets={Platform.OS === "ios"}
+            automaticallyAdjustKeyboardInsets={
+              Platform.OS === "ios"
+            }
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 24 }}
           >
             <View className="px-6 pb-3 pt-3">
-              {/* Essential title and instructions */}
+              {/* Title and instructions */}
               <View className="mb-5 flex-row items-center justify-between">
                 <View className="flex-1">
-                  <Text className={`text-2xl font-bold ${primaryText}`}>
+                  <Text
+                    className={`text-2xl font-bold ${primaryText}`}
+                  >
                     {title}
                   </Text>
+
                   <Text className={`mt-1 text-sm ${secondaryText}`}>
                     {subtitle}
                   </Text>
@@ -486,6 +560,7 @@ export default function RegisterModal({
                               </Text>
                             )}
                           </View>
+
                           <Text
                             className={`mt-1 text-[10px] ${
                               active || completed
@@ -516,7 +591,7 @@ export default function RegisterModal({
                 )}
               </View>
 
-              {/* Essential notifications */}
+              {/* Error message */}
               {error ? (
                 <View
                   className={`mb-4 flex-row items-start rounded-xl border px-4 py-3 ${
@@ -530,9 +605,12 @@ export default function RegisterModal({
                     size={20}
                     color="#ef4444"
                   />
+
                   <Text
                     className={`ml-2 flex-1 text-sm ${
-                      isDark ? "text-red-400" : "text-red-600"
+                      isDark
+                        ? "text-red-400"
+                        : "text-red-600"
                     }`}
                   >
                     {error}
@@ -540,6 +618,7 @@ export default function RegisterModal({
                 </View>
               ) : null}
 
+              {/* Success message */}
               {successMessage ? (
                 <View
                   className={`mb-4 flex-row items-start rounded-xl border px-4 py-3 ${
@@ -553,9 +632,12 @@ export default function RegisterModal({
                     size={20}
                     color="#22c55e"
                   />
+
                   <Text
                     className={`ml-2 flex-1 text-sm ${
-                      isDark ? "text-green-400" : "text-green-700"
+                      isDark
+                        ? "text-green-400"
+                        : "text-green-700"
                     }`}
                   >
                     {successMessage}
@@ -572,7 +654,10 @@ export default function RegisterModal({
                     handleEmailChange,
                     "Enter your email",
                     "mail-outline",
-                    { keyboardType: "email-address", autoCapitalize: "none" },
+                    {
+                      keyboardType: "email-address",
+                      autoCapitalize: "none",
+                    },
                   )}
 
                   {renderButton(
@@ -590,10 +675,15 @@ export default function RegisterModal({
                   {renderInput(
                     "Verification Code",
                     otp,
-                    (value) => setOtp(value.replace(/[^0-9]/g, "")),
+                    (value) =>
+                      setOtp(value.replace(/[^0-9]/g, "")),
                     "Enter OTP",
                     "keypad-outline",
-                    { keyboardType: "number-pad", autoCapitalize: "none", maxLength: 8 },
+                    {
+                      keyboardType: "number-pad",
+                      autoCapitalize: "none",
+                      maxLength: 8,
+                    },
                   )}
 
                   {renderButton(
@@ -641,6 +731,7 @@ export default function RegisterModal({
                       size={18}
                       color="#22c55e"
                     />
+
                     <Text
                       className={`ml-2 flex-1 text-sm ${secondaryText}`}
                     >
@@ -663,7 +754,10 @@ export default function RegisterModal({
                     setPhoneNumber,
                     "Enter your phone number",
                     "call-outline",
-                    { keyboardType: "phone-pad", autoCapitalize: "none" },
+                    {
+                      keyboardType: "phone-pad",
+                      autoCapitalize: "none",
+                    },
                   )}
 
                   {renderInput(
@@ -672,7 +766,10 @@ export default function RegisterModal({
                     setAddress,
                     "Enter your address",
                     "location-outline",
-                    { multiline: true, autoCapitalize: "sentences" },
+                    {
+                      multiline: true,
+                      autoCapitalize: "sentences",
+                    },
                   )}
 
                   {renderButton(
@@ -704,12 +801,16 @@ export default function RegisterModal({
                       size={54}
                       color="#22c55e"
                     />
+
                     <Text
                       className={`mt-3 text-center text-lg font-bold ${primaryText}`}
                     >
                       Registration Complete
                     </Text>
-                    <Text className={`mt-2 text-center text-sm ${secondaryText}`}>
+
+                    <Text
+                      className={`mt-2 text-center text-sm ${secondaryText}`}
+                    >
                       {verifiedEmail}
                     </Text>
                   </View>
@@ -732,11 +833,13 @@ export default function RegisterModal({
                   <Text className={`text-sm ${secondaryText}`}>
                     Already have an account?
                   </Text>
+
                   <Pressable
                     onPress={handleSignIn}
                     disabled={loading || resendLoading}
                     className="ml-1.5"
                     accessibilityRole="button"
+                    accessibilityLabel="Sign in to an existing account"
                   >
                     <Text className="text-sm font-bold text-red-500">
                       Sign In
