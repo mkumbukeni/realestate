@@ -68,6 +68,12 @@ type PostCode = {
 
 type SelectKey = "propertyType" | "region" | "district" | "area";
 
+type SubmitPayload = AddClientRequest & {
+  visibility: "public" | "private";
+  description?: string;
+  worth_check?: "yes" | "no" | null;
+};
+
 interface ListPropertyFormProps {
   onClose?: () => void;
   onSignIn?: () => void;
@@ -150,8 +156,6 @@ export default function ListPropertyForm({
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
 
-  // FIX: Read the authentication state from AuthContext.
-  // This makes isLoggedIn available throughout this component.
   const { isLoggedIn } = useAuth();
 
   const colors = {
@@ -167,7 +171,7 @@ export default function ListPropertyForm({
     textMuted: isDark ? "#a3a3a3" : "#6b7280",
     placeholder: isDark ? "#737373" : "#9ca3af",
     icon: isDark ? "#a3a3a3" : "#6b7280",
-    modalOverlay: "rgba(0,0,0,0.60)",
+    modalOverlay: "rgba(0,0,0,0.65)",
     modalSurface: isDark ? "#111111" : "#ffffff",
     optionSelected: isDark ? "#450a0a" : "#fef2f2",
     optionBackground: isDark ? "#171717" : "#ffffff",
@@ -178,6 +182,11 @@ export default function ListPropertyForm({
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  // Confirmation modal state.
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [pendingPayload, setPendingPayload] =
+    useState<SubmitPayload | null>(null);
 
   const [postalCodes, setPostalCodes] = useState<PostCode[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
@@ -360,8 +369,10 @@ export default function ListPropertyForm({
     setOptionSearch("");
   };
 
-  const handleSubmit = async () => {
-    if (submitting) return;
+  // Validate the form and prepare the request.
+  // Do not call the API here: show the confirmation modal first.
+  const handleSubmit = () => {
+    if (submitting || confirmVisible) return;
 
     if (!isLoggedIn) {
       setSubmitSuccess(false);
@@ -461,16 +472,13 @@ export default function ListPropertyForm({
     }
 
     const fullPhone = combinePhoneNumber(formData.phoneCountryCode, phone);
+
     const fullWhatsApp =
       formData.waNotify === "yes" && formData.waNumber.trim()
         ? combinePhoneNumber(formData.waCountryCode, formData.waNumber)
         : fullPhone;
 
-    const payload: AddClientRequest & {
-      visibility: "public" | "private";
-      description?: string;
-      worth_check?: "yes" | "no" | null;
-    } = {
+    const payload: SubmitPayload = {
       first_name: firstName,
       last_name: lastName,
       email,
@@ -491,12 +499,24 @@ export default function ListPropertyForm({
       worth_check: formData.worthCheck,
     };
 
+    setSubmitMessage("");
+    setSubmitSuccess(false);
+    setPendingPayload(payload);
+    setConfirmVisible(true);
+  };
+
+  // This is the only function that sends the request to the API.
+  // It runs after the user confirms in the modal.
+  const confirmSubmit = async () => {
+    if (submitting || !pendingPayload) return;
+
     try {
       setSubmitting(true);
       setSubmitMessage("");
       setSubmitSuccess(false);
+      setConfirmVisible(false);
 
-      const response = await addClient(payload);
+      const response = await addClient(pendingPayload);
 
       setSubmitSuccess(true);
       setSubmitMessage(
@@ -504,6 +524,7 @@ export default function ListPropertyForm({
           "Your property request has been submitted successfully.",
       );
 
+      setPendingPayload(null);
       setFormData({ ...initialFormData });
     } catch (error) {
       setSubmitSuccess(false);
@@ -512,9 +533,17 @@ export default function ListPropertyForm({
           ? error.message
           : "Something went wrong. Please try again.",
       );
+      setPendingPayload(null);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const cancelConfirmation = () => {
+    if (submitting) return;
+
+    setConfirmVisible(false);
+    setPendingPayload(null);
   };
 
   const requestSignIn = () => {
@@ -537,6 +566,14 @@ export default function ListPropertyForm({
         "Connect the onRegister prop to your existing registration modal.",
       );
     }
+  };
+
+  const formatPrice = (value: string) => {
+    const amount = Number(value);
+
+    if (!Number.isFinite(amount) || amount <= 0) return "Not specified";
+
+    return amount.toLocaleString();
   };
 
   return (
@@ -1001,20 +1038,40 @@ export default function ListPropertyForm({
                     : "#fef2f2",
               }}
             >
-              <Text
-                className="text-sm leading-5"
-                style={{
-                  color: submitSuccess
-                    ? isDark
-                      ? "#86efac"
-                      : "#166534"
-                    : isDark
-                      ? "#fca5a5"
-                      : "#b91c1c",
-                }}
-              >
-                {submitMessage}
-              </Text>
+              <View className="flex-row items-start">
+                <Ionicons
+                  name={
+                    submitSuccess
+                      ? "checkmark-circle-outline"
+                      : "alert-circle-outline"
+                  }
+                  size={19}
+                  color={
+                    submitSuccess
+                      ? isDark
+                        ? "#86efac"
+                        : "#166534"
+                      : isDark
+                        ? "#fca5a5"
+                        : "#b91c1c"
+                  }
+                  style={{ marginRight: 8, marginTop: 1 }}
+                />
+                <Text
+                  className="flex-1 text-sm leading-5"
+                  style={{
+                    color: submitSuccess
+                      ? isDark
+                        ? "#86efac"
+                        : "#166534"
+                      : isDark
+                        ? "#fca5a5"
+                        : "#b91c1c",
+                  }}
+                >
+                  {submitMessage}
+                </Text>
+              </View>
             </View>
           )}
 
@@ -1033,9 +1090,9 @@ export default function ListPropertyForm({
                 return;
               }
 
-              void handleSubmit();
+              handleSubmit();
             }}
-            disabled={submitting}
+            disabled={submitting || confirmVisible}
             accessibilityRole="button"
             accessibilityLabel={
               isLoggedIn
@@ -1043,7 +1100,7 @@ export default function ListPropertyForm({
                 : "Sign in to submit request"
             }
             className={`mb-4 min-h-14 flex-row items-center justify-center rounded-xl px-5 py-4 ${
-              submitting ? "bg-red-900" : "bg-red-600"
+              submitting || confirmVisible ? "bg-red-900" : "bg-red-600"
             }`}
           >
             {submitting ? (
@@ -1054,13 +1111,256 @@ export default function ListPropertyForm({
                 </Text>
               </>
             ) : (
-              <Text className="font-semibold text-white">
-                {isLoggedIn ? "Submit Request" : "Sign In to Submit"}
-              </Text>
+              <>
+                <Ionicons
+                  name="paper-plane-outline"
+                  size={18}
+                  color="#ffffff"
+                  style={{ marginRight: 8 }}
+                />
+                <Text className="font-semibold text-white">
+                  {isLoggedIn ? "Submit Request" : "Sign In to Submit"}
+                </Text>
+              </>
             )}
           </TouchableOpacity>
         </ScrollView>
       </View>
+
+      {/* =====================================================
+          SUBMISSION CONFIRMATION MODAL
+          The API is not called until Confirm & Submit is pressed.
+          ===================================================== */}
+      <Modal
+        visible={confirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelConfirmation}
+        statusBarTranslucent
+      >
+        <View
+          className="flex-1 items-center justify-center px-5"
+          style={{ backgroundColor: colors.modalOverlay }}
+        >
+          <View
+            className="w-full max-w-md rounded-3xl border p-5"
+            style={{
+              backgroundColor: colors.modalSurface,
+              borderColor: colors.borderSubtle,
+            }}
+          >
+            <View className="mb-4 items-center">
+              <View
+                className="mb-3 h-16 w-16 items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: isDark ? "#450a0a" : "#fef2f2",
+                }}
+              >
+                <Ionicons
+                  name="clipboard-outline"
+                  size={32}
+                  color="#ef4444"
+                />
+              </View>
+
+              <Text
+                className="text-center text-xl font-bold"
+                style={{ color: colors.text }}
+              >
+                Confirm Property Request
+              </Text>
+
+              <Text
+                className="mt-2 text-center text-sm leading-5"
+                style={{ color: colors.textMuted }}
+              >
+                Please review your details before submitting. Do you want to
+                continue?
+              </Text>
+            </View>
+
+            <ScrollView
+              className="max-h-72"
+              showsVerticalScrollIndicator={false}
+            >
+              <View
+                className="rounded-2xl border p-4"
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.borderSubtle,
+                }}
+              >
+                <ConfirmationRow
+                  label="Name"
+                  value={`${formData.firstName.trim()} ${formData.lastName.trim()}`}
+                  colors={colors}
+                />
+
+                <ConfirmationRow
+                  label="Email"
+                  value={formData.email.trim().toLowerCase()}
+                  colors={colors}
+                />
+
+                <ConfirmationRow
+                  label="Phone"
+                  value={combinePhoneNumber(
+                    formData.phoneCountryCode,
+                    formData.phone,
+                  )}
+                  colors={colors}
+                />
+
+                <ConfirmationRow
+                  label="Listing Type"
+                  value={
+                    formData.listingType === "rent"
+                      ? "For Rent"
+                      : "For Sale"
+                  }
+                  colors={colors}
+                />
+
+                <ConfirmationRow
+                  label="Property Type"
+                  value={formData.propertyType || "Not selected"}
+                  colors={colors}
+                />
+
+                <ConfirmationRow
+                  label="Location"
+                  value={[
+                    formData.area,
+                    formData.district,
+                    formData.region,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
+                  colors={colors}
+                />
+
+                <ConfirmationRow
+                  label="Price Range"
+                  value={`${formatPrice(formData.minPrice)} – ${formatPrice(
+                    formData.maxPrice,
+                  )}`}
+                  colors={colors}
+                />
+
+                <ConfirmationRow
+                  label="Bedrooms"
+                  value={`${formData.minBedrooms || "0"} – ${
+                    formData.maxBedrooms || "0"
+                  }`}
+                  colors={colors}
+                />
+
+                <ConfirmationRow
+                  label="Visibility"
+                  value={
+                    formData.visibility === "public" ? "Public" : "Private"
+                  }
+                  colors={colors}
+                />
+
+                <ConfirmationRow
+                  label="WhatsApp Alerts"
+                  value={formData.waNotify === "yes" ? "Enabled" : "Disabled"}
+                  colors={colors}
+                  last
+                />
+              </View>
+
+              {formData.description.trim() !== "" && (
+                <View className="mt-3">
+                  <Text
+                    className="mb-1 text-sm font-semibold"
+                    style={{ color: colors.text }}
+                  >
+                    Additional Information
+                  </Text>
+                  <Text
+                    className="text-sm leading-5"
+                    style={{ color: colors.textMuted }}
+                  >
+                    {formData.description.trim()}
+                  </Text>
+                </View>
+              )}
+
+              <View
+                className="mt-4 flex-row items-start rounded-xl border p-3"
+                style={{
+                  borderColor: isDark ? "#713f12" : "#fde68a",
+                  backgroundColor: isDark ? "#29200b" : "#fffbeb",
+                }}
+              >
+                <Ionicons
+                  name="information-circle-outline"
+                  size={20}
+                  color={isDark ? "#fbbf24" : "#92400e"}
+                  style={{ marginRight: 8, marginTop: 1 }}
+                />
+                <Text
+                  className="flex-1 text-xs leading-5"
+                  style={{ color: isDark ? "#fcd34d" : "#92400e" }}
+                >
+                  Confirm only if these details are correct. Your property
+                  request will be sent when you select Confirm & Submit.
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View className="mt-5 flex-row gap-3">
+              <TouchableOpacity
+                onPress={cancelConfirmation}
+                disabled={submitting}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel property request submission"
+                className="min-h-12 flex-1 items-center justify-center rounded-xl border px-3 py-3"
+                style={{
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                  opacity: submitting ? 0.6 : 1,
+                }}
+              >
+                <Text
+                  className="font-semibold"
+                  style={{ color: colors.text }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => void confirmSubmit()}
+                disabled={submitting || !pendingPayload}
+                accessibilityRole="button"
+                accessibilityLabel="Confirm and submit property request"
+                className="min-h-12 flex-1 flex-row items-center justify-center rounded-xl bg-red-600 px-3 py-3"
+                style={{
+                  opacity: submitting || !pendingPayload ? 0.6 : 1,
+                }}
+              >
+                {submitting ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Ionicons
+                    name="checkmark-circle-outline"
+                    size={19}
+                    color="#ffffff"
+                    style={{ marginRight: 6 }}
+                  />
+                )}
+
+                <Text className="font-semibold text-white">
+                  {submitting ? "Submitting..." : "Confirm & Submit"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Selection modal */}
       <Modal
@@ -1218,6 +1518,46 @@ export default function ListPropertyForm({
         </KeyboardAvoidingView>
       </Modal>
     </KeyboardAvoidingView>
+  );
+}
+
+function ConfirmationRow({
+  label,
+  value,
+  colors,
+  last = false,
+}: {
+  label: string;
+  value: string;
+  colors: {
+    text: string;
+    textMuted: string;
+    borderSubtle: string;
+  };
+  last?: boolean;
+}) {
+  return (
+    <View
+      className={`flex-row items-start justify-between py-2 ${
+        last ? "" : "border-b"
+      }`}
+      style={{
+        borderBottomColor: colors.borderSubtle,
+      }}
+    >
+      <Text
+        className="mr-3 flex-1 text-sm"
+        style={{ color: colors.textMuted }}
+      >
+        {label}
+      </Text>
+      <Text
+        className="flex-1 text-right text-sm font-semibold"
+        style={{ color: colors.text }}
+      >
+        {value}
+      </Text>
+    </View>
   );
 }
 

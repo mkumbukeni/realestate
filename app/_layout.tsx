@@ -9,13 +9,15 @@ import {
   useRouter,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Pressable,
   Text,
   View,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+
+import NetInfo from "@react-native-community/netinfo";
 import "react-native-reanimated";
 
 import "../global.css";
@@ -187,9 +189,6 @@ function GlobalAuthButton({
     </Pressable>
   );
 }
-
-
-
 
 /* ============================================================
    GLOBAL HEADER
@@ -642,6 +641,33 @@ function RootContent() {
 
   const router = useRouter();
 
+  // Global internet connectivity state for every screen in the app.
+  // Keep the Stack mounted while offline so the user returns to the
+  // exact screen they were viewing when connectivity is restored.
+  const [isInternetAvailable, setIsInternetAvailable] =
+    useState<boolean | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      if (!mounted) {
+        return;
+      }
+
+      const online =
+        state.isConnected === true &&
+        state.isInternetReachable !== false;
+
+      setIsInternetAvailable(online);
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
   const [
     menuVisible,
     setMenuVisible,
@@ -748,12 +774,8 @@ function RootContent() {
       router.replace(
         "/(tabs)/home",
       );
-    } catch (error) {
-      console.error(
-        "Logout failed:",
-        error,
-      );
-
+    } catch {
+      // Keep the current screen if logout fails.
       setAccountMenuVisible(false);
       setAuthDropdownVisible(false);
       setMenuVisible(false);
@@ -933,6 +955,82 @@ function RootContent() {
               : "dark"
           }
         />
+
+        {/* ====================================================
+            GLOBAL INTERNET CONNECTION BLOCKER
+
+            This covers every route without unmounting the Stack.
+            When the connection returns, the overlay disappears and
+            the current screen is available exactly where it was.
+            ==================================================== */}
+
+        {isInternetAvailable !== true && (
+          <View
+            accessibilityViewIsModal
+            accessibilityRole="alert"
+            className={`absolute inset-0 z-[9999] items-center justify-center px-8 ${
+              isDark ? "bg-[#0d0d0d]" : "bg-white"
+            }`}
+          >
+            <View
+              className={`mb-5 h-20 w-20 items-center justify-center rounded-full ${
+                isDark
+                  ? "bg-red-500/10"
+                  : "bg-red-50"
+              }`}
+            >
+              <Ionicons
+                name={
+                  isInternetAvailable === null
+                    ? "cloud-outline"
+                    : "warning-outline"
+                }
+                size={42}
+                color="#ef4444"
+              />
+            </View>
+
+            <Text
+              className={`mb-3 text-center text-2xl font-bold ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
+            >
+              {isInternetAvailable === null
+                ? "Checking Connection"
+                : "No Internet Connection"}
+            </Text>
+
+            <Text
+              className={`max-w-sm text-center text-base leading-6 ${
+                isDark ? "text-gray-400" : "text-gray-600"
+              }`}
+            >
+              {isInternetAvailable === null
+                ? "Please wait while we check your internet connection."
+                : "You are currently offline. Check your Wi-Fi or mobile data. "}
+            </Text>
+
+            {isInternetAvailable === false && (
+              <View
+                className={`mt-6 flex-row items-center rounded-full border px-4 py-2 ${
+                  isDark
+                    ? "border-red-500/30 bg-red-500/5"
+                    : "border-red-200 bg-red-50"
+                }`}
+              >
+                <Ionicons
+                  name="warning-outline"
+                  size={16}
+                  color="#ef4444"
+                />
+
+                <Text className="ml-2 text-sm font-medium text-red-500">
+                  Waiting for connection
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
     </ThemeProvider>
   );

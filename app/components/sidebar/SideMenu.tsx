@@ -58,12 +58,12 @@ const DEFAULT_MENU_ITEMS: SideMenuItem[] = [
   {
     label: "List Properties",
     icon: "add-circle-outline",
-    route: "/list-property",
+    route: "/properties/list-property",
   },
   {
     label: "Special Property Request",
     icon: "search-circle-outline",
-    route: "/special-property-request",
+    route: "/properties/special-property-request",
   },
 
   {
