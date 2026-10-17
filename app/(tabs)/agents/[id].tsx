@@ -1,37 +1,31 @@
-
-
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Image,
-  Pressable,
-  RefreshControl,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Image,
+    Pressable,
+    RefreshControl,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useAuth } from "@/app/components/auth/AuthContext";
 import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
 import LoginModal from "@/app/components/auth/LoginModal";
 import RegisterModal from "@/app/components/auth/RegisterModal";
-import SideMenu from "@/app/components/sidebar/SideMenu";
 import PropertyCard from "@/app/components/properties/PropertyCard";
+import SideMenu from "@/app/components/sidebar/SideMenu";
 import { useTheme } from "@/app/components/theme/ThemeContext";
-import { useAuth } from "@/app/components/auth/AuthContext";
 
 import {
-  fetchAgentDetails,
-  type Property,
-} from "@/app/services/propertyApi";
+    fetchAgentDetails,
+    type Property,
+} from "@/app/services/properties/propertyApi";
 
 import type { Agent } from "@/app/services/agentApi";
 
@@ -40,74 +34,53 @@ export default function AgentDetailsScreen() {
 
   const { theme } = useTheme();
 
-  const {
-    user,
-    isLoggedIn,
-  } = useAuth();
+  const { user, isLoggedIn } = useAuth();
 
   const params = useLocalSearchParams<{
     id?: string | string[];
   }>();
 
-  const agentId = Array.isArray(params.id)
-    ? params.id[0]
-    : params.id;
+  const agentId = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  const [agent, setAgent] =
-    useState<Agent | null>(null);
+  const [agent, setAgent] = useState<Agent | null>(null);
 
-  const [properties, setProperties] =
-    useState<Property[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [refreshing, setRefreshing] =
-    useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [menuVisible, setMenuVisible] =
-    useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // ============================================================
   // AUTHENTICATION / PROPERTY ACCESS
   // ============================================================
 
-  const [pendingProperty, setPendingProperty] =
-    useState<Property | null>(null);
+  const [pendingProperty, setPendingProperty] = useState<Property | null>(null);
 
-  const [authModalVisible, setAuthModalVisible] =
-    useState(false);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
 
-  const [loginModalVisible, setLoginModalVisible] =
-    useState(false);
+  const [loginModalVisible, setLoginModalVisible] = useState(false);
 
-  const [registerModalVisible, setRegisterModalVisible] =
-    useState(false);
+  const [registerModalVisible, setRegisterModalVisible] = useState(false);
 
   // ============================================================
   // MESSAGE FORM
   // ============================================================
 
-  const [firstName, setFirstName] =
-    useState("");
+  const [firstName, setFirstName] = useState("");
 
-  const [lastName, setLastName] =
-    useState("");
+  const [lastName, setLastName] = useState("");
 
-  const [email, setEmail] =
-    useState("");
+  const [email, setEmail] = useState("");
 
-  const [phone, setPhone] =
-    useState("");
+  const [phone, setPhone] = useState("");
 
-  const [message, setMessage] =
-    useState("");
+  const [message, setMessage] = useState("");
 
-  const [sendingMessage, setSendingMessage] =
-    useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   // ============================================================
   // LOAD AGENT + ASSOCIATED PROPERTIES
@@ -120,109 +93,71 @@ export default function AgentDetailsScreen() {
   // 2. The properties associated with that agent
   // ============================================================
 
-  const loadAgentDetails =
-    useCallback(
-      async (
-        isRefresh = false,
-      ) => {
-        if (!agentId) {
-          setAgent(null);
-          setProperties([]);
-          setError("Agent ID is missing.");
-          setLoading(false);
-          setRefreshing(false);
-          return;
+  const loadAgentDetails = useCallback(
+    async (isRefresh = false) => {
+      if (!agentId) {
+        setAgent(null);
+        setProperties([]);
+        setError("Agent ID is missing.");
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      try {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
         }
 
-        try {
-          if (isRefresh) {
-            setRefreshing(true);
-          } else {
-            setLoading(true);
-          }
+        setError(null);
 
-          setError(null);
+        console.log("================================================");
 
-          console.log(
-            "================================================",
-          );
+        console.log("Loading agent details");
 
-          console.log(
-            "Loading agent details",
-          );
+        console.log("Agent ID:", agentId);
 
-          console.log(
-            "Agent ID:",
-            agentId,
-          );
+        console.log("================================================");
 
-          console.log(
-            "================================================",
-          );
+        const result = await fetchAgentDetails(agentId);
 
-          const result =
-            await fetchAgentDetails(
-              agentId,
-            );
+        console.log("Agent details result:", result);
 
-          console.log(
-            "Agent details result:",
-            result,
-          );
+        console.log("Agent:", result.agent);
 
-          console.log(
-            "Agent:",
-            result.agent,
-          );
+        console.log("Associated properties:", result.properties);
 
-          console.log(
-            "Associated properties:",
-            result.properties,
-          );
+        console.log("Associated property count:", result.properties.length);
 
-          console.log(
-            "Associated property count:",
-            result.properties.length,
-          );
+        setAgent(result.agent);
 
-          setAgent(result.agent);
+        setProperties(
+          Array.isArray(result.properties) ? result.properties : [],
+        );
+      } catch (requestError) {
+        console.error("================================================");
 
-          setProperties(
-            Array.isArray(
-              result.properties,
-            )
-              ? result.properties
-              : [],
-          );
-        } catch (requestError) {
-          console.error(
-            "================================================",
-          );
+        console.error("Failed to load agent details:", requestError);
 
-          console.error(
-            "Failed to load agent details:",
-            requestError,
-          );
+        console.error("================================================");
 
-          console.error(
-            "================================================",
-          );
+        setAgent(null);
+        setProperties([]);
 
-          setAgent(null);
-          setProperties([]);
-
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : "Failed to load agent details.",
-          );
-        } finally {
-          setLoading(false);
-          setRefreshing(false);
-        }
-      },
-      [agentId],
-    );
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Failed to load agent details.",
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [agentId],
+  );
 
   // ============================================================
   // INITIAL LOAD
@@ -264,9 +199,7 @@ export default function AgentDetailsScreen() {
   //     authentication-required modal.
   // ============================================================
 
-  const handlePropertyPress = (
-    property: Property,
-  ) => {
+  const handlePropertyPress = (property: Property) => {
     if (!property?.id) {
       return;
     }
@@ -277,8 +210,7 @@ export default function AgentDetailsScreen() {
 
     if (isLoggedIn) {
       router.push({
-        pathname:
-          "/(tabs)/properties/[id]",
+        pathname: "/(tabs)/properties/[id]",
         params: {
           id: String(property.id),
         },
@@ -329,15 +261,13 @@ export default function AgentDetailsScreen() {
   ) => {
     setLoginModalVisible(false);
 
-    const propertyToOpen =
-      pendingProperty;
+    const propertyToOpen = pendingProperty;
 
     setPendingProperty(null);
 
     if (propertyToOpen?.id) {
       router.push({
-        pathname:
-          "/(tabs)/properties/[id]",
+        pathname: "/(tabs)/properties/[id]",
         params: {
           id: String(propertyToOpen.id),
         },
@@ -362,48 +292,34 @@ export default function AgentDetailsScreen() {
   // ============================================================
 
   const handleSendMessage = async () => {
-    const trimmedFirstName =
-      firstName.trim();
+    const trimmedFirstName = firstName.trim();
 
-    const trimmedLastName =
-      lastName.trim();
+    const trimmedLastName = lastName.trim();
 
-    const trimmedEmail =
-      email.trim();
+    const trimmedEmail = email.trim();
 
-    const trimmedPhone =
-      phone.trim();
+    const trimmedPhone = phone.trim();
 
-    const trimmedMessage =
-      message.trim();
+    const trimmedMessage = message.trim();
 
     // ----------------------------------------------------------
     // VALIDATION
     // ----------------------------------------------------------
 
     if (!trimmedFirstName) {
-      Alert.alert(
-        "First Name Required",
-        "Please enter your first name.",
-      );
+      Alert.alert("First Name Required", "Please enter your first name.");
 
       return;
     }
 
     if (!trimmedLastName) {
-      Alert.alert(
-        "Last Name Required",
-        "Please enter your last name.",
-      );
+      Alert.alert("Last Name Required", "Please enter your last name.");
 
       return;
     }
 
     if (!trimmedEmail) {
-      Alert.alert(
-        "Email Required",
-        "Please enter your email address.",
-      );
+      Alert.alert("Email Required", "Please enter your email address.");
 
       return;
     }
@@ -418,10 +334,7 @@ export default function AgentDetailsScreen() {
     }
 
     if (!trimmedMessage) {
-      Alert.alert(
-        "Message Required",
-        "Please enter your message.",
-      );
+      Alert.alert("Message Required", "Please enter your message.");
 
       return;
     }
@@ -432,8 +345,7 @@ export default function AgentDetailsScreen() {
     // The sender_id must be the currently logged-in user's ID.
     // ----------------------------------------------------------
 
-    const senderId =
-      user?.id;
+    const senderId = user?.id;
 
     if (
       senderId === undefined ||
@@ -453,10 +365,7 @@ export default function AgentDetailsScreen() {
     // ----------------------------------------------------------
 
     if (!agent) {
-      Alert.alert(
-        "Unable to Send",
-        "Agent information is unavailable.",
-      );
+      Alert.alert("Unable to Send", "Agent information is unavailable.");
 
       return;
     }
@@ -474,18 +383,14 @@ export default function AgentDetailsScreen() {
     // agent.userId therefore has priority.
     // ----------------------------------------------------------
 
-    const receiverId =
-      agent.userId ?? agent.id;
+    const receiverId = agent.userId ?? agent.id;
 
     if (
       receiverId === undefined ||
       receiverId === null ||
       String(receiverId).trim() === ""
     ) {
-      Alert.alert(
-        "Unable to Send",
-        "The agent's user ID is unavailable.",
-      );
+      Alert.alert("Unable to Send", "The agent's user ID is unavailable.");
 
       return;
     }
@@ -494,8 +399,7 @@ export default function AgentDetailsScreen() {
     // API URL
     // ----------------------------------------------------------
 
-    const apiUrl =
-      process.env.EXPO_PUBLIC_API_URL;
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
 
     if (!apiUrl) {
       Alert.alert(
@@ -506,8 +410,7 @@ export default function AgentDetailsScreen() {
       return;
     }
 
-    const endpoint =
-      `${apiUrl.replace(/\/+$/, "")}/v2/messages/send`;
+    const endpoint = `${apiUrl.replace(/\/+$/, "")}/v2/messages/send`;
 
     // ----------------------------------------------------------
     // MESSAGE CONTENT
@@ -532,132 +435,72 @@ export default function AgentDetailsScreen() {
     try {
       setSendingMessage(true);
 
-      console.log(
-        "================================================",
-      );
+      console.log("================================================");
 
-      console.log(
-        "Sending message to agent",
-      );
+      console.log("Sending message to agent");
 
-      console.log(
-        "Endpoint:",
-        endpoint,
-      );
+      console.log("Endpoint:", endpoint);
 
-      console.log(
-        "Sender ID:",
-        senderId,
-      );
+      console.log("Sender ID:", senderId);
 
-      console.log(
-        "Receiver ID:",
-        receiverId,
-      );
+      console.log("Receiver ID:", receiverId);
 
-      console.log(
-        "================================================",
-      );
+      console.log("================================================");
 
-      const response =
-        await fetch(
-          endpoint,
-          {
-            method: "POST",
+      const response = await fetch(endpoint, {
+        method: "POST",
 
-            headers: {
-              Accept:
-                "application/json",
+        headers: {
+          Accept: "application/json",
 
-              "Content-Type":
-                "application/json",
-            },
+          "Content-Type": "application/json",
+        },
 
-            body: JSON.stringify({
-              sender_id:
-                senderId,
+        body: JSON.stringify({
+          sender_id: senderId,
 
-              receiver_id:
-                receiverId,
+          receiver_id: receiverId,
 
-              message:
-                formattedMessage,
-            }),
-          },
-        );
+          message: formattedMessage,
+        }),
+      });
 
-      const responseText =
-        await response
-          .text()
-          .catch(() => "");
+      const responseText = await response.text().catch(() => "");
 
-      let responseJson: unknown =
-        null;
+      let responseJson: unknown = null;
 
       try {
-        responseJson =
-          responseText
-            ? JSON.parse(
-                responseText,
-              )
-            : null;
+        responseJson = responseText ? JSON.parse(responseText) : null;
       } catch {
-        responseJson =
-          responseText;
+        responseJson = responseText;
       }
 
-      console.log(
-        "Message API response:",
-        responseJson,
-      );
+      console.log("Message API response:", responseJson);
 
       // --------------------------------------------------------
       // HANDLE API ERROR
       // --------------------------------------------------------
 
       if (!response.ok) {
-        let errorMessage =
-          `Message request failed (${response.status}).`;
+        let errorMessage = `Message request failed (${response.status}).`;
 
-        if (
-          typeof responseJson ===
-            "object" &&
-          responseJson !== null
-        ) {
-          const possibleResponse =
-            responseJson as {
-              message?: unknown;
-              msg?: unknown;
-              error?: unknown;
-            };
+        if (typeof responseJson === "object" && responseJson !== null) {
+          const possibleResponse = responseJson as {
+            message?: unknown;
+            msg?: unknown;
+            error?: unknown;
+          };
 
-          if (
-            possibleResponse.message
-          ) {
-            errorMessage =
-              String(
-                possibleResponse.message,
-              );
-          } else if (
-            possibleResponse.msg
-          ) {
-            errorMessage =
-              String(
-                possibleResponse.msg,
-              );
-          } else if (
-            possibleResponse.error
-          ) {
-            errorMessage =
-              String(
-                possibleResponse.error,
-              );
+          if (possibleResponse.message) {
+            errorMessage = String(possibleResponse.message);
+          } else if (possibleResponse.msg) {
+            errorMessage = String(possibleResponse.msg);
+          } else if (possibleResponse.error) {
+            errorMessage = String(possibleResponse.error);
           }
         }
 
-        throw new Error(
-          errorMessage,
-        );
+        throw new Error(errorMessage);
       }
 
       // --------------------------------------------------------
@@ -672,24 +515,14 @@ export default function AgentDetailsScreen() {
 
       Alert.alert(
         "Message Sent",
-        `Your message has been sent to ${
-          agent.name ||
-          "the agent"
-        }.`,
+        `Your message has been sent to ${agent.name || "the agent"}.`,
       );
     } catch (sendError) {
-      console.error(
-        "================================================",
-      );
+      console.error("================================================");
 
-      console.error(
-        "Failed to send message:",
-        sendError,
-      );
+      console.error("Failed to send message:", sendError);
 
-      console.error(
-        "================================================",
-      );
+      console.error("================================================");
 
       Alert.alert(
         "Message Not Sent",
@@ -706,11 +539,7 @@ export default function AgentDetailsScreen() {
   // PROPERTY CARD
   // ============================================================
 
-  const renderProperty = ({
-    item,
-  }: {
-    item: Property;
-  }) => {
+  const renderProperty = ({ item }: { item: Property }) => {
     return (
       <View className="px-4">
         <PropertyCard
@@ -726,79 +555,62 @@ export default function AgentDetailsScreen() {
   // EMPTY PROPERTY LIST
   // ============================================================
 
-  const renderEmptyProperties =
-    () => {
-      if (loading) {
-        return null;
-      }
+  const renderEmptyProperties = () => {
+    if (loading) {
+      return null;
+    }
 
-      return (
-        <View
-          className="mx-4 items-center justify-center rounded-2xl px-6 py-12"
+    return (
+      <View
+        className="mx-4 items-center justify-center rounded-2xl px-6 py-12"
+        style={{
+          backgroundColor: theme.card,
+
+          borderWidth: 1,
+
+          borderColor: theme.border,
+        }}
+      >
+        <Ionicons name="home-outline" size={52} color={theme.textMuted} />
+
+        <Text
+          className="mt-4 text-center text-lg font-bold"
           style={{
-            backgroundColor:
-              theme.card,
-
-            borderWidth: 1,
-
-            borderColor:
-              theme.border,
+            color: theme.text,
           }}
         >
-          <Ionicons
-            name="home-outline"
-            size={52}
-            color={theme.textMuted}
-          />
+          No properties assigned
+        </Text>
 
+        <Text
+          className="mt-2 text-center text-sm leading-5"
+          style={{
+            color: theme.textMuted,
+          }}
+        >
+          There are currently no properties assigned to this agent.
+        </Text>
+
+        {error ? (
           <Text
-            className="mt-4 text-center text-lg font-bold"
+            className="mt-4 text-center text-xs leading-5"
             style={{
-              color: theme.text,
+              color: theme.textMuted,
             }}
           >
-            No properties assigned
+            {error}
           </Text>
+        ) : null}
 
-          <Text
-            className="mt-2 text-center text-sm leading-5"
-            style={{
-              color:
-                theme.textMuted,
-            }}
-          >
-            There are currently no
-            properties assigned to
-            this agent.
-          </Text>
-
-          {error ? (
-            <Text
-              className="mt-4 text-center text-xs leading-5"
-              style={{
-                color:
-                  theme.textMuted,
-              }}
-            >
-              {error}
-            </Text>
-          ) : null}
-
-          <Pressable
-            onPress={() =>
-              void loadAgentDetails(
-                false,
-              )
-            }
-            className="mt-5 rounded-xl bg-red-600 px-5 py-3"
-          >
-            <Text className="font-bold text-white">
-              Try Again
-            </Text>
-          </Pressable>
-        </View>
-      );
-    };
+        <Pressable
+          onPress={() => void loadAgentDetails(false)}
+          className="mt-5 rounded-xl bg-red-600 px-5 py-3"
+        >
+          <Text className="font-bold text-white">Try Again</Text>
+        </Pressable>
+      </View>
+    );
+  };
 
   // ============================================================
   // LEAVE A MESSAGE
@@ -809,217 +621,173 @@ export default function AgentDetailsScreen() {
   // all associated properties.
   // ============================================================
 
-  const renderMessageForm =
-    () => {
-      if (!agent) {
-        return null;
-      }
+  const renderMessageForm = () => {
+    if (!agent) {
+      return null;
+    }
 
-      return (
-        <View className="px-4">
-          <View className="mb-8 mt-8">
-            <Text
-              className="text-2xl font-bold"
-              style={{
-                color: theme.text,
-              }}
-            >
-              Leave a Message
-            </Text>
+    return (
+      <View className="px-4">
+        <View className="mb-8 mt-8">
+          <Text
+            className="text-2xl font-bold"
+            style={{
+              color: theme.text,
+            }}
+          >
+            Leave a Message
+          </Text>
 
-            <Text
-              className="mt-1 text-sm leading-5"
-              style={{
-                color:
-                  theme.textMuted,
-              }}
-            >
-              Send a message directly to{" "}
-              {agent.name ||
-                "this agent"}.
-            </Text>
+          <Text
+            className="mt-1 text-sm leading-5"
+            style={{
+              color: theme.textMuted,
+            }}
+          >
+            Send a message directly to {agent.name || "this agent"}.
+          </Text>
 
-            <View
-              className="mt-4 rounded-2xl p-4"
-              style={{
-                backgroundColor:
-                  theme.card,
+          <View
+            className="mt-4 rounded-2xl p-4"
+            style={{
+              backgroundColor: theme.card,
 
-                borderWidth: 1,
+              borderWidth: 1,
 
-                borderColor:
-                  theme.border,
-              }}
-            >
-              {/* ================================================= */}
-              {/* FIRST NAME */}
-              {/* ================================================= */}
+              borderColor: theme.border,
+            }}
+          >
+            {/* ================================================= */}
+            {/* FIRST NAME */}
+            {/* ================================================= */}
 
-              <MessageInput
-                label="First Name"
-                value={firstName}
-                onChangeText={
-                  setFirstName
-                }
-                placeholder="Enter your first name"
-                icon="person-outline"
-                theme={theme}
-                editable={
-                  !sendingMessage
-                }
-              />
+            <MessageInput
+              label="First Name"
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter your first name"
+              icon="person-outline"
+              theme={theme}
+              editable={!sendingMessage}
+            />
 
-              {/* ================================================= */}
-              {/* LAST NAME */}
-              {/* ================================================= */}
+            {/* ================================================= */}
+            {/* LAST NAME */}
+            {/* ================================================= */}
 
-              <MessageInput
-                label="Last Name"
-                value={lastName}
-                onChangeText={
-                  setLastName
-                }
-                placeholder="Enter your last name"
-                icon="person-outline"
-                theme={theme}
-                editable={
-                  !sendingMessage
-                }
-              />
+            <MessageInput
+              label="Last Name"
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Enter your last name"
+              icon="person-outline"
+              theme={theme}
+              editable={!sendingMessage}
+            />
 
-              {/* ================================================= */}
-              {/* EMAIL */}
-              {/* ================================================= */}
+            {/* ================================================= */}
+            {/* EMAIL */}
+            {/* ================================================= */}
 
-              <MessageInput
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Enter your email"
-                icon="mail-outline"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                theme={theme}
-                editable={
-                  !sendingMessage
-                }
-              />
+            <MessageInput
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Enter your email"
+              icon="mail-outline"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              theme={theme}
+              editable={!sendingMessage}
+            />
 
-              {/* ================================================= */}
-              {/* PHONE */}
-              {/* ================================================= */}
+            {/* ================================================= */}
+            {/* PHONE */}
+            {/* ================================================= */}
 
-              <MessageInput
-                label="Phone Number"
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="Preferably a WhatsApp number"
-                icon="call-outline"
-                keyboardType="phone-pad"
-                theme={theme}
-                editable={
-                  !sendingMessage
-                }
-                helperText="Preferably a WhatsApp number"
-              />
+            <MessageInput
+              label="Phone Number"
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="Preferably a WhatsApp number"
+              icon="call-outline"
+              keyboardType="phone-pad"
+              theme={theme}
+              editable={!sendingMessage}
+              helperText="Preferably a WhatsApp number"
+            />
 
-              {/* ================================================= */}
-              {/* MESSAGE */}
-              {/* ================================================= */}
+            {/* ================================================= */}
+            {/* MESSAGE */}
+            {/* ================================================= */}
 
-              <View className="mt-1">
-                <Text
-                  className="mb-2 text-sm font-semibold"
-                  style={{
-                    color:
-                      theme.text,
-                  }}
-                >
-                  Message
-                </Text>
-
-                <View
-                  className="rounded-xl"
-                  style={{
-                    backgroundColor:
-                      theme.surface,
-
-                    borderWidth: 1,
-
-                    borderColor:
-                      theme.border,
-                  }}
-                >
-                  <TextInput
-                    value={message}
-                    onChangeText={
-                      setMessage
-                    }
-                    placeholder="Write your message..."
-                    placeholderTextColor={
-                      theme.textMuted
-                    }
-                    multiline
-                    textAlignVertical="top"
-                    editable={
-                      !sendingMessage
-                    }
-                    className="px-4 py-3 text-sm"
-                    style={{
-                      color:
-                        theme.text,
-
-                      minHeight: 140,
-
-                      maxHeight: 220,
-                    }}
-                  />
-                </View>
-              </View>
-
-              {/* ================================================= */}
-              {/* SEND MESSAGE BUTTON */}
-              {/* ================================================= */}
-
-              <Pressable
-                onPress={
-                  handleSendMessage
-                }
-                disabled={
-                  sendingMessage
-                }
-                className="mt-5 min-h-[52px] flex-row items-center justify-center rounded-xl px-5"
+            <View className="mt-1">
+              <Text
+                className="mb-2 text-sm font-semibold"
                 style={{
-                  backgroundColor:
-                    sendingMessage
-                      ? theme.textMuted
-                      : "#dc2626",
+                  color: theme.text,
                 }}
               >
-                {sendingMessage ? (
-                  <ActivityIndicator
-                    size="small"
-                    color="#ffffff"
-                  />
-                ) : (
-                  <Ionicons
-                    name="send-outline"
-                    size={20}
-                    color="#ffffff"
-                  />
-                )}
+                Message
+              </Text>
 
-                <Text className="ml-2 text-base font-bold text-white">
-                  {sendingMessage
-                    ? "Sending..."
-                    : "Send Message"}
-                </Text>
-              </Pressable>
+              <View
+                className="rounded-xl"
+                style={{
+                  backgroundColor: theme.surface,
+
+                  borderWidth: 1,
+
+                  borderColor: theme.border,
+                }}
+              >
+                <TextInput
+                  value={message}
+                  onChangeText={setMessage}
+                  placeholder="Write your message..."
+                  placeholderTextColor={theme.textMuted}
+                  multiline
+                  textAlignVertical="top"
+                  editable={!sendingMessage}
+                  className="px-4 py-3 text-sm"
+                  style={{
+                    color: theme.text,
+
+                    minHeight: 140,
+
+                    maxHeight: 220,
+                  }}
+                />
+              </View>
             </View>
+
+            {/* ================================================= */}
+            {/* SEND MESSAGE BUTTON */}
+            {/* ================================================= */}
+
+            <Pressable
+              onPress={handleSendMessage}
+              disabled={sendingMessage}
+              className="mt-5 min-h-[52px] flex-row items-center justify-center rounded-xl px-5"
+              style={{
+                backgroundColor: sendingMessage ? theme.textMuted : "#dc2626",
+              }}
+            >
+              {sendingMessage ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Ionicons name="send-outline" size={20} color="#ffffff" />
+              )}
+
+              <Text className="ml-2 text-base font-bold text-white">
+                {sendingMessage ? "Sending..." : "Send Message"}
+              </Text>
+            </Pressable>
           </View>
         </View>
-      );
-    };
+      </View>
+    );
+  };
 
   // ============================================================
   // LOADING SCREEN
@@ -1030,8 +798,7 @@ export default function AgentDetailsScreen() {
       <SafeAreaView
         className="flex-1"
         style={{
-          backgroundColor:
-            theme.background,
+          backgroundColor: theme.background,
         }}
       >
         <View
@@ -1039,23 +806,17 @@ export default function AgentDetailsScreen() {
           style={{
             borderBottomWidth: 1,
 
-            borderBottomColor:
-              theme.border,
+            borderBottomColor: theme.border,
           }}
         >
           <Pressable
             onPress={handleBack}
             className="h-11 w-11 items-center justify-center rounded-full"
             style={{
-              backgroundColor:
-                theme.card,
+              backgroundColor: theme.card,
             }}
           >
-            <Ionicons
-              name="arrow-back"
-              size={23}
-              color={theme.icon}
-            />
+            <Ionicons name="arrow-back" size={23} color={theme.icon} />
           </Pressable>
 
           <Text
@@ -1069,16 +830,12 @@ export default function AgentDetailsScreen() {
         </View>
 
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator
-            size="large"
-            color={theme.accent}
-          />
+          <ActivityIndicator size="large" color={theme.accent} />
 
           <Text
             className="mt-3 text-sm"
             style={{
-              color:
-                theme.textMuted,
+              color: theme.textMuted,
             }}
           >
             Loading agent details...
@@ -1097,8 +854,7 @@ export default function AgentDetailsScreen() {
       <SafeAreaView
         className="flex-1"
         style={{
-          backgroundColor:
-            theme.background,
+          backgroundColor: theme.background,
         }}
       >
         <View
@@ -1106,23 +862,17 @@ export default function AgentDetailsScreen() {
           style={{
             borderBottomWidth: 1,
 
-            borderBottomColor:
-              theme.border,
+            borderBottomColor: theme.border,
           }}
         >
           <Pressable
             onPress={handleBack}
             className="h-11 w-11 items-center justify-center rounded-full"
             style={{
-              backgroundColor:
-                theme.card,
+              backgroundColor: theme.card,
             }}
           >
-            <Ionicons
-              name="arrow-back"
-              size={23}
-              color={theme.icon}
-            />
+            <Ionicons name="arrow-back" size={23} color={theme.icon} />
           </Pressable>
 
           <Text
@@ -1136,11 +886,7 @@ export default function AgentDetailsScreen() {
         </View>
 
         <View className="flex-1 items-center justify-center px-6">
-          <Ionicons
-            name="person-outline"
-            size={60}
-            color={theme.textMuted}
-          />
+          <Ionicons name="person-outline" size={60} color={theme.textMuted} />
 
           <Text
             className="mt-5 text-center text-xl font-bold"
@@ -1154,38 +900,28 @@ export default function AgentDetailsScreen() {
           <Text
             className="mt-2 text-center text-sm"
             style={{
-              color:
-                theme.textMuted,
+              color: theme.textMuted,
             }}
           >
-            {error ||
-              "The requested agent could not be found."}
+            {error || "The requested agent could not be found."}
           </Text>
 
           <Pressable
-            onPress={() =>
-              void loadAgentDetails(
-                false,
-              )
-            }
+            onPress={() => void loadAgentDetails(false)}
             className="mt-5 rounded-xl bg-red-600 px-6 py-3"
           >
-            <Text className="font-bold text-white">
-              Try Again
-            </Text>
+            <Text className="font-bold text-white">Try Again</Text>
           </Pressable>
 
           <Pressable
             onPress={handleBack}
             className="mt-3 rounded-xl px-6 py-3"
             style={{
-              backgroundColor:
-                theme.card,
+              backgroundColor: theme.card,
 
               borderWidth: 1,
 
-              borderColor:
-                theme.border,
+              borderColor: theme.border,
             }}
           >
             <Text
@@ -1210,14 +946,9 @@ export default function AgentDetailsScreen() {
     <SafeAreaView
       className="flex-1"
       style={{
-        backgroundColor:
-          theme.background,
+        backgroundColor: theme.background,
       }}
-      edges={[
-        "top",
-        "left",
-        "right",
-      ]}
+      edges={["top", "left", "right"]}
     >
       {/* ====================================================== */}
       {/* HEADER */}
@@ -1226,13 +957,11 @@ export default function AgentDetailsScreen() {
       <View
         className="flex-row items-center justify-between px-4 py-3"
         style={{
-          backgroundColor:
-            theme.background,
+          backgroundColor: theme.background,
 
           borderBottomWidth: 1,
 
-          borderBottomColor:
-            theme.border,
+          borderBottomColor: theme.border,
         }}
       >
         <View className="flex-1 flex-row items-center">
@@ -1240,15 +969,10 @@ export default function AgentDetailsScreen() {
             onPress={handleBack}
             className="h-11 w-11 items-center justify-center rounded-full"
             style={{
-              backgroundColor:
-                theme.card,
+              backgroundColor: theme.card,
             }}
           >
-            <Ionicons
-              name="arrow-back"
-              size={23}
-              color={theme.icon}
-            />
+            <Ionicons name="arrow-back" size={23} color={theme.icon} />
           </Pressable>
 
           <View className="ml-3 flex-1">
@@ -1265,8 +989,7 @@ export default function AgentDetailsScreen() {
             <Text
               className="text-xs"
               style={{
-                color:
-                  theme.textMuted,
+                color: theme.textMuted,
               }}
             >
               Agent #{agent.id}
@@ -1275,20 +998,13 @@ export default function AgentDetailsScreen() {
         </View>
 
         <Pressable
-          onPress={() =>
-            setMenuVisible(true)
-          }
+          onPress={() => setMenuVisible(true)}
           className="h-11 w-11 items-center justify-center rounded-full"
           style={{
-            backgroundColor:
-              theme.card,
+            backgroundColor: theme.card,
           }}
         >
-          <Ionicons
-            name="menu-outline"
-            size={27}
-            color={theme.icon}
-          />
+          <Ionicons name="menu-outline" size={27} color={theme.icon} />
         </Pressable>
       </View>
 
@@ -1298,9 +1014,7 @@ export default function AgentDetailsScreen() {
 
       <FlatList
         data={properties}
-        keyExtractor={(item) =>
-          String(item.id)
-        }
+        keyExtractor={(item) => String(item.id)}
         renderItem={renderProperty}
         ListHeaderComponent={
           <View className="px-4 pt-5">
@@ -1311,13 +1025,11 @@ export default function AgentDetailsScreen() {
             <View
               className="overflow-hidden rounded-2xl"
               style={{
-                backgroundColor:
-                  theme.card,
+                backgroundColor: theme.card,
 
                 borderWidth: 1,
 
-                borderColor:
-                  theme.border,
+                borderColor: theme.border,
               }}
             >
               <View className="items-center px-5 pb-6 pt-7">
@@ -1333,16 +1045,13 @@ export default function AgentDetailsScreen() {
                   <View
                     className="h-28 w-28 items-center justify-center rounded-full border-2 border-red-600"
                     style={{
-                      backgroundColor:
-                        theme.surface,
+                      backgroundColor: theme.surface,
                     }}
                   >
                     <Ionicons
                       name="person-outline"
                       size={52}
-                      color={
-                        theme.textMuted
-                      }
+                      color={theme.textMuted}
                     />
                   </View>
                 )}
@@ -1353,8 +1062,7 @@ export default function AgentDetailsScreen() {
                     color: theme.text,
                   }}
                 >
-                  {agent.name ||
-                    "Unnamed Agent"}
+                  {agent.name || "Unnamed Agent"}
                 </Text>
 
                 {agent.agentType ? (
@@ -1376,8 +1084,7 @@ export default function AgentDetailsScreen() {
                     <Text
                       className="ml-1.5 text-xs"
                       style={{
-                        color:
-                          theme.textMuted,
+                        color: theme.textMuted,
                       }}
                     >
                       {agent.licenseStatus}
@@ -1395,8 +1102,7 @@ export default function AgentDetailsScreen() {
                 style={{
                   borderTopWidth: 1,
 
-                  borderTopColor:
-                    theme.border,
+                  borderTopColor: theme.border,
                 }}
               >
                 {agent.email ? (
@@ -1427,18 +1133,14 @@ export default function AgentDetailsScreen() {
                   <InfoRow
                     icon="briefcase-outline"
                     label="Specialization"
-                    value={
-                      agent.specialization
-                    }
+                    value={agent.specialization}
                   />
                 ) : null}
 
                 <InfoRow
                   icon="home-outline"
                   label="Associated Properties"
-                  value={String(
-                    properties.length,
-                  )}
+                  value={String(properties.length)}
                   last
                 />
               </View>
@@ -1462,20 +1164,17 @@ export default function AgentDetailsScreen() {
                 <View
                   className="rounded-2xl p-4"
                   style={{
-                    backgroundColor:
-                      theme.card,
+                    backgroundColor: theme.card,
 
                     borderWidth: 1,
 
-                    borderColor:
-                      theme.border,
+                    borderColor: theme.border,
                   }}
                 >
                   <Text
                     className="text-sm leading-6"
                     style={{
-                      color:
-                        theme.textSecondary,
+                      color: theme.textSecondary,
                     }}
                   >
                     {agent.about}
@@ -1488,8 +1187,7 @@ export default function AgentDetailsScreen() {
             {/* COVERAGE AREAS */}
             {/* ================================================= */}
 
-            {agent.coverageAreas.length >
-            0 ? (
+            {agent.coverageAreas.length > 0 ? (
               <View className="mt-6">
                 <Text
                   className="mb-3 text-xl font-bold"
@@ -1501,73 +1199,61 @@ export default function AgentDetailsScreen() {
                 </Text>
 
                 <View className="flex-row flex-wrap">
-                  {agent.coverageAreas.map(
-                    (
-                      area,
-                      index,
-                    ) => {
-                      const areaName =
-                        area.location_name ||
-                        area.district_name ||
-                        "Coverage Area";
+                  {agent.coverageAreas.map((area, index) => {
+                    const areaName =
+                      area.location_name ||
+                      area.district_name ||
+                      "Coverage Area";
 
-                      const district =
-                        area.location_name &&
-                        area.district_name &&
-                        area.location_name !==
-                          area.district_name
-                          ? area.district_name
-                          : "";
+                    const district =
+                      area.location_name &&
+                      area.district_name &&
+                      area.location_name !== area.district_name
+                        ? area.district_name
+                        : "";
 
-                      return (
-                        <View
-                          key={`${areaName}-${district}-${index}`}
-                          className="mb-2 mr-2 rounded-xl px-3 py-2.5"
-                          style={{
-                            backgroundColor:
-                              theme.card,
+                    return (
+                      <View
+                        key={`${areaName}-${district}-${index}`}
+                        className="mb-2 mr-2 rounded-xl px-3 py-2.5"
+                        style={{
+                          backgroundColor: theme.card,
 
-                            borderWidth: 1,
+                          borderWidth: 1,
 
-                            borderColor:
-                              theme.border,
-                          }}
-                        >
-                          <View className="flex-row items-center">
-                            <Ionicons
-                              name="location-outline"
-                              size={17}
-                              color={
-                                theme.accent
-                              }
-                            />
+                          borderColor: theme.border,
+                        }}
+                      >
+                        <View className="flex-row items-center">
+                          <Ionicons
+                            name="location-outline"
+                            size={17}
+                            color={theme.accent}
+                          />
 
-                            <Text
-                              className="ml-2 text-sm font-medium"
-                              style={{
-                                color:
-                                  theme.textSecondary,
-                              }}
-                            >
-                              {areaName}
-                            </Text>
-                          </View>
-
-                          {district ? (
-                            <Text
-                              className="ml-6 mt-1 text-xs"
-                              style={{
-                                color:
-                                  theme.textMuted,
-                              }}
-                            >
-                              {district}
-                            </Text>
-                          ) : null}
+                          <Text
+                            className="ml-2 text-sm font-medium"
+                            style={{
+                              color: theme.textSecondary,
+                            }}
+                          >
+                            {areaName}
+                          </Text>
                         </View>
-                      );
-                    },
-                  )}
+
+                        {district ? (
+                          <Text
+                            className="ml-6 mt-1 text-xs"
+                            style={{
+                              color: theme.textMuted,
+                            }}
+                          >
+                            {district}
+                          </Text>
+                        ) : null}
+                      </View>
+                    );
+                  })}
                 </View>
               </View>
             ) : null}
@@ -1576,8 +1262,7 @@ export default function AgentDetailsScreen() {
             {/* SOCIAL PROFILES */}
             {/* ================================================= */}
 
-            {agent.linkedin ||
-            agent.facebook ? (
+            {agent.linkedin || agent.facebook ? (
               <View className="mt-6">
                 <Text
                   className="mb-3 text-xl font-bold"
@@ -1593,13 +1278,11 @@ export default function AgentDetailsScreen() {
                     <View
                       className="mr-2 flex-row items-center rounded-xl px-4 py-3"
                       style={{
-                        backgroundColor:
-                          theme.card,
+                        backgroundColor: theme.card,
 
                         borderWidth: 1,
 
-                        borderColor:
-                          theme.border,
+                        borderColor: theme.border,
                       }}
                     >
                       <Ionicons
@@ -1611,8 +1294,7 @@ export default function AgentDetailsScreen() {
                       <Text
                         className="ml-2 text-sm"
                         style={{
-                          color:
-                            theme.textSecondary,
+                          color: theme.textSecondary,
                         }}
                       >
                         LinkedIn
@@ -1624,13 +1306,11 @@ export default function AgentDetailsScreen() {
                     <View
                       className="flex-row items-center rounded-xl px-4 py-3"
                       style={{
-                        backgroundColor:
-                          theme.card,
+                        backgroundColor: theme.card,
 
                         borderWidth: 1,
 
-                        borderColor:
-                          theme.border,
+                        borderColor: theme.border,
                       }}
                     >
                       <Ionicons
@@ -1642,8 +1322,7 @@ export default function AgentDetailsScreen() {
                       <Text
                         className="ml-2 text-sm"
                         style={{
-                          color:
-                            theme.textSecondary,
+                          color: theme.textSecondary,
                         }}
                       >
                         Facebook
@@ -1672,13 +1351,10 @@ export default function AgentDetailsScreen() {
                 <Text
                   className="mt-1 text-sm"
                   style={{
-                    color:
-                      theme.textMuted,
+                    color: theme.textMuted,
                   }}
                 >
-                  All properties associated
-                  with{" "}
-                  {agent.name}
+                  All properties associated with {agent.name}
                 </Text>
               </View>
 
@@ -1690,18 +1366,12 @@ export default function AgentDetailsScreen() {
             </View>
           </View>
         }
-        ListEmptyComponent={
-          renderEmptyProperties
-        }
-        ListFooterComponent={
-          renderMessageForm
-        }
+        ListEmptyComponent={renderEmptyProperties}
+        ListFooterComponent={renderMessageForm}
         contentContainerStyle={{
           paddingBottom: 35,
         }}
-        showsVerticalScrollIndicator={
-          false
-        }
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -1717,12 +1387,7 @@ export default function AgentDetailsScreen() {
       {/* SIDE MENU */}
       {/* ====================================================== */}
 
-      <SideMenu
-        visible={menuVisible}
-        onClose={() =>
-          setMenuVisible(false)
-        }
-      />
+      <SideMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
 
       {/* ====================================================== */}
       {/* AUTH REQUIRED MODAL */}
@@ -1763,9 +1428,7 @@ export default function AgentDetailsScreen() {
         onClose={() => {
           setRegisterModalVisible(false);
         }}
-        onRegister={
-          handleRegistrationComplete
-        }
+        onRegister={handleRegistrationComplete}
         onLogin={() => {
           setRegisterModalVisible(false);
           setLoginModalVisible(true);
@@ -1784,29 +1447,19 @@ interface MessageInputProps {
 
   value: string;
 
-  onChangeText: (
-    value: string,
-  ) => void;
+  onChangeText: (value: string) => void;
 
   placeholder: string;
 
-  icon: React.ComponentProps<
-    typeof Ionicons
-  >["name"];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
 
-  theme: ReturnType<
-    typeof useTheme
-  >["theme"];
+  theme: ReturnType<typeof useTheme>["theme"];
 
   editable?: boolean;
 
-  keyboardType?: React.ComponentProps<
-    typeof TextInput
-  >["keyboardType"];
+  keyboardType?: React.ComponentProps<typeof TextInput>["keyboardType"];
 
-  autoCapitalize?: React.ComponentProps<
-    typeof TextInput
-  >["autoCapitalize"];
+  autoCapitalize?: React.ComponentProps<typeof TextInput>["autoCapitalize"];
 
   helperText?: string;
 }
@@ -1837,41 +1490,25 @@ function MessageInput({
       <View
         className="flex-row items-center rounded-xl"
         style={{
-          backgroundColor:
-            theme.surface,
+          backgroundColor: theme.surface,
 
           borderWidth: 1,
 
-          borderColor:
-            theme.border,
+          borderColor: theme.border,
         }}
       >
         <View className="pl-3">
-          <Ionicons
-            name={icon}
-            size={19}
-            color={theme.textMuted}
-          />
+          <Ionicons name={icon} size={19} color={theme.textMuted} />
         </View>
 
         <TextInput
           value={value}
-          onChangeText={
-            onChangeText
-          }
-          placeholder={
-            placeholder
-          }
-          placeholderTextColor={
-            theme.textMuted
-          }
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={theme.textMuted}
           editable={editable}
-          keyboardType={
-            keyboardType
-          }
-          autoCapitalize={
-            autoCapitalize
-          }
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
           className="min-h-[50px] flex-1 px-3 py-2 text-sm"
           style={{
             color: theme.text,
@@ -1883,8 +1520,7 @@ function MessageInput({
         <Text
           className="mt-1 text-xs"
           style={{
-            color:
-              theme.textMuted,
+            color: theme.textMuted,
           }}
         >
           {helperText}
@@ -1899,9 +1535,7 @@ function MessageInput({
 // ============================================================
 
 interface InfoRowProps {
-  icon: React.ComponentProps<
-    typeof Ionicons
-  >["name"];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
 
   label: string;
 
@@ -1910,14 +1544,8 @@ interface InfoRowProps {
   last?: boolean;
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-  last = false,
-}: InfoRowProps) {
-  const { theme } =
-    useTheme();
+function InfoRow({ icon, label, value, last = false }: InfoRowProps) {
+  const { theme } = useTheme();
 
   return (
     <View
@@ -1928,31 +1556,24 @@ function InfoRow({
           : {
               borderBottomWidth: 1,
 
-              borderBottomColor:
-                theme.border,
+              borderBottomColor: theme.border,
             }
       }
     >
       <View
         className="h-9 w-9 items-center justify-center rounded-lg"
         style={{
-          backgroundColor:
-            theme.surface,
+          backgroundColor: theme.surface,
         }}
       >
-        <Ionicons
-          name={icon}
-          size={18}
-          color={theme.accent}
-        />
+        <Ionicons name={icon} size={18} color={theme.accent} />
       </View>
 
       <View className="ml-3 flex-1">
         <Text
           className="text-xs"
           style={{
-            color:
-              theme.textMuted,
+            color: theme.textMuted,
           }}
         >
           {label}
@@ -1961,8 +1582,7 @@ function InfoRow({
         <Text
           className="mt-1 text-sm font-semibold"
           style={{
-            color:
-              theme.textSecondary,
+            color: theme.textSecondary,
           }}
           numberOfLines={3}
         >
@@ -1972,4 +1592,3 @@ function InfoRow({
     </View>
   );
 }
-

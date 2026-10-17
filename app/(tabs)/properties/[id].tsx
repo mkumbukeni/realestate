@@ -1,4 +1,6 @@
 
+// app/(tabs)/properties/[id].tsx
+
 import React, { useEffect, useMemo, useState } from "react";
 
 import {
@@ -23,17 +25,18 @@ import SideMenu from "@/app/components/sidebar/SideMenu";
 
 import { useAuth } from "@/app/components/auth/AuthContext";
 
-import type { Property } from "@/app/types/properties/property";
-import type { PropertyMediaItem } from "@/app/types/properties/property";
+import type {
+  Property,
+  PropertyMediaItem,
+  PropertyMedia,
+} from "@/app/types/properties/property";
 
 import {
+  fetchAgentDetails,
   fetchProperties,
   fetchPropertyImages,
   fetchPropertyVideos,
-  fetchAgentDetails,
-} from "@/app/services/propertyApi";
-
-import type { PropertyMedia } from "@/app/types/properties/property";
+} from "@/app/services/properties/propertyApi";
 
 import type { Agent } from "@/app/types/agents/agent";
 
@@ -61,15 +64,17 @@ import PropertyOpenHouse, {
 
 import PropertyMessageModal from "@/app/components/properties/PropertyDetails/PropertyMessageModal";
 
+import { trackPropertyView } from "@/app/services/properties/propertyViewApi";
+
 import {
-  getPropertyLocationText,
-  getPropertyCoordinates,
-  getPropertyListingType,
-  getPropertyType,
-  getPropertyDescription,
-  getPropertyValue,
   getPropertyAmenities,
+  getPropertyCoordinates,
+  getPropertyDescription,
+  getPropertyListingType,
+  getPropertyLocationText,
   getPropertyOpenHouses,
+  getPropertyType,
+  getPropertyValue,
 } from "@/app/components/properties/PropertyDetails/propertyDetailsUtils";
 
 // ============================================================
@@ -119,10 +124,8 @@ export default function PropertyDetailsScreen() {
 
   const [listingAgentLoading, setListingAgentLoading] = useState(false);
 
-  // Images use the PropertyMediaItem type returned by the image endpoint.
   const [images, setImages] = useState<PropertyMediaItem[]>([]);
 
-  // PropertyVideosSection expects PropertyMedia from propertyApi.
   const [videos, setVideos] = useState<PropertyMedia[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -196,6 +199,35 @@ export default function PropertyDetailsScreen() {
       cancelled = true;
     };
   }, [propertyId]);
+
+  // ============================================================
+  // RECORD PROPERTY VIEW
+  // ============================================================
+  //
+  // The separate utility handles the API request and duplicate
+  // request protection.
+  //
+  // This effect runs only after the property has loaded.
+  // Tapping a property card alone does not call the view API.
+  // ============================================================
+
+  useEffect(() => {
+    if (loading || !property || !propertyId) {
+      return;
+    }
+
+    void trackPropertyView({
+      propertyId: property.id,
+      userId: loggedInUserId,
+      getAuthHeaders,
+    });
+  }, [
+    loading,
+    property,
+    propertyId,
+    loggedInUserId,
+    getAuthHeaders,
+  ]);
 
   // ============================================================
   // LOAD LISTING AGENT
@@ -410,8 +442,6 @@ export default function PropertyDetailsScreen() {
         console.log("Loaded property videos:", result);
 
         if (!cancelled) {
-          // Convert the API media items into the type expected by
-          // PropertyVideosSection: id, name, original_url, preview_url.
           const formattedVideos: PropertyMedia[] = result.map(
             (video, index) => ({
               id: Number(video.id) || index + 1,
@@ -598,10 +628,7 @@ export default function PropertyDetailsScreen() {
     const trimmedMessage = messageText.trim();
 
     if (!trimmedMessage) {
-      Alert.alert(
-        "Message Required",
-        "Please enter a message before sending.",
-      );
+      Alert.alert("Message Required", "Please enter a message before sending.");
       return;
     }
 
@@ -701,10 +728,7 @@ export default function PropertyDetailsScreen() {
           if (typeof serverMessage === "string" && serverMessage.trim()) {
             errorMessage = serverMessage;
           }
-        } else if (
-          typeof responseData === "string" &&
-          responseData.trim()
-        ) {
+        } else if (typeof responseData === "string" && responseData.trim()) {
           errorMessage = responseData;
         }
 
@@ -917,7 +941,6 @@ export default function PropertyDetailsScreen() {
   // ============================================================
 
   const propertyInformation: PropertyInformationData = {
-    // Property does not define a title field; use its property type.
     title: propertyType || property.type || "Property Details",
     listingType: listingType || "For Sale",
     status: property.systemStatus,
@@ -1182,10 +1205,7 @@ export default function PropertyDetailsScreen() {
 
       {/* SIDE MENU */}
 
-      <SideMenu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-      />
+      <SideMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </SafeAreaView>
   );
 }

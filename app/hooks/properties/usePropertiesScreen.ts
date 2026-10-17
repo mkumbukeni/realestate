@@ -1,29 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
-  fetchFeaturedProperties,
-  fetchMostViewedProperties,
-  fetchProperties,
-} from "@/app/services/propertyApi";
+    fetchFeaturedProperties,
+    fetchMostViewedProperties,
+    fetchProperties,
+} from "@/app/services/properties/propertyApi";
 
 import type { Property } from "@/app/types/properties/property";
 
 import {
-  filterProperties,
-  getCategory,
-  removeDuplicateProperties,
-  type ListingFilter,
-  type PropertyCategory,
-  type PropertyTypeFilter,
+    filterProperties,
+    getCategory,
+    removeDuplicateProperties,
+    type ListingFilter,
+    type PropertyTypeFilter
 } from "@/app/utils/properties/propertiesScreen.utils";
 
 type UsePropertiesScreenOptions = {
   category?: string | string[];
 };
 
-export function usePropertiesScreen({
-  category,
-}: UsePropertiesScreenOptions) {
+export function usePropertiesScreen({ category }: UsePropertiesScreenOptions) {
   const selectedCategory = getCategory(category);
   const isAllPropertiesMode = selectedCategory === null;
 
@@ -33,12 +30,10 @@ export function usePropertiesScreen({
   const [error, setError] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [listingFilter, setListingFilter] =
-    useState<ListingFilter>("all");
+  const [listingFilter, setListingFilter] = useState<ListingFilter>("all");
   const [propertyTypeFilter, setPropertyTypeFilter] =
     useState<PropertyTypeFilter>("all");
-  const [openDropdown, setOpenDropdown] =
-    useState<ListingFilter | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<ListingFilter | null>(null);
 
   const loadProperties = useCallback(async () => {
     setError(null);
@@ -60,23 +55,17 @@ export function usePropertiesScreen({
       } else if (selectedCategory === "New to Market") {
         result = await fetchProperties();
       } else {
-        const [newToMarket, featured, mostViewed] =
-          await Promise.all([
-            fetchProperties(),
-            fetchFeaturedProperties(),
-            fetchMostViewedProperties(),
-          ]);
+        const [newToMarket, featured, mostViewed] = await Promise.all([
+          fetchProperties(),
+          fetchFeaturedProperties(),
+          fetchMostViewedProperties(),
+        ]);
 
         const openHouses = newToMarket.filter(
           (property) => property.isOpenHouse === true,
         );
 
-        result = [
-          ...featured,
-          ...newToMarket,
-          ...openHouses,
-          ...mostViewed,
-        ];
+        result = [...featured, ...newToMarket, ...openHouses, ...mostViewed];
       }
 
       setProperties(removeDuplicateProperties(result));
@@ -120,23 +109,15 @@ export function usePropertiesScreen({
     setSearchQuery("");
   }, []);
 
-  const handleListingFilterPress = useCallback(
-    (filter: ListingFilter) => {
-      setOpenDropdown((current) =>
-        current === filter ? null : filter,
-      );
-      setListingFilter(filter);
-    },
-    [],
-  );
+  const handleListingFilterPress = useCallback((filter: ListingFilter) => {
+    setOpenDropdown((current) => (current === filter ? null : filter));
+    setListingFilter(filter);
+  }, []);
 
-  const handlePropertyTypeSelect = useCallback(
-    (type: PropertyTypeFilter) => {
-      setPropertyTypeFilter(type);
-      setOpenDropdown(null);
-    },
-    [],
-  );
+  const handlePropertyTypeSelect = useCallback((type: PropertyTypeFilter) => {
+    setPropertyTypeFilter(type);
+    setOpenDropdown(null);
+  }, []);
 
   return {
     selectedCategory,

@@ -1,6 +1,11 @@
 
 import Ionicons from "@expo/vector-icons/Ionicons";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -66,7 +71,11 @@ type PostCode = {
   updated_at: string;
 };
 
-type SelectKey = "propertyType" | "region" | "district" | "area";
+type SelectKey =
+  | "propertyType"
+  | "region"
+  | "district"
+  | "area";
 
 type SubmitPayload = AddClientRequest & {
   visibility: "public" | "private";
@@ -114,6 +123,10 @@ const initialFormData: FormData = {
   waCountryIso: "MW",
 };
 
+/**
+ * Builds the post-codes endpoint from EXPO_PUBLIC_API_URL.
+ * Supports base URLs ending in /api/v2, /api, or the host alone.
+ */
 function getPostCodesUrl(): string {
   if (!API_URL) {
     throw new Error(
@@ -134,18 +147,54 @@ function getPostCodesUrl(): string {
   return `${baseUrl}/api/v1/post-codes`;
 }
 
-function combinePhoneNumber(countryCode: string, phone: string): string {
+/**
+ * Combines a country calling code and phone number.
+ * Avoids duplicating the calling code if it is already included.
+ */
+function combinePhoneNumber(
+  countryCode: string,
+  phone: string,
+): string {
   const digits = phone.replace(/\D/g, "");
   const codeDigits = countryCode.replace(/\D/g, "");
 
-  if (!digits) return "";
+  if (!digits) {
+    return "";
+  }
 
   if (codeDigits && digits.startsWith(codeDigits)) {
     return `+${digits}`;
   }
 
   const localDigits = digits.replace(/^0+/, "");
+
   return `${countryCode}${localDigits}`;
+}
+
+/**
+ * Converts an account phone number into the local number
+ * displayed beside the country calling-code picker.
+ *
+ * The app defaults to Malawi (+265). If the saved number
+ * starts with +265 or 0265, that prefix is removed from the
+ * editable number field to avoid displaying it twice.
+ */
+function getInitialPhoneNumber(phone: string): string {
+  const trimmedPhone = phone.trim();
+
+  if (trimmedPhone.startsWith("+265")) {
+    return trimmedPhone.slice(4).replace(/\D/g, "");
+  }
+
+  if (trimmedPhone.startsWith("0265")) {
+    return trimmedPhone.slice(4).replace(/\D/g, "");
+  }
+
+  if (trimmedPhone.startsWith("265")) {
+    return trimmedPhone.slice(3).replace(/\D/g, "");
+  }
+
+  return trimmedPhone;
 }
 
 export default function ListPropertyForm({
@@ -156,7 +205,7 @@ export default function ListPropertyForm({
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
 
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
 
   const colors = {
     screen: isDark ? "#0d0d0d" : "#f3f4f6",
@@ -178,12 +227,76 @@ export default function ListPropertyForm({
     disabledText: isDark ? "#525252" : "#9ca3af",
   };
 
-  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [formData, setFormData] =
+    useState<FormData>(initialFormData);
+
+  /*
+   * Personal details come from the authenticated account.
+   * The form displays the names as read-only text.
+   *
+   * AuthContext may expose firstName/lastName directly,
+   * or only the backend's full name in user.name.
+   */
+  const toTrimmedString = (value: unknown): string =>
+    typeof value === "string" ? value.trim() : "";
+
+  const authenticatedEmail = toTrimmedString(
+    user?.email,
+  ).toLowerCase();
+
+  const authenticatedFullName = toTrimmedString(
+    user?.fullName ?? user?.name,
+  );
+
+  const nameParts = authenticatedFullName
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const authenticatedFirstName =
+    toTrimmedString(user?.firstName) ||
+    nameParts[0] ||
+    "";
+
+  const authenticatedLastName =
+    toTrimmedString(user?.lastName) ||
+    nameParts.slice(1).join(" ");
+
+  const authenticatedPhone = toTrimmedString(
+    user?.phoneNumber ?? user?.phone,
+  );
+
+  /*
+   * Synchronize the account details when the user signs in,
+   * signs out, or the authenticated account changes.
+   *
+   * The phone field is initialized from the account but is
+   * still editable afterwards.
+   */
+  useEffect(() => {
+    const savedPhone = getInitialPhoneNumber(
+      authenticatedPhone,
+    );
+
+    setFormData((previous) => ({
+      ...previous,
+      firstName: authenticatedFirstName,
+      lastName: authenticatedLastName,
+      email: authenticatedEmail,
+      phone: savedPhone,
+      phoneCountryCode: "+265",
+      phoneCountryIso: "MW",
+    }));
+  }, [
+    authenticatedFirstName,
+    authenticatedLastName,
+    authenticatedEmail,
+    authenticatedPhone,
+  ]);
+
   const [submitting, setSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Confirmation modal state.
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [pendingPayload, setPendingPayload] =
     useState<SubmitPayload | null>(null);
@@ -192,9 +305,13 @@ export default function ListPropertyForm({
   const [loadingLocations, setLoadingLocations] = useState(true);
   const [locationError, setLocationError] = useState("");
 
-  const [activeSelect, setActiveSelect] = useState<SelectKey | null>(null);
+  const [activeSelect, setActiveSelect] =
+    useState<SelectKey | null>(null);
   const [optionSearch, setOptionSearch] = useState("");
 
+  /**
+   * Loads the available locations from the backend.
+   */
   const loadLocations = useCallback(async () => {
     try {
       setLoadingLocations(true);
@@ -202,7 +319,9 @@ export default function ListPropertyForm({
 
       const response = await fetch(getPostCodesUrl(), {
         method: "GET",
-        headers: { Accept: "application/json" },
+        headers: {
+          Accept: "application/json",
+        },
       });
 
       const responseText = await response.text();
@@ -210,13 +329,19 @@ export default function ListPropertyForm({
       let result: { data?: PostCode[] };
 
       try {
-        result = JSON.parse(responseText) as { data?: PostCode[] };
+        result = JSON.parse(responseText) as {
+          data?: PostCode[];
+        };
       } catch {
-        throw new Error("The server returned an invalid locations response.");
+        throw new Error(
+          "The server returned an invalid locations response.",
+        );
       }
 
       if (!response.ok) {
-        throw new Error(`Failed to load locations (${response.status}).`);
+        throw new Error(
+          `Failed to load locations (${response.status}).`,
+        );
       }
 
       if (!Array.isArray(result.data)) {
@@ -244,7 +369,11 @@ export default function ListPropertyForm({
   const regions = useMemo(
     () =>
       Array.from(
-        new Set(postalCodes.map((item) => item.region).filter(Boolean)),
+        new Set(
+          postalCodes
+            .map((item) => item.region)
+            .filter(Boolean),
+        ),
       ).sort((a, b) => a.localeCompare(b)),
     [postalCodes],
   );
@@ -254,7 +383,9 @@ export default function ListPropertyForm({
       Array.from(
         new Set(
           postalCodes
-            .filter((item) => item.region === formData.region)
+            .filter(
+              (item) => item.region === formData.region,
+            )
             .map((item) => item.district_name)
             .filter(Boolean),
         ),
@@ -297,7 +428,9 @@ export default function ListPropertyForm({
   const filteredOptions = useMemo(() => {
     const query = optionSearch.trim().toLowerCase();
 
-    if (!query) return selectOptions;
+    if (!query) {
+      return selectOptions;
+    }
 
     return selectOptions.filter((option) =>
       option.toLowerCase().includes(query),
@@ -323,13 +456,22 @@ export default function ListPropertyForm({
     field: K,
     value: FormData[K],
   ) => {
-    setFormData((previous) => ({ ...previous, [field]: value }));
+    setFormData((previous) => ({
+      ...previous,
+      [field]: value,
+    }));
+
     setSubmitMessage("");
   };
 
   const openSelect = (field: SelectKey) => {
-    if (field === "district" && !formData.region) return;
-    if (field === "area" && !formData.district) return;
+    if (field === "district" && !formData.region) {
+      return;
+    }
+
+    if (field === "area" && !formData.district) {
+      return;
+    }
 
     setOptionSearch("");
     setActiveSelect(field);
@@ -369,10 +511,14 @@ export default function ListPropertyForm({
     setOptionSearch("");
   };
 
-  // Validate the form and prepare the request.
-  // Do not call the API here: show the confirmation modal first.
+  /**
+   * Validates the form and prepares a payload.
+   * Does not send the API request until confirmation.
+   */
   const handleSubmit = () => {
-    if (submitting || confirmVisible) return;
+    if (submitting || confirmVisible) {
+      return;
+    }
 
     if (!isLoggedIn) {
       setSubmitSuccess(false);
@@ -382,26 +528,47 @@ export default function ListPropertyForm({
       return;
     }
 
-    const firstName = formData.firstName.trim();
-    const lastName = formData.lastName.trim();
-    const email = formData.email.trim().toLowerCase();
+    /*
+     * Always use the authenticated name and email.
+     * The user cannot modify those values in the UI.
+     */
+    const firstName = authenticatedFirstName;
+    const lastName = authenticatedLastName;
+    const email = authenticatedEmail;
+
+    /*
+     * The phone number comes from the editable input.
+     */
     const phone = formData.phone.trim();
 
-    if (!firstName || !lastName || !email || !phone) {
+    if (!email) {
       setSubmitSuccess(false);
       setSubmitMessage(
-        "Please enter your first name, last name, email address, and phone number.",
+        "Your signed-in account does not have an email address. Please sign out and sign in again.",
+      );
+      return;
+    }
+
+    if (!firstName || !lastName || !phone) {
+      setSubmitSuccess(false);
+      setSubmitMessage(
+        "Your account must have a first name and last name, and you must provide a phone number.",
       );
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setSubmitSuccess(false);
-      setSubmitMessage("Please enter a valid email address.");
+      setSubmitMessage("Your account email address is invalid.");
       return;
     }
 
-    if (!combinePhoneNumber(formData.phoneCountryCode, phone)) {
+    const fullPhone = combinePhoneNumber(
+      formData.phoneCountryCode,
+      phone,
+    );
+
+    if (!fullPhone) {
       setSubmitSuccess(false);
       setSubmitMessage("Please enter a valid phone number.");
       return;
@@ -429,7 +596,10 @@ export default function ListPropertyForm({
       return;
     }
 
-    if (formData.waNotify === "yes" && !formData.waNumber.trim()) {
+    if (
+      formData.waNotify === "yes" &&
+      !formData.waNumber.trim()
+    ) {
       setSubmitSuccess(false);
       setSubmitMessage("Please enter your WhatsApp number.");
       return;
@@ -459,11 +629,16 @@ export default function ListPropertyForm({
 
     if (maxPrice > 0 && minPrice > maxPrice) {
       setSubmitSuccess(false);
-      setSubmitMessage("Minimum price cannot be greater than maximum price.");
+      setSubmitMessage(
+        "Minimum price cannot be greater than maximum price.",
+      );
       return;
     }
 
-    if (maxBedrooms > 0 && minBedrooms > maxBedrooms) {
+    if (
+      maxBedrooms > 0 &&
+      minBedrooms > maxBedrooms
+    ) {
       setSubmitSuccess(false);
       setSubmitMessage(
         "Minimum bedrooms cannot be greater than maximum bedrooms.",
@@ -471,11 +646,13 @@ export default function ListPropertyForm({
       return;
     }
 
-    const fullPhone = combinePhoneNumber(formData.phoneCountryCode, phone);
-
     const fullWhatsApp =
-      formData.waNotify === "yes" && formData.waNumber.trim()
-        ? combinePhoneNumber(formData.waCountryCode, formData.waNumber)
+      formData.waNotify === "yes" &&
+      formData.waNumber.trim()
+        ? combinePhoneNumber(
+            formData.waCountryCode,
+            formData.waNumber,
+          )
         : fullPhone;
 
     const payload: SubmitPayload = {
@@ -505,10 +682,13 @@ export default function ListPropertyForm({
     setConfirmVisible(true);
   };
 
-  // This is the only function that sends the request to the API.
-  // It runs after the user confirms in the modal.
+  /**
+   * Sends the request only after the user confirms.
+   */
   const confirmSubmit = async () => {
-    if (submitting || !pendingPayload) return;
+    if (submitting || !pendingPayload) {
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -525,7 +705,20 @@ export default function ListPropertyForm({
       );
 
       setPendingPayload(null);
-      setFormData({ ...initialFormData });
+
+      /*
+       * Reset property requirements while retaining the
+       * authenticated user's details and editable phone.
+       */
+      setFormData((previous) => ({
+        ...initialFormData,
+        firstName: authenticatedFirstName,
+        lastName: authenticatedLastName,
+        email: authenticatedEmail,
+        phone: previous.phone,
+        phoneCountryCode: previous.phoneCountryCode,
+        phoneCountryIso: previous.phoneCountryIso,
+      }));
     } catch (error) {
       setSubmitSuccess(false);
       setSubmitMessage(
@@ -540,7 +733,9 @@ export default function ListPropertyForm({
   };
 
   const cancelConfirmation = () => {
-    if (submitting) return;
+    if (submitting) {
+      return;
+    }
 
     setConfirmVisible(false);
     setPendingPayload(null);
@@ -571,7 +766,9 @@ export default function ListPropertyForm({
   const formatPrice = (value: string) => {
     const amount = Number(value);
 
-    if (!Number.isFinite(amount) || amount <= 0) return "Not specified";
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return "Not specified";
+    }
 
     return amount.toLocaleString();
   };
@@ -583,16 +780,23 @@ export default function ListPropertyForm({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
     >
-      <View className="flex-1" style={{ backgroundColor: colors.screen }}>
+      <View
+        className="flex-1"
+        style={{ backgroundColor: colors.screen }}
+      >
         {/* Header */}
         <View
           className="flex-row items-center justify-between border-b px-5 py-4"
           style={{ borderBottomColor: colors.borderSubtle }}
         >
           <View className="flex-1">
-            <Text className="text-xl font-bold" style={{ color: colors.text }}>
+            <Text
+              className="text-xl font-bold"
+              style={{ color: colors.text }}
+            >
               List a Property
             </Text>
+
             <Text
               className="mt-1 text-sm"
               style={{ color: colors.textMuted }}
@@ -609,7 +813,11 @@ export default function ListPropertyForm({
               className="ml-3 h-10 w-10 items-center justify-center rounded-full"
               style={{ backgroundColor: colors.surface }}
             >
-              <Ionicons name="close" size={22} color={colors.text} />
+              <Ionicons
+                name="close"
+                size={22}
+                color={colors.text}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -622,9 +830,12 @@ export default function ListPropertyForm({
             paddingBottom: 36,
           }}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={
+            Platform.OS === "ios" ? "interactive" : "on-drag"
+          }
           showsVerticalScrollIndicator={false}
         >
-          {/* Account notice */}
+          {/* Account status */}
           <View
             className="mb-6 rounded-xl border p-4"
             style={{
@@ -644,8 +855,8 @@ export default function ListPropertyForm({
               style={{ color: colors.textMuted }}
             >
               {isLoggedIn
-                ? "You are signed in and can submit this request."
-                : "Complete the form and sign in or register before submitting your request."}
+                ? "Your name and email come from your signed-in account. You can update your phone number."
+                : "Sign in or register before submitting your request."}
             </Text>
 
             {!isLoggedIn && (
@@ -656,7 +867,9 @@ export default function ListPropertyForm({
                   className="flex-1 items-center rounded-lg border px-4 py-3"
                   style={{ borderColor: "#dc2626" }}
                 >
-                  <Text className="font-semibold text-red-600">Sign In</Text>
+                  <Text className="font-semibold text-red-600">
+                    Sign In
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -664,48 +877,97 @@ export default function ListPropertyForm({
                   accessibilityRole="button"
                   className="flex-1 items-center rounded-lg bg-red-600 px-4 py-3"
                 >
-                  <Text className="font-semibold text-white">Register</Text>
+                  <Text className="font-semibold text-white">
+                    Register
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
           </View>
 
-          <SectionTitle title="Personal Information" isDark={isDark} />
-
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <InputField
-                label="First Name"
-                placeholder="Enter first name"
-                value={formData.firstName}
-                onChangeText={(value) => updateField("firstName", value)}
-                autoCapitalize="words"
-                isDark={isDark}
-              />
-            </View>
-
-            <View className="flex-1">
-              <InputField
-                label="Last Name"
-                placeholder="Enter last name"
-                value={formData.lastName}
-                onChangeText={(value) => updateField("lastName", value)}
-                autoCapitalize="words"
-                isDark={isDark}
-              />
-            </View>
-          </View>
-
-          <InputField
-            label="Email Address"
-            placeholder="Enter email address"
-            value={formData.email}
-            onChangeText={(value) => updateField("email", value)}
-            keyboardType="email-address"
-            autoCapitalize="none"
+          {/* Personal information: names are read-only */}
+          <SectionTitle
+            title="Personal Information"
             isDark={isDark}
           />
 
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Text
+                className="mb-2 text-sm font-medium"
+                style={{ color: colors.textSecondary }}
+              >
+                First Name
+              </Text>
+
+              <View
+                className="min-h-[52px] justify-center rounded-xl border px-3 py-3"
+                style={{
+                  backgroundColor: colors.inputDisabled,
+                  borderColor: colors.border,
+                }}
+              >
+                <Text
+                  className="text-base"
+                  style={{ color: colors.text }}
+                >
+                  {authenticatedFirstName ||
+                    "Sign in to load your name"}
+                </Text>
+              </View>
+            </View>
+
+            <View className="flex-1">
+              <Text
+                className="mb-2 text-sm font-medium"
+                style={{ color: colors.textSecondary }}
+              >
+                Last Name
+              </Text>
+
+              <View
+                className="min-h-[52px] justify-center rounded-xl border px-3 py-3"
+                style={{
+                  backgroundColor: colors.inputDisabled,
+                  borderColor: colors.border,
+                }}
+              >
+                <Text
+                  className="text-base"
+                  style={{ color: colors.text }}
+                >
+                  {authenticatedLastName ||
+                    "Sign in to load your name"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Email is read-only */}
+          <View
+            className="mb-5 mt-5 rounded-lg border px-3 py-3"
+            style={{
+              borderColor: colors.border,
+              backgroundColor: colors.inputDisabled,
+            }}
+          >
+            <Text
+              className="mb-1 text-xs"
+              style={{ color: colors.textMuted }}
+            >
+              Signed-in Email
+            </Text>
+
+            <Text
+              className="text-sm"
+              style={{ color: colors.text }}
+            >
+              {authenticatedEmail ||
+                "Sign in to load your email address"}
+            </Text>
+          </View>
+
+          {/* Phone is editable */}
           <PhoneField
             label="Phone Number"
             value={formData.phone}
@@ -723,7 +985,11 @@ export default function ListPropertyForm({
             isDark={isDark}
           />
 
-          <SectionTitle title="Property Requirements" isDark={isDark} />
+          {/* Property requirements */}
+          <SectionTitle
+            title="Property Requirements"
+            isDark={isDark}
+          />
 
           <Text
             className="mb-2 text-sm font-medium"
@@ -739,6 +1005,7 @@ export default function ListPropertyForm({
               onPress={() => updateField("worthCheck", "yes")}
               isDark={isDark}
             />
+
             <RadioButton
               label="No"
               selected={formData.worthCheck === "no"}
@@ -761,6 +1028,7 @@ export default function ListPropertyForm({
               onPress={() => updateField("listingType", "rent")}
               isDark={isDark}
             />
+
             <RadioButton
               label="For Sale"
               selected={formData.listingType === "sale"}
@@ -781,10 +1049,14 @@ export default function ListPropertyForm({
             label="Region"
             value={formData.region}
             placeholder={
-              loadingLocations ? "Loading regions..." : "Select region"
+              loadingLocations
+                ? "Loading regions..."
+                : "Select region"
             }
             onPress={() => openSelect("region")}
-            disabled={loadingLocations || regions.length === 0}
+            disabled={
+              loadingLocations || regions.length === 0
+            }
             isDark={isDark}
           />
 
@@ -800,7 +1072,9 @@ export default function ListPropertyForm({
             }
             onPress={() => openSelect("district")}
             disabled={
-              loadingLocations || !formData.region || districts.length === 0
+              loadingLocations ||
+              !formData.region ||
+              districts.length === 0
             }
             isDark={isDark}
           />
@@ -817,14 +1091,19 @@ export default function ListPropertyForm({
             }
             onPress={() => openSelect("area")}
             disabled={
-              loadingLocations || !formData.district || areas.length === 0
+              loadingLocations ||
+              !formData.district ||
+              areas.length === 0
             }
             isDark={isDark}
           />
 
           {loadingLocations && (
             <View className="mb-5 flex-row items-center">
-              <ActivityIndicator size="small" color="#ef4444" />
+              <ActivityIndicator
+                size="small"
+                color="#ef4444"
+              />
               <Text
                 className="ml-2 text-sm"
                 style={{ color: colors.textMuted }}
@@ -844,15 +1123,20 @@ export default function ListPropertyForm({
             >
               <Text
                 className="text-sm leading-5"
-                style={{ color: isDark ? "#fca5a5" : "#b91c1c" }}
+                style={{
+                  color: isDark ? "#fca5a5" : "#b91c1c",
+                }}
               >
                 {locationError}
               </Text>
 
               <TouchableOpacity
                 onPress={() => void loadLocations()}
+                accessibilityRole="button"
                 className="mt-3 self-start flex-row items-center rounded-lg border px-3 py-2"
-                style={{ borderColor: isDark ? "#991b1b" : "#fca5a5" }}
+                style={{
+                  borderColor: isDark ? "#991b1b" : "#fca5a5",
+                }}
               >
                 <Ionicons
                   name="refresh"
@@ -861,7 +1145,9 @@ export default function ListPropertyForm({
                 />
                 <Text
                   className="ml-2 text-sm font-semibold"
-                  style={{ color: isDark ? "#fca5a5" : "#b91c1c" }}
+                  style={{
+                    color: isDark ? "#fca5a5" : "#b91c1c",
+                  }}
                 >
                   Retry
                 </Text>
@@ -869,7 +1155,11 @@ export default function ListPropertyForm({
             </View>
           )}
 
-          <SectionTitle title="Budget and Bedrooms" isDark={isDark} />
+          {/* Budget and bedrooms */}
+          <SectionTitle
+            title="Budget and Bedrooms"
+            isDark={isDark}
+          />
 
           <View className="flex-row gap-3">
             <View className="flex-1">
@@ -877,7 +1167,9 @@ export default function ListPropertyForm({
                 label="Minimum Price"
                 placeholder="0"
                 value={formData.minPrice}
-                onChangeText={(value) => updateField("minPrice", value)}
+                onChangeText={(value) =>
+                  updateField("minPrice", value)
+                }
                 keyboardType="numeric"
                 isDark={isDark}
               />
@@ -888,7 +1180,9 @@ export default function ListPropertyForm({
                 label="Maximum Price"
                 placeholder="0"
                 value={formData.maxPrice}
-                onChangeText={(value) => updateField("maxPrice", value)}
+                onChangeText={(value) =>
+                  updateField("maxPrice", value)
+                }
                 keyboardType="numeric"
                 isDark={isDark}
               />
@@ -901,7 +1195,9 @@ export default function ListPropertyForm({
                 label="Minimum Bedrooms"
                 placeholder="0"
                 value={formData.minBedrooms}
-                onChangeText={(value) => updateField("minBedrooms", value)}
+                onChangeText={(value) =>
+                  updateField("minBedrooms", value)
+                }
                 keyboardType="numeric"
                 isDark={isDark}
               />
@@ -912,14 +1208,20 @@ export default function ListPropertyForm({
                 label="Maximum Bedrooms"
                 placeholder="0"
                 value={formData.maxBedrooms}
-                onChangeText={(value) => updateField("maxBedrooms", value)}
+                onChangeText={(value) =>
+                  updateField("maxBedrooms", value)
+                }
                 keyboardType="numeric"
                 isDark={isDark}
               />
             </View>
           </View>
 
-          <SectionTitle title="Availability" isDark={isDark} />
+          {/* Visibility */}
+          <SectionTitle
+            title="Availability"
+            isDark={isDark}
+          />
 
           <Text
             className="mb-2 text-sm font-medium"
@@ -935,6 +1237,7 @@ export default function ListPropertyForm({
               onPress={() => updateField("visibility", "public")}
               isDark={isDark}
             />
+
             <RadioButton
               label="Private"
               selected={formData.visibility === "private"}
@@ -947,11 +1250,15 @@ export default function ListPropertyForm({
             className="-mt-3 mb-5 text-xs leading-5"
             style={{ color: colors.textMuted }}
           >
-            Public makes the request available for public viewing. Private
-            access restrictions must also be enforced by the API.
+            Public makes the request available for public viewing.
+            Private access restrictions must also be enforced by the API.
           </Text>
 
-          <SectionTitle title="WhatsApp Notifications" isDark={isDark} />
+          {/* WhatsApp preferences */}
+          <SectionTitle
+            title="WhatsApp Notifications"
+            isDark={isDark}
+          />
 
           <Text
             className="mb-2 text-sm font-medium"
@@ -967,6 +1274,7 @@ export default function ListPropertyForm({
               onPress={() => updateField("waNotify", "yes")}
               isDark={isDark}
             />
+
             <RadioButton
               label="No"
               selected={formData.waNotify === "no"}
@@ -981,7 +1289,9 @@ export default function ListPropertyForm({
               value={formData.waNumber}
               countryCode={formData.waCountryCode}
               countryIso={formData.waCountryIso}
-              onChangeText={(value) => updateField("waNumber", value)}
+              onChangeText={(value) =>
+                updateField("waNumber", value)
+              }
               onCountryChange={(iso, callingCode) => {
                 setFormData((previous) => ({
                   ...previous,
@@ -994,7 +1304,11 @@ export default function ListPropertyForm({
             />
           )}
 
-          <SectionTitle title="Additional Information" isDark={isDark} />
+          {/* Additional information */}
+          <SectionTitle
+            title="Additional Information"
+            isDark={isDark}
+          />
 
           <Text
             className="mb-2 text-sm font-medium"
@@ -1013,11 +1327,14 @@ export default function ListPropertyForm({
             placeholder="Enter any additional requirements"
             placeholderTextColor={colors.placeholder}
             value={formData.description}
-            onChangeText={(value) => updateField("description", value)}
+            onChangeText={(value) =>
+              updateField("description", value)
+            }
             multiline
             textAlignVertical="top"
           />
 
+          {/* Submission feedback */}
           {submitMessage !== "" && (
             <View
               className="mb-4 rounded-lg border p-3"
@@ -1055,8 +1372,12 @@ export default function ListPropertyForm({
                         ? "#fca5a5"
                         : "#b91c1c"
                   }
-                  style={{ marginRight: 8, marginTop: 1 }}
+                  style={{
+                    marginRight: 8,
+                    marginTop: 1,
+                  }}
                 />
+
                 <Text
                   className="flex-1 text-sm leading-5"
                   style={{
@@ -1082,9 +1403,18 @@ export default function ListPropertyForm({
                   "Sign In Required",
                   "Please sign in or register before submitting this request.",
                   [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Sign In", onPress: requestSignIn },
-                    { text: "Register", onPress: requestRegister },
+                    {
+                      text: "Cancel",
+                      style: "cancel",
+                    },
+                    {
+                      text: "Sign In",
+                      onPress: requestSignIn,
+                    },
+                    {
+                      text: "Register",
+                      onPress: requestRegister,
+                    },
                   ],
                 );
                 return;
@@ -1100,12 +1430,17 @@ export default function ListPropertyForm({
                 : "Sign in to submit request"
             }
             className={`mb-4 min-h-14 flex-row items-center justify-center rounded-xl px-5 py-4 ${
-              submitting || confirmVisible ? "bg-red-900" : "bg-red-600"
+              submitting || confirmVisible
+                ? "bg-red-900"
+                : "bg-red-600"
             }`}
           >
             {submitting ? (
               <>
-                <ActivityIndicator size="small" color="#ffffff" />
+                <ActivityIndicator
+                  size="small"
+                  color="#ffffff"
+                />
                 <Text className="ml-2 font-semibold text-white">
                   Submitting...
                 </Text>
@@ -1119,7 +1454,9 @@ export default function ListPropertyForm({
                   style={{ marginRight: 8 }}
                 />
                 <Text className="font-semibold text-white">
-                  {isLoggedIn ? "Submit Request" : "Sign In to Submit"}
+                  {isLoggedIn
+                    ? "Submit Request"
+                    : "Sign In to Submit"}
                 </Text>
               </>
             )}
@@ -1127,10 +1464,7 @@ export default function ListPropertyForm({
         </ScrollView>
       </View>
 
-      {/* =====================================================
-          SUBMISSION CONFIRMATION MODAL
-          The API is not called until Confirm & Submit is pressed.
-          ===================================================== */}
+      {/* Submission confirmation modal */}
       <Modal
         visible={confirmVisible}
         transparent
@@ -1174,13 +1508,14 @@ export default function ListPropertyForm({
                 className="mt-2 text-center text-sm leading-5"
                 style={{ color: colors.textMuted }}
               >
-                Please review your details before submitting. Do you want to
-                continue?
+                Please review your details before submitting.
+                Do you want to continue?
               </Text>
             </View>
 
             <ScrollView
               className="max-h-72"
+              keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
               <View
@@ -1192,13 +1527,13 @@ export default function ListPropertyForm({
               >
                 <ConfirmationRow
                   label="Name"
-                  value={`${formData.firstName.trim()} ${formData.lastName.trim()}`}
+                  value={`${authenticatedFirstName} ${authenticatedLastName}`.trim()}
                   colors={colors}
                 />
 
                 <ConfirmationRow
                   label="Email"
-                  value={formData.email.trim().toLowerCase()}
+                  value={authenticatedEmail || "Not available"}
                   colors={colors}
                 />
 
@@ -1241,9 +1576,9 @@ export default function ListPropertyForm({
 
                 <ConfirmationRow
                   label="Price Range"
-                  value={`${formatPrice(formData.minPrice)} – ${formatPrice(
-                    formData.maxPrice,
-                  )}`}
+                  value={`${formatPrice(
+                    formData.minPrice,
+                  )} – ${formatPrice(formData.maxPrice)}`}
                   colors={colors}
                 />
 
@@ -1258,14 +1593,20 @@ export default function ListPropertyForm({
                 <ConfirmationRow
                   label="Visibility"
                   value={
-                    formData.visibility === "public" ? "Public" : "Private"
+                    formData.visibility === "public"
+                      ? "Public"
+                      : "Private"
                   }
                   colors={colors}
                 />
 
                 <ConfirmationRow
                   label="WhatsApp Alerts"
-                  value={formData.waNotify === "yes" ? "Enabled" : "Disabled"}
+                  value={
+                    formData.waNotify === "yes"
+                      ? "Enabled"
+                      : "Disabled"
+                  }
                   colors={colors}
                   last
                 />
@@ -1279,6 +1620,7 @@ export default function ListPropertyForm({
                   >
                     Additional Information
                   </Text>
+
                   <Text
                     className="text-sm leading-5"
                     style={{ color: colors.textMuted }}
@@ -1299,14 +1641,21 @@ export default function ListPropertyForm({
                   name="information-circle-outline"
                   size={20}
                   color={isDark ? "#fbbf24" : "#92400e"}
-                  style={{ marginRight: 8, marginTop: 1 }}
+                  style={{
+                    marginRight: 8,
+                    marginTop: 1,
+                  }}
                 />
+
                 <Text
                   className="flex-1 text-xs leading-5"
-                  style={{ color: isDark ? "#fcd34d" : "#92400e" }}
+                  style={{
+                    color: isDark ? "#fcd34d" : "#92400e",
+                  }}
                 >
-                  Confirm only if these details are correct. Your property
-                  request will be sent when you select Confirm & Submit.
+                  Confirm only if these details are correct.
+                  Your property request will be sent when you
+                  select Confirm & Submit.
                 </Text>
               </View>
             </ScrollView>
@@ -1339,11 +1688,15 @@ export default function ListPropertyForm({
                 accessibilityLabel="Confirm and submit property request"
                 className="min-h-12 flex-1 flex-row items-center justify-center rounded-xl bg-red-600 px-3 py-3"
                 style={{
-                  opacity: submitting || !pendingPayload ? 0.6 : 1,
+                  opacity:
+                    submitting || !pendingPayload ? 0.6 : 1,
                 }}
               >
                 {submitting ? (
-                  <ActivityIndicator size="small" color="#ffffff" />
+                  <ActivityIndicator
+                    size="small"
+                    color="#ffffff"
+                  />
                 ) : (
                   <Ionicons
                     name="checkmark-circle-outline"
@@ -1354,7 +1707,9 @@ export default function ListPropertyForm({
                 )}
 
                 <Text className="font-semibold text-white">
-                  {submitting ? "Submitting..." : "Confirm & Submit"}
+                  {submitting
+                    ? "Submitting..."
+                    : "Confirm & Submit"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1362,7 +1717,7 @@ export default function ListPropertyForm({
         </View>
       </Modal>
 
-      {/* Selection modal */}
+      {/* Searchable selector modal */}
       <Modal
         visible={activeSelect !== null}
         transparent
@@ -1373,7 +1728,9 @@ export default function ListPropertyForm({
         <KeyboardAvoidingView
           className="flex-1 justify-end"
           style={{ backgroundColor: colors.modalOverlay }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={
+            Platform.OS === "ios" ? "padding" : undefined
+          }
         >
           <View
             className="max-h-[82%] rounded-t-3xl border-t px-5 pb-6 pt-5"
@@ -1400,7 +1757,11 @@ export default function ListPropertyForm({
                 className="ml-3 h-10 w-10 items-center justify-center rounded-full"
                 style={{ backgroundColor: colors.surface }}
               >
-                <Ionicons name="close" size={22} color={colors.text} />
+                <Ionicons
+                  name="close"
+                  size={22}
+                  color={colors.text}
+                />
               </TouchableOpacity>
             </View>
 
@@ -1411,7 +1772,11 @@ export default function ListPropertyForm({
                 backgroundColor: colors.input,
               }}
             >
-              <Ionicons name="search" size={19} color={colors.icon} />
+              <Ionicons
+                name="search"
+                size={19}
+                color={colors.icon}
+              />
 
               <TextInput
                 className="ml-2 flex-1 py-3 text-base"
@@ -1426,7 +1791,11 @@ export default function ListPropertyForm({
               />
 
               {optionSearch.length > 0 && (
-                <TouchableOpacity onPress={() => setOptionSearch("")}>
+                <TouchableOpacity
+                  onPress={() => setOptionSearch("")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear option search"
+                >
                   <Ionicons
                     name="close-circle"
                     size={19}
@@ -1450,6 +1819,7 @@ export default function ListPropertyForm({
                     size={30}
                     color={colors.icon}
                   />
+
                   <Text
                     className="mt-3 text-center text-sm"
                     style={{ color: colors.textMuted }}
@@ -1462,17 +1832,23 @@ export default function ListPropertyForm({
                 const selected =
                   (activeSelect === "propertyType" &&
                     formData.propertyType === item) ||
-                  (activeSelect === "region" && formData.region === item) ||
+                  (activeSelect === "region" &&
+                    formData.region === item) ||
                   (activeSelect === "district" &&
                     formData.district === item) ||
-                  (activeSelect === "area" && formData.area === item);
+                  (activeSelect === "area" &&
+                    formData.area === item);
 
                 return (
                   <TouchableOpacity
                     onPress={() => handleSelectOption(item)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
                     className="mb-2 min-h-12 flex-row items-center justify-between rounded-xl border px-4 py-3"
                     style={{
-                      borderColor: selected ? "#dc2626" : colors.borderSubtle,
+                      borderColor: selected
+                        ? "#dc2626"
+                        : colors.borderSubtle,
                       backgroundColor: selected
                         ? colors.optionSelected
                         : colors.optionBackground,
@@ -1481,7 +1857,9 @@ export default function ListPropertyForm({
                     <Text
                       className="flex-1 text-base"
                       style={{
-                        color: selected ? colors.text : colors.textSecondary,
+                        color: selected
+                          ? colors.text
+                          : colors.textSecondary,
                         fontWeight: selected ? "600" : "400",
                       }}
                     >
@@ -1500,20 +1878,24 @@ export default function ListPropertyForm({
               }}
             />
 
-            {activeSelect === "region" && locationError !== "" && (
-              <TouchableOpacity
-                onPress={() => void loadLocations()}
-                className="mt-3 items-center rounded-xl border py-3"
-                style={{ borderColor: "#dc2626" }}
-              >
-                <Text
-                  className="font-semibold"
-                  style={{ color: isDark ? "#fca5a5" : "#b91c1c" }}
+            {activeSelect === "region" &&
+              locationError !== "" && (
+                <TouchableOpacity
+                  onPress={() => void loadLocations()}
+                  accessibilityRole="button"
+                  className="mt-3 items-center rounded-xl border py-3"
+                  style={{ borderColor: "#dc2626" }}
                 >
-                  Retry loading locations
-                </Text>
-              </TouchableOpacity>
-            )}
+                  <Text
+                    className="font-semibold"
+                    style={{
+                      color: isDark ? "#fca5a5" : "#b91c1c",
+                    }}
+                  >
+                    Retry loading locations
+                  </Text>
+                </TouchableOpacity>
+              )}
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -1521,6 +1903,9 @@ export default function ListPropertyForm({
   );
 }
 
+/**
+ * Displays one label/value pair in the confirmation summary.
+ */
 function ConfirmationRow({
   label,
   value,
@@ -1551,6 +1936,7 @@ function ConfirmationRow({
       >
         {label}
       </Text>
+
       <Text
         className="flex-1 text-right text-sm font-semibold"
         style={{ color: colors.text }}
@@ -1561,6 +1947,9 @@ function ConfirmationRow({
   );
 }
 
+/**
+ * Section heading.
+ */
 function SectionTitle({
   title,
   isDark,
@@ -1571,7 +1960,9 @@ function SectionTitle({
   return (
     <Text
       className="mb-4 mt-2 text-lg font-bold"
-      style={{ color: isDark ? "#ffffff" : "#111827" }}
+      style={{
+        color: isDark ? "#ffffff" : "#111827",
+      }}
     >
       {title}
     </Text>
@@ -1583,11 +1974,22 @@ interface InputFieldProps {
   placeholder: string;
   value: string;
   onChangeText: (value: string) => void;
-  keyboardType?: "default" | "email-address" | "phone-pad" | "numeric";
-  autoCapitalize?: "none" | "sentences" | "words" | "characters";
+  keyboardType?:
+    | "default"
+    | "email-address"
+    | "phone-pad"
+    | "numeric";
+  autoCapitalize?:
+    | "none"
+    | "sentences"
+    | "words"
+    | "characters";
   isDark: boolean;
 }
 
+/**
+ * Reusable themed text input.
+ */
 function InputField({
   label,
   placeholder,
@@ -1601,7 +2003,9 @@ function InputField({
     <View className="mb-5">
       <Text
         className="mb-2 text-sm font-medium"
-        style={{ color: isDark ? "#d4d4d4" : "#374151" }}
+        style={{
+          color: isDark ? "#d4d4d4" : "#374151",
+        }}
       >
         {label}
       </Text>
@@ -1614,7 +2018,9 @@ function InputField({
           color: isDark ? "#ffffff" : "#111827",
         }}
         placeholder={placeholder}
-        placeholderTextColor={isDark ? "#737373" : "#9ca3af"}
+        placeholderTextColor={
+          isDark ? "#737373" : "#9ca3af"
+        }
         value={value}
         onChangeText={onChangeText}
         keyboardType={keyboardType}
@@ -1631,10 +2037,16 @@ interface PhoneFieldProps {
   countryCode: string;
   countryIso: CountryCode;
   onChangeText: (value: string) => void;
-  onCountryChange: (iso: CountryCode, callingCode: string) => void;
+  onCountryChange: (
+    iso: CountryCode,
+    callingCode: string,
+  ) => void;
   isDark: boolean;
 }
 
+/**
+ * Editable phone field with an international country picker.
+ */
 function PhoneField({
   label,
   value,
@@ -1644,7 +2056,10 @@ function PhoneField({
   onCountryChange,
   isDark,
 }: PhoneFieldProps) {
-  const [countryPickerVisible, setCountryPickerVisible] = useState(false);
+  const [
+    countryPickerVisible,
+    setCountryPickerVisible,
+  ] = useState(false);
 
   const formattedCountryCode = countryCode.startsWith("+")
     ? countryCode
@@ -1657,7 +2072,9 @@ function PhoneField({
     <View className="mb-5">
       <Text
         className="mb-2 text-sm font-medium"
-        style={{ color: isDark ? "#d4d4d4" : "#374151" }}
+        style={{
+          color: isDark ? "#d4d4d4" : "#374151",
+        }}
       >
         {label}
       </Text>
@@ -1724,7 +2141,9 @@ function PhoneField({
 
         <View
           className="h-7 w-px"
-          style={{ backgroundColor: isDark ? "#404040" : "#e5e7eb" }}
+          style={{
+            backgroundColor: isDark ? "#404040" : "#e5e7eb",
+          }}
         />
 
         <TextInput
@@ -1736,7 +2155,9 @@ function PhoneField({
             textAlignVertical: "center",
           }}
           placeholder="Phone number"
-          placeholderTextColor={isDark ? "#737373" : "#9ca3af"}
+          placeholderTextColor={
+            isDark ? "#737373" : "#9ca3af"
+          }
           value={value}
           onChangeText={onChangeText}
           keyboardType="phone-pad"
@@ -1757,6 +2178,9 @@ interface SelectFieldProps {
   isDark: boolean;
 }
 
+/**
+ * Dropdown-style field whose options are shown in the selector modal.
+ */
 function SelectField({
   label,
   value,
@@ -1772,7 +2196,9 @@ function SelectField({
     <View className="mb-5">
       <Text
         className="mb-2 text-sm font-medium"
-        style={{ color: isDark ? "#d4d4d4" : "#374151" }}
+        style={{
+          color: isDark ? "#d4d4d4" : "#374151",
+        }}
       >
         {label}
       </Text>
@@ -1841,6 +2267,9 @@ interface RadioButtonProps {
   isDark: boolean;
 }
 
+/**
+ * Selectable radio-style button.
+ */
 function RadioButton({
   label,
   selected,
@@ -1854,7 +2283,11 @@ function RadioButton({
       accessibilityState={{ checked: selected }}
       className="min-h-12 flex-1 flex-row items-center rounded-xl border px-3 py-3"
       style={{
-        borderColor: selected ? "#dc2626" : isDark ? "#404040" : "#d1d5db",
+        borderColor: selected
+          ? "#dc2626"
+          : isDark
+            ? "#404040"
+            : "#d1d5db",
         backgroundColor: selected
           ? isDark
             ? "#450a0a"
@@ -1867,7 +2300,11 @@ function RadioButton({
       <View
         className="mr-2 h-5 w-5 items-center justify-center rounded-full border"
         style={{
-          borderColor: selected ? "#ef4444" : isDark ? "#737373" : "#9ca3af",
+          borderColor: selected
+            ? "#ef4444"
+            : isDark
+              ? "#737373"
+              : "#9ca3af",
         }}
       >
         {selected && (

@@ -1,4 +1,6 @@
-
+import Ionicons from "@expo/vector-icons/Ionicons";
+import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,32 +15,29 @@ import {
   useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
-import * as Location from "expo-location";
 
+import { useAuth } from "@/app/components/auth/AuthContext";
 import AuthRequiredModal from "@/app/components/auth/AuthRequiredModal";
 import LoginModal from "@/app/components/auth/LoginModal";
 import RegisterModal from "@/app/components/auth/RegisterModal";
 import NewsletterSubscribeModal from "@/app/components/newsletter/NewsletterSubscribeModal";
-import { useAuth } from "@/app/components/auth/AuthContext";
 
-import { type PropertyStatusType } from "@/app/components/properties/PropertyCard";
 import AgentCard from "@/app/components/agents/AgentCard";
-import AutoPropertySlider from "@/app/components/properties/AutoPropertySlider";
 import MotivationalMessage from "@/app/components/home/MotivationalMessage";
+import AutoPropertySlider from "@/app/components/properties/AutoPropertySlider";
+import { type PropertyStatusType } from "@/app/components/properties/PropertyCard";
 
-import { type Property } from "@/app/types/properties/property";
 import { type Agent } from "@/app/types/agents/agent";
+import { type Property } from "@/app/types/properties/property";
 
 import { fetchAgents } from "@/app/services/agentApi";
 
 import {
-  fetchProperties,
   fetchFeaturedProperties,
   fetchMostViewedProperties,
   fetchNearbyProperties,
-} from "@/app/services/propertyApi";
+  fetchProperties,
+} from "@/app/services/properties/propertyApi";
 
 /* ============================================================
    PROPERTY SECTION COMPONENT
@@ -320,8 +319,8 @@ function NearbyPropertySection({
                 : "mt-1 text-center text-sm leading-5 text-gray-500"
             }
           >
-            Press "Use My Location" to discover properties close
-            to your current location.
+            Press "Use My Location" to discover properties close to your current
+            location.
           </Text>
         </View>
       )}
@@ -347,42 +346,40 @@ function NearbyPropertySection({
         </View>
       )}
 
-      {nearbyRequested &&
-        !loadingNearby &&
-        nearbyProperties.length === 0 && (
-          <View
+      {nearbyRequested && !loadingNearby && nearbyProperties.length === 0 && (
+        <View
+          className={
+            isDark
+              ? "items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10"
+              : "items-center rounded-2xl border border-gray-200 bg-white px-5 py-10"
+          }
+        >
+          <Ionicons
+            name="location-outline"
+            size={44}
+            color={isDark ? "#444" : "#9ca3af"}
+          />
+          <Text
             className={
               isDark
-                ? "items-center rounded-2xl border border-[#292929] bg-[#171717] px-5 py-10"
-                : "items-center rounded-2xl border border-gray-200 bg-white px-5 py-10"
+                ? "mt-4 text-base font-semibold text-gray-400"
+                : "mt-4 text-base font-semibold text-gray-700"
             }
           >
-            <Ionicons
-              name="location-outline"
-              size={44}
-              color={isDark ? "#444" : "#9ca3af"}
-            />
-            <Text
-              className={
-                isDark
-                  ? "mt-4 text-base font-semibold text-gray-400"
-                  : "mt-4 text-base font-semibold text-gray-700"
-              }
-            >
-              No nearby properties found
-            </Text>
-            <Text
-              className={
-                isDark
-                  ? "mt-1 text-center text-sm leading-5 text-gray-600"
-                  : "mt-1 text-center text-sm leading-5 text-gray-500"
-              }
-            >
-              There are currently no properties available within
-              the nearby search radius.
-            </Text>
-          </View>
-        )}
+            No nearby properties found
+          </Text>
+          <Text
+            className={
+              isDark
+                ? "mt-1 text-center text-sm leading-5 text-gray-600"
+                : "mt-1 text-center text-sm leading-5 text-gray-500"
+            }
+          >
+            There are currently no properties available within the nearby search
+            radius.
+          </Text>
+        </View>
+      )}
 
       {!loadingNearby && nearbyProperties.length > 0 && (
         <>
@@ -443,8 +440,12 @@ export default function HomeScreen() {
   // PROPERTY STATE
   const [properties, setProperties] = useState<Property[]>([]);
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
-  const [openHouseProperties, setOpenHouseProperties] = useState<Property[]>([]);
-  const [mostViewedProperties, setMostViewedProperties] = useState<Property[]>([]);
+  const [openHouseProperties, setOpenHouseProperties] = useState<Property[]>(
+    [],
+  );
+  const [mostViewedProperties, setMostViewedProperties] = useState<Property[]>(
+    [],
+  );
   const [nearbyProperties, setNearbyProperties] = useState<Property[]>([]);
 
   // LOADING STATE
@@ -498,7 +499,7 @@ export default function HomeScreen() {
         setProperties(result);
 
         const openHouses = result.filter(
-          (property) => property.isOpenHouse === true
+          (property) => property.isOpenHouse === true,
         );
 
         setOpenHouseProperties(openHouses);
@@ -514,7 +515,7 @@ export default function HomeScreen() {
       } else {
         console.error(
           "Failed to load featured properties:",
-          featuredResult.reason
+          featuredResult.reason,
         );
       }
 
@@ -526,7 +527,7 @@ export default function HomeScreen() {
       } else {
         console.error(
           "Failed to load most viewed properties:",
-          mostViewedResult.reason
+          mostViewedResult.reason,
         );
       }
 
@@ -574,7 +575,7 @@ export default function HomeScreen() {
 
         if (!servicesEnabled) {
           console.warn(
-            "Location services are disabled while refreshing nearby properties."
+            "Location services are disabled while refreshing nearby properties.",
           );
           return;
         }
@@ -583,7 +584,7 @@ export default function HomeScreen() {
 
         if (permission.status !== Location.PermissionStatus.GRANTED) {
           console.warn(
-            "Location permission is not granted while refreshing nearby properties."
+            "Location permission is not granted while refreshing nearby properties.",
           );
           return;
         }
@@ -619,7 +620,7 @@ export default function HomeScreen() {
 
         Alert.alert(
           "Location Disabled",
-          "Please enable location services on your device and try again."
+          "Please enable location services on your device and try again.",
         );
 
         return;
@@ -632,7 +633,7 @@ export default function HomeScreen() {
 
         Alert.alert(
           "Location Permission Required",
-          "Please allow location access to find properties near you."
+          "Please allow location access to find properties near you.",
         );
 
         return;
@@ -656,7 +657,7 @@ export default function HomeScreen() {
 
       Alert.alert(
         "Unable to Find Properties",
-        "We could not find properties near your current location. Please try again."
+        "We could not find properties near your current location. Please try again.",
       );
     } finally {
       setLoadingNearby(false);
@@ -693,7 +694,7 @@ export default function HomeScreen() {
   // LOGIN SUCCESS
   const handleLoginSuccess = (
     _email: string,
-    _response: Record<string, unknown>
+    _response: Record<string, unknown>,
   ) => {
     setLoginVisible(false);
 
@@ -787,9 +788,8 @@ export default function HomeScreen() {
                   : "mt-4 max-w-sm text-center text-base leading-7 text-gray-600"
               }
             >
-              Discover residential, commercial, industrial, and
-              agricultural properties for sale or rent across Malawi
-              with Real Estate Africa.
+              Discover residential, commercial, industrial, and agricultural
+              properties for sale or rent across Malawi with Real Estate Africa.
             </Text>
           </View>
         </View>
@@ -1090,9 +1090,7 @@ export default function HomeScreen() {
 
           {/* SPECIAL PROPERTY REQUEST */}
           <Pressable
-            onPress={() =>
-              router.push("/properties/special-property-request")
-            }
+            onPress={() => router.push("/properties/special-property-request")}
             accessibilityRole="button"
             accessibilityLabel="Special property request"
             className={
