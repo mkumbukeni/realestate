@@ -26,10 +26,17 @@ if (!EXPO_PUBLIC_API_URL) {
   );
 }
 
+
 /*
 |--------------------------------------------------------------------------
 | PARSE COVERAGE AREAS
 |--------------------------------------------------------------------------
+|
+| Supports:
+| 1. A JSON string containing an array of coverage areas.
+| 2. An array of coverage-area objects.
+| 3. null or invalid data.
+|
 */
 
 function parseCoverageAreas(
@@ -39,20 +46,50 @@ function parseCoverageAreas(
     return [];
   }
 
-  if (Array.isArray(coverageArea)) {
-    return coverageArea;
+  let parsed: unknown = coverageArea;
+
+  // Convert JSON strings into JavaScript data.
+  if (typeof coverageArea === "string") {
+    try {
+      parsed = JSON.parse(coverageArea);
+    } catch (error) {
+      console.warn("Unable to parse agent coverage areas:", error);
+      return [];
+    }
   }
 
-  try {
-    const parsed: unknown = JSON.parse(coverageArea);
-
-    return Array.isArray(parsed)
-      ? (parsed as CoverageArea[])
-      : [];
-  } catch {
+  // Only arrays are supported.
+  if (!Array.isArray(parsed)) {
     return [];
   }
+
+  // Validate and normalize each coverage-area object.
+  return parsed.filter(
+    (area): area is CoverageArea =>
+      typeof area === "object" &&
+      area !== null &&
+      !Array.isArray(area),
+  ).map((area) => {
+    const item = area as Partial<CoverageArea>;
+
+    return {
+      ...item,
+      id: Number(item.id ?? 0),
+      region: String(item.region ?? ""),
+      district_code: String(item.district_code ?? ""),
+      district_name: String(item.district_name ?? ""),
+      location_name: String(item.location_name ?? ""),
+      location_code: String(item.location_code ?? ""),
+      latitude: item.latitude ?? null,
+      longitude: item.longitude ?? null,
+      google_map_link: item.google_map_link ?? null,
+      last_sync_date: item.last_sync_date ?? null,
+      created_at: String(item.created_at ?? ""),
+      updated_at: String(item.updated_at ?? ""),
+    } as CoverageArea;
+  });
 }
+
 
 /*
 |--------------------------------------------------------------------------

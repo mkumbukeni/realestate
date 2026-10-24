@@ -1,247 +1,219 @@
+
 import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
-import {
-  Image,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 
 import type { Agent } from "@/app/services/agentApi";
-import { useTheme } from "@/app/components/theme/ThemeContext";
 
 interface AgentCardProps {
   agent: Agent;
   onPress: (agent: Agent) => void;
-  isFullWidth?: boolean;
 }
 
-const AgentCard = ({
-  agent,
-  onPress,
-  isFullWidth = false,
-}: AgentCardProps) => {
-  const { isDark, theme } = useTheme();
+const getAgentDisplayType = (agentType?: string | null): string => {
+  return agentType?.toLowerCase() === "registered"
+    ? "Real Estate Agent"
+    : "Scout";
+};
+
+const AgentCard: React.FC<AgentCardProps> = ({ agent, onPress }) => {
+  const agentName = agent.name?.trim() || "Unknown Agent";
+
+  const imageUri = agent.image?.trim() || null;
+
+  const agentType = getAgentDisplayType(agent.agentType);
+
+  // Read the agent's coverage areas.
+  // These should already be parsed into objects by agentApi.ts.
+  const coverageAreas = agent.coverageAreas ?? [];
+
+  // Collect unique regions across all coverage areas.
+  const regions = [
+    ...new Set(
+      coverageAreas
+        .map((area) => area.region?.trim())
+        .filter((region): region is string => Boolean(region)),
+    ),
+  ];
+
+  // Collect unique districts across all coverage areas.
+  const districts = [
+    ...new Set(
+      coverageAreas
+        .map((area) => area.district_name?.trim())
+        .filter((district): district is string => Boolean(district)),
+    ),
+  ];
+
+  // Collect unique locations across all coverage areas.
+  const locations = [
+    ...new Set(
+      coverageAreas
+        .map((area) => area.location_name?.trim())
+        .filter((location): location is string => Boolean(location)),
+    ),
+  ];
+
+  // Keep the existing address as a fallback for the location label.
+  const address = agent.address?.trim();
 
   return (
-    <Pressable
+    <TouchableOpacity
+      activeOpacity={0.85}
       onPress={() => onPress(agent)}
-      className="mb-3 overflow-hidden rounded-2xl"
-      style={({ pressed }) => ({
-        opacity: pressed ? 0.85 : 1,
-        backgroundColor: theme.card,
-
-        // Shadow
-        shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: 3,
-        },
-        shadowOpacity: isDark ? 0.35 : 0.12,
-        shadowRadius: 6,
-
-        elevation: 4,
-      })}
+      className="mb-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-[#171717]"
     >
-      {/* ================================================== */}
-      {/* PROFILE IMAGE */}
-      {/* ================================================== */}
-
-      <View
-        className={`relative ${
-          isFullWidth ? "h-52" : "h-40"
-        } w-full`}
-        style={{
-          backgroundColor: theme.surface,
-        }}
-      >
-        {agent.image ? (
+      {/* Agent image */}
+      <View className="relative h-48 w-full items-center justify-center bg-neutral-200 dark:bg-neutral-800">
+        {imageUri ? (
           <Image
-            source={{ uri: agent.image }}
+            source={{ uri: imageUri }}
             className="h-full w-full"
             resizeMode="cover"
           />
         ) : (
-          <View className="h-full w-full items-center justify-center">
-            <View
-              className="h-16 w-16 items-center justify-center rounded-full"
-              style={{
-                backgroundColor: theme.border,
-              }}
-            >
-              <Ionicons
-                name="person-outline"
-                size={34}
-                color={theme.textMuted}
-              />
-            </View>
+          <View className="items-center justify-center">
+            <Ionicons
+              name="person-circle-outline"
+              size={76}
+              color="#9ca3af"
+            />
+            <Text className="mt-1 text-xs text-neutral-500">
+              No profile image
+            </Text>
           </View>
         )}
 
-        {/* AGENT TYPE */}
-        <View className="absolute left-3 top-3 rounded-lg bg-red-600 px-2 py-1">
-          <Text className="text-[11px] font-bold capitalize text-white">
-            {agent.agentType}
+        {/* Agent type badge */}
+        <View className="absolute left-3 top-3 rounded-lg bg-red-600 px-3 py-1.5">
+          <Text className="text-[11px] font-bold text-white">
+            {agentType}
           </Text>
         </View>
-
-        {/* LICENSE STATUS */}
-        {agent.licenseStatus === "active" && (
-          <View
-            className="absolute right-3 top-3 flex-row items-center rounded-lg px-2 py-1"
-            style={{
-              backgroundColor: isDark
-                ? "rgba(0,0,0,0.75)"
-                : "rgba(255,255,255,0.90)",
-            }}
-          >
-            <View className="mr-1.5 h-2 w-2 rounded-full bg-green-500" />
-
-            <Text
-              className="text-[11px] font-medium"
-              style={{
-                color: isDark ? "#ffffff" : "#111111",
-              }}
-            >
-              Licensed
-            </Text>
-          </View>
-        )}
       </View>
 
-      {/* ================================================== */}
-      {/* AGENT INFORMATION */}
-      {/* ================================================== */}
-
-      <View className="px-3.5 pb-3.5 pt-3">
-        {/* NAME */}
+      {/* Agent information */}
+      <View className="p-4">
         <Text
-          className="text-base font-bold"
-          style={{
-            color: theme.text,
-          }}
           numberOfLines={1}
+          className="text-base font-bold text-neutral-900 dark:text-white"
         >
-          {agent.name}
+          {agentName}
         </Text>
 
-        {/* SPECIALIZATION */}
-        <Text
-          className="mt-0.5 text-xs"
-          style={{
-            color: theme.textSecondary,
-          }}
-          numberOfLines={1}
-        >
-          {agent.specialization}
-        </Text>
+        {/* Region */}
+        <View className="mt-3 flex-row items-start">
+          <Ionicons
+            name="map-outline"
+            size={16}
+            color="#ef4444"
+            style={{ marginTop: 2 }}
+          />
 
-        {/* LOCATION */}
-        {agent.coverageAreas.length > 0 && (
+          <View className="ml-2 flex-1">
+            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+              Region
+            </Text>
+
+            <Text className="text-sm text-neutral-700 dark:text-neutral-200">
+              {regions.length > 0 ? regions.join(", ") : "Not specified"}
+            </Text>
+          </View>
+        </View>
+
+        {/* District */}
+        <View className="mt-2 flex-row items-start">
+          <Ionicons
+            name="location-outline"
+            size={16}
+            color="#ef4444"
+            style={{ marginTop: 2 }}
+          />
+
+          <View className="ml-2 flex-1">
+            <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+              District
+            </Text>
+
+            <Text className="text-sm text-neutral-700 dark:text-neutral-200">
+              {districts.length > 0
+                ? districts.join(", ")
+                : address || "Not specified"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Specific coverage locations */}
+        {locations.length > 0 && (
+          <View className="mt-2 flex-row items-start">
+            <Ionicons
+              name="navigate-outline"
+              size={16}
+              color="#ef4444"
+              style={{ marginTop: 2 }}
+            />
+
+            <View className="ml-2 flex-1">
+              <Text className="text-xs text-neutral-500 dark:text-neutral-400">
+                Areas Covered
+              </Text>
+
+              <Text className="text-sm text-neutral-700 dark:text-neutral-200">
+                {locations.join(", ")}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Contact details */}
+        {agent.phone ? (
+          <View className="mt-3 flex-row items-center">
+            <Ionicons
+              name="call-outline"
+              size={15}
+              color="#9ca3af"
+            />
+
+            <Text
+              numberOfLines={1}
+              className="ml-2 flex-1 text-sm text-neutral-600 dark:text-neutral-400"
+            >
+              {agent.phone}
+            </Text>
+          </View>
+        ) : null}
+
+        {agent.email ? (
           <View className="mt-2 flex-row items-center">
             <Ionicons
-              name="location-outline"
+              name="mail-outline"
               size={15}
-              color={theme.accent}
+              color="#9ca3af"
             />
 
             <Text
-              className="ml-1.5 flex-1 text-xs"
-              style={{
-                color: theme.textSecondary,
-              }}
               numberOfLines={1}
+              className="ml-2 flex-1 text-sm text-neutral-600 dark:text-neutral-400"
             >
-              {agent.coverageAreas[0].location_name},{" "}
-              {agent.coverageAreas[0].district_name}
+              {agent.email}
             </Text>
           </View>
-        )}
+        ) : null}
 
-        {/* ADDRESS FALLBACK */}
-        {agent.coverageAreas.length === 0 &&
-          agent.address !== "" && (
-            <View className="mt-2 flex-row items-center">
-              <Ionicons
-                name="location-outline"
-                size={15}
-                color={theme.accent}
-              />
+        {/* View profile */}
+        <View className="mt-4 flex-row items-center justify-between border-t border-neutral-200 pt-3 dark:border-neutral-800">
+          <Text className="text-sm font-semibold text-red-600">
+            View profile
+          </Text>
 
-              <Text
-                className="ml-1.5 flex-1 text-xs"
-                style={{
-                  color: theme.textSecondary,
-                }}
-                numberOfLines={1}
-              >
-                {agent.address}
-              </Text>
-            </View>
-          )}
-
-        {/* CONTACT + SALES */}
-        <View
-          className="mt-2.5 flex-row items-center border-t pt-2.5"
-          style={{
-            borderTopColor: theme.border,
-          }}
-        >
-          {/* PHONE */}
-          {agent.phone !== "" && (
-            <View className="mr-3 flex-row items-center">
-              <Ionicons
-                name="call-outline"
-                size={14}
-                color={theme.textMuted}
-              />
-
-              <Text
-                className="ml-1 text-[11px]"
-                style={{
-                  color: theme.textMuted,
-                }}
-              >
-                {agent.phone}
-              </Text>
-            </View>
-          )}
-
-          {/* SALES */}
-          <View className="ml-auto flex-row items-center">
-            <Ionicons
-              name="home-outline"
-              size={14}
-              color={theme.accent}
-            />
-
-            <Text
-              className="ml-1 text-[11px] font-semibold"
-              style={{
-                color: theme.textSecondary,
-              }}
-            >
-              {agent.totalSales}{" "}
-              {agent.totalSales === 1
-                ? "Sale"
-                : "Sales"}
-            </Text>
-          </View>
-        </View>
-
-        {/* VIEW PROFILE */}
-        <View
-          className="mt-3 flex-row items-center justify-center rounded-lg px-3 py-2"
-          style={{
-            backgroundColor: isDark
-              ? "#242424"
-              : "#f5f5f5",
-          }}
-        >
-         
+          <Ionicons
+            name="arrow-forward-circle-outline"
+            size={23}
+            color="#dc2626"
+          />
         </View>
       </View>
-    </Pressable>
+    </TouchableOpacity>
   );
 };
 
