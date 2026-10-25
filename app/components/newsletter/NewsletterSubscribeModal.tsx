@@ -1,8 +1,6 @@
-
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -13,101 +11,91 @@ import {
   useColorScheme,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-
 interface NewsletterSubscribeModalProps {
   visible: boolean;
   onClose: () => void;
 }
-
 type ApiResponse = {
   message?: string;
   error?: string;
   success?: boolean;
   [key: string]: unknown;
 };
-
+type ToastState = {
+  title: string;
+  message: string;
+  type: "success" | "error";
+} | null;
 function getNewsletterEndpoint(): string {
   const configuredUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
-
   if (!configuredUrl) {
     throw new Error(
       "The API URL is not configured. Please set EXPO_PUBLIC_API_URL in your environment."
     );
   }
-
   const baseUrl = configuredUrl.replace(/\/+$/, "");
-
   if (/\/api\/v2$/i.test(baseUrl) || /\/v2$/i.test(baseUrl)) {
     return `${baseUrl}/newsletter/subscribe`;
   }
-
   if (/\/api$/i.test(baseUrl)) {
     return `${baseUrl}/v2/newsletter/subscribe`;
   }
-
   return `${baseUrl}/api/v2/newsletter/subscribe`;
 }
-
 export default function NewsletterSubscribeModal({
   visible,
   onClose,
 }: NewsletterSubscribeModalProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
-
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [confirmationVisible, setConfirmationVisible] = useState(false);
-
+  const [toast, setToast] = useState<ToastState>(null);
   // Designation is intentionally handled in code, not shown to the user.
   const NEWSLETTER_DESIGNATION = "Client";
-
   useEffect(() => {
     if (!visible) {
       setLoading(false);
       setConfirmationVisible(false);
     }
   }, [visible]);
-
+  useEffect(() => {
+    if (!toast) return;
+    const timeout = setTimeout(() => setToast(null), 5800);
+    return () => clearTimeout(timeout);
+  }, [toast]);
+  const showToast = (title: string, message: string, type: "success" | "error") => {
+    setToast({ title, message, type });
+  };
   const closeModal = () => {
     if (loading) return;
-
     setConfirmationVisible(false);
     onClose();
   };
-
   // Validate first, then ask the user to confirm before calling the API.
   const handleSubscribePress = () => {
     const trimmedEmail = email.trim();
-
     if (!trimmedEmail) {
-      Alert.alert("Email required", "Please enter your email address.");
+      showToast("Email required", "Please enter your email address.", "error");
       return;
     }
-
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     if (!emailPattern.test(trimmedEmail)) {
-      Alert.alert("Invalid email", "Please enter a valid email address.");
+      showToast("Invalid email", "Please enter a valid email address.", "error");
       return;
     }
-
     setConfirmationVisible(true);
   };
-
   const confirmSubscription = async () => {
     if (loading) return;
-
     const trimmedEmail = email.trim();
-
     // Revalidate in case the value changed before confirmation.
     if (!trimmedEmail) {
       setConfirmationVisible(false);
-
-      Alert.alert("Email required", "Please enter your email address.");
+      showToast("Email required", "Please enter your email address.", "error");
       return;
     }
-
     /*
      * IMPORTANT:
      * Close ONLY the confirmation modal.
@@ -116,12 +104,9 @@ export default function NewsletterSubscribeModal({
      * the Subscribe button change to "Subscribing...".
      */
     setConfirmationVisible(false);
-
     try {
       setLoading(true);
-
       const endpoint = getNewsletterEndpoint();
-
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
@@ -133,75 +118,59 @@ export default function NewsletterSubscribeModal({
           designation: NEWSLETTER_DESIGNATION,
         }),
       });
-
       let responseData: ApiResponse = {};
-
       try {
         responseData = (await response.json()) as ApiResponse;
       } catch {
         // Some servers return an empty response body.
       }
-
       if (!response.ok) {
         const serverMessage =
           (typeof responseData.message === "string" &&
             responseData.message) ||
           (typeof responseData.error === "string" && responseData.error) ||
           `Subscription failed (HTTP ${response.status}).`;
-
         throw new Error(serverMessage);
       }
-
       setEmail("");
-
-      Alert.alert(
+      showToast(
         "Subscription successful",
-        (typeof responseData.message === "string" &&
-          responseData.message) ||
-          "Thank you for subscribing to our newsletter."
+        (typeof responseData.message === "string" && responseData.message) ||
+          "Thank you for subscribing to our newsletter.",
+        "success"
       );
-
       onClose();
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "Something went wrong. Please try again.";
-
-      Alert.alert("Unable to subscribe", message);
+      showToast("Unable to subscribe", message, "error");
     } finally {
       setLoading(false);
     }
   };
-
   const panelClass = isDark
     ? "rounded-t-3xl border border-[#292929] bg-[#171717]"
     : "rounded-t-3xl border border-gray-200 bg-white";
-
   const titleClass = isDark
     ? "text-xl font-bold text-white"
     : "text-xl font-bold text-black";
-
   const descriptionClass = isDark
     ? "mt-2 text-sm leading-5 text-gray-400"
     : "mt-2 text-sm leading-5 text-gray-600";
-
   const labelClass = isDark
     ? "mb-2 text-sm font-semibold text-gray-200"
     : "mb-2 text-sm font-semibold text-gray-800";
-
   const inputClass = isDark
     ? "rounded-xl border border-[#363636] bg-[#101010] px-4 py-3.5 text-base text-white"
     : "rounded-xl border border-gray-300 bg-white px-4 py-3.5 text-base text-black";
-
   const confirmationPanelClass = isDark
     ? "w-full max-w-md rounded-3xl border border-[#303030] bg-[#171717] p-6"
     : "w-full max-w-md rounded-3xl border border-gray-200 bg-white p-6";
-
   const secondaryButtonClass = isDark
     ? "flex-1 items-center justify-center rounded-xl border border-[#383838] px-4 py-3.5"
     : "flex-1 items-center justify-center rounded-xl border border-gray-300 px-4 py-3.5";
-
   return (
     <>
       {/* Main newsletter modal */}
@@ -220,7 +189,6 @@ export default function NewsletterSubscribeModal({
             disabled={loading}
             className="absolute inset-0 bg-black/60"
           />
-
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             className="w-full"
@@ -236,7 +204,6 @@ export default function NewsletterSubscribeModal({
                   }
                 />
               </View>
-
               <View className="px-[22px] pb-7 pt-3">
                 <View className="mb-5 flex-row items-start">
                   <View className="mr-3 h-12 w-12 items-center justify-center rounded-2xl bg-red-600">
@@ -246,18 +213,15 @@ export default function NewsletterSubscribeModal({
                       color="#fff"
                     />
                   </View>
-
                   <View className="flex-1 pr-2">
                     <Text className={titleClass}>
                       Subscribe to our newsletter
                     </Text>
-
                     <Text className={descriptionClass}>
                       Get the latest property news, listings, and updates
                       delivered to your inbox.
                     </Text>
                   </View>
-
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Close modal"
@@ -276,10 +240,8 @@ export default function NewsletterSubscribeModal({
                     />
                   </Pressable>
                 </View>
-
                 <View className="mb-4">
                   <Text className={labelClass}>Email address</Text>
-
                   <TextInput
                     value={email}
                     onChangeText={setEmail}
@@ -299,7 +261,6 @@ export default function NewsletterSubscribeModal({
                     onSubmitEditing={handleSubscribePress}
                   />
                 </View>
-
                 {/* ONLY THIS BUTTON shows the loading state */}
                 <Pressable
                   accessibilityRole="button"
@@ -318,7 +279,6 @@ export default function NewsletterSubscribeModal({
                         size="small"
                         color="#fff"
                       />
-
                       <Text className="ml-3 text-base font-bold text-white">
                         Subscribing...
                       </Text>
@@ -330,23 +290,104 @@ export default function NewsletterSubscribeModal({
                         size={20}
                         color="#fff"
                       />
-
                       <Text className="ml-2 text-base font-bold text-white">
                         Subscribe
                       </Text>
                     </>
                   )}
                 </Pressable>
-
                 <Text className="mt-4 text-center text-xs leading-5 text-gray-500">
                   You can close this window at any time.
                 </Text>
               </View>
             </View>
           </KeyboardAvoidingView>
+          {toast && visible && (
+            <View
+              pointerEvents="box-none"
+              className="absolute left-0 right-0 top-12 z-50 items-center px-4"
+            >
+              <View
+                accessibilityRole="alert"
+                className={`w-full max-w-xl flex-row items-start rounded-2xl border px-4 py-3 shadow-lg ${
+                  toast.type === "success"
+                    ? isDark
+                      ? "border-emerald-800 bg-[#10251c]"
+                      : "border-emerald-200 bg-white"
+                    : isDark
+                      ? "border-red-900 bg-[#2a1517]"
+                      : "border-red-200 bg-white"
+                }`}
+              >
+                <Ionicons
+                  name={toast.type === "success" ? "checkmark-circle" : "alert-circle"}
+                  size={24}
+                  color={toast.type === "success" ? "#16a34a" : "#ef4444"}
+                />
+                <View className="ml-3 flex-1">
+                  <Text className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                    {toast.title}
+                  </Text>
+                  <Text className={`mt-1 text-sm leading-5 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                    {toast.message}
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Dismiss notification"
+                  onPress={() => setToast(null)}
+                  hitSlop={8}
+                  className="ml-2 p-1"
+                >
+                  <Ionicons name="close" size={18} color={isDark ? "#d1d5db" : "#6b7280"} />
+                </Pressable>
+              </View>
+            </View>
+          )}
         </View>
       </Modal>
-
+      {!visible && toast && (
+        <View
+          pointerEvents="box-none"
+          className="absolute left-0 right-0 top-12 z-[9999] items-center px-4"
+        >
+          <View
+            accessibilityRole="alert"
+            className={`w-full max-w-xl flex-row items-start rounded-2xl border px-4 py-3 shadow-lg ${
+              toast.type === "success"
+                ? isDark
+                  ? "border-emerald-800 bg-[#10251c]"
+                  : "border-emerald-200 bg-white"
+                : isDark
+                  ? "border-red-900 bg-[#2a1517]"
+                  : "border-red-200 bg-white"
+            }`}
+          >
+            <Ionicons
+              name={toast.type === "success" ? "checkmark-circle" : "alert-circle"}
+              size={24}
+              color={toast.type === "success" ? "#16a34a" : "#ef4444"}
+            />
+            <View className="ml-3 flex-1">
+              <Text className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"}`}>
+                {toast.title}
+              </Text>
+              <Text className={`mt-1 text-sm leading-5 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
+                {toast.message}
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss notification"
+              onPress={() => setToast(null)}
+              hitSlop={8}
+              className="ml-2 p-1"
+            >
+              <Ionicons name="close" size={18} color={isDark ? "#d1d5db" : "#6b7280"} />
+            </Pressable>
+          </View>
+        </View>
+      )}
       {/* Confirmation modal */}
       <Modal
         visible={confirmationVisible}
@@ -370,7 +411,6 @@ export default function NewsletterSubscribeModal({
             }}
             className="absolute inset-0 bg-black/70"
           />
-
           <View className={confirmationPanelClass}>
             <View className="mb-4 h-14 w-14 items-center justify-center rounded-2xl bg-red-600/15">
               <Ionicons
@@ -379,16 +419,13 @@ export default function NewsletterSubscribeModal({
                 color="#ef4444"
               />
             </View>
-
             <Text className={titleClass}>
               Confirm subscription
             </Text>
-
             <Text className={descriptionClass}>
               Would you like to subscribe this email address to our
               newsletter?
             </Text>
-
             <View
               className={
                 isDark
@@ -406,7 +443,6 @@ export default function NewsletterSubscribeModal({
                 {email.trim()}
               </Text>
             </View>
-
             <View className="mt-6 flex-row gap-3">
               <Pressable
                 accessibilityRole="button"
@@ -424,7 +460,6 @@ export default function NewsletterSubscribeModal({
                   Cancel
                 </Text>
               </Pressable>
-
               <Pressable
                 accessibilityRole="button"
                 onPress={confirmSubscription}

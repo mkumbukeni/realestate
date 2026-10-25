@@ -271,20 +271,20 @@ export default function AgentsScreen() {
                 {/* Count badge: top-right corner of active button */}
                 {selected && !loading && (
                   <View
-                    className="absolute items-center justify-center rounded-full  "
+                    className="absolute items-center justify-center rounded-full bg-white   "
                     style={{
                       top: 1,
                       right: 3,
-                      minWidth: 20,
-                      height: 20,
+                      minWidth: 17,
+                      height: 17,
                       paddingHorizontal: 4,
-                      backgroundColor: theme.background,
+                      
                       borderWidth: 1,
                       borderColor: theme.accent,
                     }}
                   >
                     <Text
-                      className="text-[10px] font-extrabold dark:text-white"
+                      className="text-[10px] font-extrabold dark:text-black "
                     
                     >
                       {count} 

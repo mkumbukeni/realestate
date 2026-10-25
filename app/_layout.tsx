@@ -178,7 +178,7 @@ function GlobalAuthButton({
               ? "person-circle-outline"
               : "person-outline"
           }
-          size={26}
+          size={22}
           color={
             isDark
               ? "white"
