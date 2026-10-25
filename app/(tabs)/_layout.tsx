@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Tabs, useRouter } from "expo-router";
+import { Tabs } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -9,7 +9,6 @@ import { useTheme } from "@/app/components/theme/ThemeContext";
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const { isDark, theme } = useTheme();
-  const router = useRouter();
 
   return (
     <Tabs
@@ -68,12 +67,6 @@ export default function TabLayout() {
             />
           ),
         }}
-        listeners={{
-          tabPress: (event) => {
-            event.preventDefault();
-            router.replace("/(tabs)/properties");
-          },
-        }}
       />
 
       <Tabs.Screen
@@ -87,12 +80,6 @@ export default function TabLayout() {
               color={color}
             />
           ),
-        }}
-        listeners={{
-          tabPress: (event) => {
-            event.preventDefault();
-            router.replace("/(tabs)/agents");
-          },
         }}
       />
 

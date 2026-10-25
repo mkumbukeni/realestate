@@ -991,28 +991,9 @@ export default function ListPropertyForm({
             isDark={isDark}
           />
 
-          <Text
-            className="mb-2 text-sm font-medium"
-            style={{ color: colors.textSecondary }}
-          >
-            Are you looking for a property?
-          </Text>
+          
 
-          <View className="mb-5 flex-row gap-3">
-            <RadioButton
-              label="Yes"
-              selected={formData.worthCheck === "yes"}
-              onPress={() => updateField("worthCheck", "yes")}
-              isDark={isDark}
-            />
-
-            <RadioButton
-              label="No"
-              selected={formData.worthCheck === "no"}
-              onPress={() => updateField("worthCheck", "no")}
-              isDark={isDark}
-            />
-          </View>
+         
 
           <Text
             className="mb-2 text-sm font-medium"
