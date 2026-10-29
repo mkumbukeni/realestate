@@ -3,20 +3,20 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    RefreshControl,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AgentCard from "@/app/components/agents/AgentCard";
 import { useTheme } from "@/app/components/theme/ThemeContext";
-import { fetchAgents } from "@/app/services/agentApi";
-import  {Agent} from "@/app/types/agents/agent"
+import { fetchAgents } from "@/app/services/agent/agentApi";
+import { Agent } from "@/app/types/agents/agent";
 
 type AgentFilter = "all" | "registered" | "unregistered";
 

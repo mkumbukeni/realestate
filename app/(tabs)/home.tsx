@@ -3,16 +3,16 @@ import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  StatusBar,
-  Text,
-  View,
-  useColorScheme,
+    ActivityIndicator,
+    Alert,
+    Image,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StatusBar,
+    Text,
+    View,
+    useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -30,13 +30,13 @@ import { type PropertyStatusType } from "@/app/components/properties/PropertyCar
 import { type Agent } from "@/app/types/agents/agent";
 import { type Property } from "@/app/types/properties/property";
 
-import { fetchAgents } from "@/app/services/agentApi";
+import { fetchAgents } from "@/app/services/agent/agentApi";
 
 import {
-  fetchFeaturedProperties,
-  fetchMostViewedProperties,
-  fetchNearbyProperties,
-  fetchProperties,
+    fetchFeaturedProperties,
+    fetchMostViewedProperties,
+    fetchNearbyProperties,
+    fetchProperties,
 } from "@/app/services/properties/propertyApi";
 
 /* ============================================================

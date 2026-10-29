@@ -1,4 +1,4 @@
-import { mapApiAgent } from "../agentApi";
+import { mapApiAgent } from "../agent/agentApi";
 
 import type { Agent } from "@/app/types/agents/agent";
 

@@ -4,15 +4,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 
 import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  Text,
-  View,
-  useColorScheme,
+    ActivityIndicator,
+    Alert,
+    Linking,
+    Pressable,
+    ScrollView,
+    StatusBar,
+    Text,
+    View,
+    useColorScheme,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,21 +26,21 @@ import SideMenu from "@/app/components/sidebar/SideMenu";
 import { useAuth } from "@/app/components/auth/AuthContext";
 
 import type {
-  Property,
-  PropertyMediaItem,
-  PropertyMedia,
+    Property,
+    PropertyMedia,
+    PropertyMediaItem,
 } from "@/app/types/properties/property";
 
 import {
-  fetchAgentDetails,
-  fetchProperties,
-  fetchPropertyImages,
-  fetchPropertyVideos,
+    fetchAgentDetails,
+    fetchProperties,
+    fetchPropertyImages,
+    fetchPropertyVideos,
 } from "@/app/services/properties/propertyApi";
 
 import type { Agent } from "@/app/types/agents/agent";
 
-import { fetchAgents } from "@/app/services/agentApi";
+import { fetchAgents } from "@/app/services/agent/agentApi";
 
 import PropertyLocationMap from "@/app/components/properties/PropertyLocationMap";
 
@@ -51,7 +51,7 @@ import PropertyImageGallery from "@/app/components/properties/PropertyDetails/Pr
 import PropertyHighlights from "@/app/components/properties/PropertyDetails/PropertyHighlights";
 
 import PropertyInformation, {
-  type PropertyInformationData,
+    type PropertyInformationData,
 } from "@/app/components/properties/PropertyDetails/PropertyInformation";
 
 import PropertyAmenities from "@/app/components/properties/PropertyDetails/PropertyAmenities";
@@ -59,7 +59,7 @@ import PropertyAmenities from "@/app/components/properties/PropertyDetails/Prope
 import PropertyVideosSection from "@/app/components/properties/PropertyDetails/PropertyVideosSection";
 
 import PropertyOpenHouse, {
-  type PropertyOpenHouseItem,
+    type PropertyOpenHouseItem,
 } from "@/app/components/properties/PropertyDetails/PropertyOpenHouse";
 
 import PropertyMessageModal from "@/app/components/properties/PropertyDetails/PropertyMessageModal";
@@ -67,14 +67,14 @@ import PropertyMessageModal from "@/app/components/properties/PropertyDetails/Pr
 import { trackPropertyView } from "@/app/services/properties/propertyViewApi";
 
 import {
-  getPropertyAmenities,
-  getPropertyCoordinates,
-  getPropertyDescription,
-  getPropertyListingType,
-  getPropertyLocationText,
-  getPropertyOpenHouses,
-  getPropertyType,
-  getPropertyValue,
+    getPropertyAmenities,
+    getPropertyCoordinates,
+    getPropertyDescription,
+    getPropertyListingType,
+    getPropertyLocationText,
+    getPropertyOpenHouses,
+    getPropertyType,
+    getPropertyValue,
 } from "@/app/components/properties/PropertyDetails/propertyDetailsUtils";
 
 // ============================================================

@@ -3,7 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
-import type { Agent } from "@/app/services/agentApi";
+import type { Agent } from "@/app/types/agents/agent";
 
 interface AgentCardProps {
   agent: Agent;

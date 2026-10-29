@@ -31,7 +31,7 @@ const MENU_ITEMS: MenuItem[] = [
     title: "About",
     description: "Learn more about our real estate platform.",
     icon: "information-circle-outline",
-    route: "others/about",
+    route: "others/abouts/about",
   },
   {
     title: "Privacy Policy",

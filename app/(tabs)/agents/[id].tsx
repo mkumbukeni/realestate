@@ -5,7 +5,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 
 import {
-
     ActivityIndicator,
 
     Alert,
@@ -23,7 +22,6 @@ import {
     TextInput,
 
     View,
-
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -43,14 +41,12 @@ import SideMenu from "@/app/components/sidebar/SideMenu";
 import { useTheme } from "@/app/components/theme/ThemeContext";
 
 import {
-
     fetchAgentDetails,
 
     type Property,
-
 } from "@/app/services/properties/propertyApi";
 
-import type { Agent } from "@/app/services/agentApi";
+import type { Agent } from "@/app/services/agent/agentApi";
 
 const getAgentDisplayType = (agentType?: string | null): string => {
   const normalizedType = agentType?.trim().toLowerCase().replace(/[\s_-]+/g, "");
