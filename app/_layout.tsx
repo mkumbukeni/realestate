@@ -208,27 +208,27 @@ function GlobalHeader({
   const { isDark } = useTheme();
 
   return (
-    <View
-      className={`
-        absolute
-        left-3
-        right-0
-        top-0
-        z-50
-        h-[110px]
-        flex-row
-        items-center
-        border-b
-        pl-5
-        pr-2
-        pt-[38px]
-        ${
-          isDark
-            ? "border-[#222] bg-[#0d0d0d]"
-            : "border-gray-200 bg-white"
-        }
-      `}
-    >
+   <View
+  className={`
+    absolute
+    left-0
+    right-0
+    top-0
+    z-50
+    h-[110px]
+    flex-row
+    items-center
+    border-b
+    pl-5
+    pr-2
+    pt-[38px]
+    ${
+      isDark
+        ? "border-[#222] bg-[#0d0d0d]"
+        : "border-gray-200 bg-white"
+    }
+  `}
+>
       {/* ======================================================
           LEFT - TITLE
           ====================================================== */}
