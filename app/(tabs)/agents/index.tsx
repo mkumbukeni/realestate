@@ -1,24 +1,51 @@
-
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    RefreshControl,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  Easing,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import AgentCard from "@/app/components/agents/AgentCard";
 import { useTheme } from "@/app/components/theme/ThemeContext";
 import { fetchAgents } from "@/app/services/agent/agentApi";
-import { Agent } from "@/app/types/agents/agent";
+import type { Agent } from "@/app/types/agents/agent";
+
+// ============================================================
+// TYPES
+// ============================================================
 
 type AgentFilter = "all" | "registered" | "unregistered";
+
+type ShimmerProps = {
+  width?: ViewStyle["width"];
+  height: number;
+  radius?: number;
+  baseColor: string;
+  highlightColor: string;
+  style?: StyleProp<ViewStyle>;
+};
+
+// ============================================================
+// FILTER OPTIONS
+// ============================================================
 
 const FILTER_OPTIONS: {
   label: string;
@@ -38,25 +65,341 @@ const FILTER_OPTIONS: {
   },
 ];
 
+// ============================================================
+// FACEBOOK-STYLE SHIMMER
+// ============================================================
+
+function FacebookShimmer({
+  width = "100%",
+  height,
+  radius = 8,
+  baseColor,
+  highlightColor,
+  style,
+}: ShimmerProps) {
+  const animation = useRef(new Animated.Value(0)).current;
+
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  const handleLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const measuredWidth = event.nativeEvent.layout.width;
+
+      if (measuredWidth !== containerWidth) {
+        setContainerWidth(measuredWidth);
+      }
+    },
+    [containerWidth],
+  );
+
+  useEffect(() => {
+    if (containerWidth <= 0) {
+      return;
+    }
+
+    animation.setValue(0);
+
+    const shimmerAnimation = Animated.loop(
+      Animated.timing(animation, {
+        toValue: 1,
+        duration: 1250,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+
+    shimmerAnimation.start();
+
+    return () => {
+      shimmerAnimation.stop();
+    };
+  }, [animation, containerWidth]);
+
+  const translateX = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-110, containerWidth + 110],
+  });
+
+  return (
+    <View
+      onLayout={handleLayout}
+      style={[
+        {
+          width,
+          height,
+          borderRadius: radius,
+          backgroundColor: baseColor,
+          overflow: "hidden",
+        },
+        style,
+      ]}
+    >
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: -8,
+          bottom: -8,
+          left: 0,
+          width: 85,
+          borderRadius: radius,
+          backgroundColor: highlightColor,
+          opacity: 0.85,
+          transform: [{ translateX }],
+        }}
+      />
+    </View>
+  );
+}
+
+// ============================================================
+// AGENT CARD SKELETON
+// ============================================================
+
+function AgentCardSkeleton({
+  baseColor,
+  highlightColor,
+  cardBackground,
+  borderColor,
+}: {
+  baseColor: string;
+  highlightColor: string;
+  cardBackground: string;
+  borderColor: string;
+}) {
+  return (
+    <View
+      className="mb-4 overflow-hidden rounded-2xl border p-4"
+      style={{
+        backgroundColor: cardBackground,
+        borderColor,
+      }}
+    >
+      {/* Agent profile row */}
+
+      <View className="flex-row items-center">
+        {/* Profile image placeholder */}
+
+        <FacebookShimmer
+          width={68}
+          height={68}
+          radius={40}
+          baseColor={baseColor}
+          highlightColor={highlightColor}
+        />
+
+        {/* Agent details */}
+
+        <View className="ml-4 flex-1">
+          <FacebookShimmer
+            width="75%"
+            height={15}
+            radius={5}
+            baseColor={baseColor}
+            highlightColor={highlightColor}
+          />
+
+          <View className="mt-3">
+            <FacebookShimmer
+              width="55%"
+              height={11}
+              radius={4}
+              baseColor={baseColor}
+              highlightColor={highlightColor}
+            />
+          </View>
+
+          <View className="mt-3 flex-row items-center">
+            <FacebookShimmer
+              width={75}
+              height={19}
+              radius={10}
+              baseColor={baseColor}
+              highlightColor={highlightColor}
+            />
+
+            <View className="ml-2">
+              <FacebookShimmer
+                width={65}
+                height={19}
+                radius={10}
+                baseColor={baseColor}
+                highlightColor={highlightColor}
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Divider */}
+
+      <View
+        className="my-4"
+        style={{
+          height: 1,
+          backgroundColor: borderColor,
+        }}
+      />
+
+      {/* Contact information */}
+
+      <View className="flex-row items-center">
+        <Ionicons name="call-outline" size={16} color={highlightColor} />
+
+        <View className="ml-3 flex-1">
+          <FacebookShimmer
+            width="65%"
+            height={11}
+            radius={4}
+            baseColor={baseColor}
+            highlightColor={highlightColor}
+          />
+        </View>
+      </View>
+
+      <View className="mt-4 flex-row items-center">
+        <Ionicons name="location-outline" size={16} color={highlightColor} />
+
+        <View className="ml-3 flex-1">
+          <FacebookShimmer
+            width="80%"
+            height={11}
+            radius={4}
+            baseColor={baseColor}
+            highlightColor={highlightColor}
+          />
+        </View>
+      </View>
+
+      {/* Bottom action placeholder */}
+
+      <View className="mt-5 flex-row items-center justify-between">
+        <FacebookShimmer
+          width={100}
+          height={12}
+          radius={4}
+          baseColor={baseColor}
+          highlightColor={highlightColor}
+        />
+
+        <FacebookShimmer
+          width={90}
+          height={34}
+          radius={9}
+          baseColor={baseColor}
+          highlightColor={highlightColor}
+        />
+      </View>
+    </View>
+  );
+}
+
+// ============================================================
+// AGENT LIST LOADING SKELETON
+// ============================================================
+
+function AgentsLoadingSkeleton({
+  theme,
+}: {
+  theme: ReturnType<typeof useTheme>["theme"];
+}) {
+  /*
+   * theme.border gives the skeleton a visible base in both themes.
+   * theme.inputBackground provides the moving highlight.
+   */
+
+  const baseColor = theme.border;
+  const highlightColor = theme.inputBackground;
+
+  return (
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{
+        padding: 16,
+        paddingBottom: 30,
+      }}
+    >
+      <View className="mb-4 flex-row items-center justify-between">
+        <FacebookShimmer
+          width={125}
+          height={15}
+          radius={5}
+          baseColor={baseColor}
+          highlightColor={highlightColor}
+        />
+
+        <FacebookShimmer
+          width={65}
+          height={13}
+          radius={5}
+          baseColor={baseColor}
+          highlightColor={highlightColor}
+        />
+      </View>
+
+      <AgentCardSkeleton
+        baseColor={baseColor}
+        highlightColor={highlightColor}
+        cardBackground={theme.inputBackground}
+        borderColor={theme.border}
+      />
+
+      <AgentCardSkeleton
+        baseColor={baseColor}
+        highlightColor={highlightColor}
+        cardBackground={theme.inputBackground}
+        borderColor={theme.border}
+      />
+
+      <AgentCardSkeleton
+        baseColor={baseColor}
+        highlightColor={highlightColor}
+        cardBackground={theme.inputBackground}
+        borderColor={theme.border}
+      />
+    </ScrollView>
+  );
+}
+
+// ============================================================
+// MAIN AGENTS SCREEN
+// ============================================================
+
 export default function AgentsScreen() {
   const router = useRouter();
+
   const { theme } = useTheme();
 
+  // ============================================================
+  // STATE
+  // ============================================================
+
   const [agents, setAgents] = useState<Agent[]>([]);
+
   const [loading, setLoading] = useState(true);
+
   const [refreshing, setRefreshing] = useState(false);
+
   const [search, setSearch] = useState("");
+
   const [activeFilter, setActiveFilter] = useState<AgentFilter>("all");
+
+  // ============================================================
+  // LOAD AGENTS
+  // ============================================================
 
   const loadAgents = useCallback(async (forceRefresh = false) => {
     try {
       const result = await fetchAgents(forceRefresh);
+
       setAgents(result);
     } catch (error) {
       console.error("Failed to load agents:", error);
+
       setAgents([]);
     } finally {
       setLoading(false);
+
       setRefreshing(false);
     }
   }, []);
@@ -65,24 +408,40 @@ export default function AgentsScreen() {
     void loadAgents();
   }, [loadAgents]);
 
+  // ============================================================
+  // REFRESH
+  // ============================================================
+
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
+
     void loadAgents(true);
   }, [loadAgents]);
+
+  // ============================================================
+  // AGENT NAVIGATION
+  // ============================================================
 
   const handleAgentPress = useCallback(
     (agent: Agent) => {
       router.push({
         pathname: "/(tabs)/agents/[id]",
-        params: { id: String(agent.id) },
+        params: {
+          id: String(agent.id),
+        },
       });
     },
     [router],
   );
 
+  // ============================================================
+  // SEARCH
+  // ============================================================
+
   const normalizedSearch = search.trim().toLowerCase();
 
   // Use one shared predicate for search and counts.
+
   const matchesSearch = useCallback(
     (agent: Agent) => {
       if (!normalizedSearch) {
@@ -108,6 +467,10 @@ export default function AgentsScreen() {
     [normalizedSearch],
   );
 
+  // ============================================================
+  // CATEGORY FILTER
+  // ============================================================
+
   const matchesCategory = useCallback(
     (agent: Agent, filter: AgentFilter) => {
       const type = String(agent.agentType ?? "").trim().toLowerCase();
@@ -125,7 +488,12 @@ export default function AgentsScreen() {
     [],
   );
 
+  // ============================================================
+  // CATEGORY COUNTS
+  // ============================================================
+
   // Counts and list data use identical category and search conditions.
+
   const categoryCounts = useMemo(() => {
     const counts: Record<AgentFilter, number> = {
       all: 0,
@@ -148,6 +516,10 @@ export default function AgentsScreen() {
     return counts;
   }, [agents, matchesSearch, matchesCategory]);
 
+  // ============================================================
+  // FILTERED AGENTS
+  // ============================================================
+
   const filteredAgents = useMemo(
     () =>
       agents.filter(
@@ -157,6 +529,10 @@ export default function AgentsScreen() {
     [agents, activeFilter, matchesCategory, matchesSearch],
   );
 
+  // ============================================================
+  // RENDER AGENT
+  // ============================================================
+
   const renderAgent = ({ item }: { item: Agent }) => (
     <AgentCard
       agent={item}
@@ -164,6 +540,10 @@ export default function AgentsScreen() {
       onPress={handleAgentPress}
     />
   );
+
+  // ============================================================
+  // EMPTY STATE
+  // ============================================================
 
   const renderEmpty = () => (
     <View className="flex-1 items-center justify-center px-6 py-20">
@@ -202,12 +582,17 @@ export default function AgentsScreen() {
     </View>
   );
 
+  // ============================================================
+  // MAIN UI
+  // ============================================================
+
   return (
     <SafeAreaView
       className="flex-1"
       style={{ backgroundColor: theme.background }}
     >
-      {/* Header */}
+      {/* HEADER */}
+
       <View
         className="px-5 pb-4 pt-3"
         style={{
@@ -229,10 +614,12 @@ export default function AgentsScreen() {
           Meet our real estate professionals
         </Text>
 
-        {/* Category buttons */}
+        {/* CATEGORY BUTTONS */}
+
         <View className="mt-4 flex-row gap-2">
           {FILTER_OPTIONS.map((option) => {
             const selected = activeFilter === option.value;
+
             const count = categoryCounts[option.value];
 
             return (
@@ -268,26 +655,23 @@ export default function AgentsScreen() {
                   {option.label}
                 </Text>
 
-                {/* Count badge: top-right corner of active button */}
+                {/* COUNT BADGE */}
+
                 {selected && !loading && (
                   <View
-                    className="absolute items-center justify-center rounded-full bg-white   "
+                    className="absolute items-center justify-center rounded-full bg-white"
                     style={{
                       top: 1,
                       right: 3,
                       minWidth: 17,
                       height: 17,
                       paddingHorizontal: 4,
-                      
                       borderWidth: 1,
                       borderColor: theme.accent,
                     }}
                   >
-                    <Text
-                      className="text-[10px] font-extrabold dark:text-black "
-                    
-                    >
-                      {count} 
+                    <Text className="text-[10px] font-extrabold text-black">
+                      {count}
                     </Text>
                   </View>
                 )}
@@ -296,7 +680,8 @@ export default function AgentsScreen() {
           })}
         </View>
 
-        {/* Search field below category buttons */}
+        {/* SEARCH FIELD */}
+
         <View
           className="mt-4 min-h-12 flex-row items-center rounded-xl border px-3"
           style={{
@@ -340,18 +725,10 @@ export default function AgentsScreen() {
         </View>
       </View>
 
-      {/* Agent list */}
-      {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={theme.accent} />
+      {/* AGENT LIST / LOADING SKELETON */}
 
-          <Text
-            className="mt-3 text-sm"
-            style={{ color: theme.textMuted }}
-          >
-            Loading agents...
-          </Text>
-        </View>
+      {loading ? (
+        <AgentsLoadingSkeleton theme={theme} />
       ) : (
         <FlatList
           data={filteredAgents}

@@ -1,11 +1,14 @@
 import React, {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   FlatList,
   Pressable,
   RefreshControl,
@@ -13,6 +16,9 @@ import {
   Text,
   View,
   useColorScheme,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +31,281 @@ import {
   getBlogs,
   type Blog,
 } from "@/app/services/blogs/blogApi";
+
+/*
+|--------------------------------------------------------------------------
+| Facebook-Style Shimmer
+|--------------------------------------------------------------------------
+*/
+
+function FacebookShimmer({
+  isDark,
+  style,
+}: {
+  isDark: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const shimmerAnimation = useRef(
+    new Animated.Value(0)
+  ).current;
+
+  const [containerWidth, setContainerWidth] =
+    useState(0);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(shimmerAnimation, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [shimmerAnimation]);
+
+  const handleLayout = (
+    event: LayoutChangeEvent
+  ) => {
+    setContainerWidth(
+      event.nativeEvent.layout.width
+    );
+  };
+
+  const translateX = shimmerAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-110, containerWidth + 110],
+  });
+
+  return (
+    <View
+      onLayout={handleLayout}
+      style={[
+        {
+          overflow: "hidden",
+          backgroundColor: isDark
+            ? "#292929"
+            : "#e5e7eb",
+        },
+        style,
+      ]}
+    >
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          width: 110,
+          transform: [{ translateX }],
+          backgroundColor: isDark
+            ? "rgba(255,255,255,0.07)"
+            : "rgba(255,255,255,0.65)",
+        }}
+      />
+    </View>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Blog Card Skeleton
+|--------------------------------------------------------------------------
+*/
+
+function BlogCardSkeleton({
+  isDark,
+}: {
+  isDark: boolean;
+}) {
+  return (
+    <View
+      className={`mb-5 overflow-hidden rounded-xl border ${
+        isDark
+          ? "border-[#303030] bg-[#171717]"
+          : "border-gray-200 bg-white"
+      }`}
+    >
+      <FacebookShimmer
+        isDark={isDark}
+        style={{
+          width: "100%",
+          height: 190,
+        }}
+      />
+
+      <View className="p-4">
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "85%",
+            height: 19,
+            borderRadius: 5,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "45%",
+            height: 12,
+            borderRadius: 4,
+            marginTop: 12,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "100%",
+            height: 12,
+            borderRadius: 4,
+            marginTop: 17,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "92%",
+            height: 12,
+            borderRadius: 4,
+            marginTop: 8,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "65%",
+            height: 12,
+            borderRadius: 4,
+            marginTop: 8,
+          }}
+        />
+
+        <View className="mt-5 flex-row items-center justify-between">
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              width: 85,
+              height: 12,
+              borderRadius: 4,
+            }}
+          />
+
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              width: 65,
+              height: 28,
+              borderRadius: 7,
+            }}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Blogs Loading Skeleton
+|--------------------------------------------------------------------------
+*/
+
+function BlogsLoadingSkeleton({
+  isDark,
+}: {
+  isDark: boolean;
+}) {
+  return (
+    <SafeAreaView
+      className={`flex-1 ${
+        isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+      }`}
+    >
+      <StatusBar
+        barStyle={
+          isDark ? "light-content" : "dark-content"
+        }
+        backgroundColor={
+          isDark ? "#0d0d0d" : "#f8f9fa"
+        }
+      />
+
+      <View className="px-5 pt-5">
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: 190,
+            height: 29,
+            borderRadius: 5,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "95%",
+            height: 12,
+            borderRadius: 4,
+            marginTop: 13,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "75%",
+            height: 12,
+            borderRadius: 4,
+            marginTop: 7,
+          }}
+        />
+      </View>
+
+      <View className="mx-5 mb-2 mt-5 flex-row items-center">
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: 17,
+            height: 17,
+            borderRadius: 4,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: 115,
+            height: 12,
+            borderRadius: 4,
+            marginLeft: 10,
+          }}
+        />
+      </View>
+
+      <FlatList
+        data={[1, 2, 3]}
+        keyExtractor={(item) => item.toString()}
+        renderItem={() => (
+          <BlogCardSkeleton isDark={isDark} />
+        )}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 5,
+          paddingBottom: 25,
+        }}
+      />
+    </SafeAreaView>
+  );
+}
 
 export default function BlogsScreen() {
   const router = useRouter();
@@ -129,33 +410,7 @@ export default function BlogsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView
-        className={`flex-1 ${
-          isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
-        }`}
-      >
-        <StatusBar
-          barStyle={
-            isDark ? "light-content" : "dark-content"
-          }
-          backgroundColor={screenBackground}
-        />
-
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator
-            size="large"
-            color="#ef4444"
-          />
-
-          <Text
-            className={`mt-4 text-sm ${
-              isDark ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            Loading blogs...
-          </Text>
-        </View>
-      </SafeAreaView>
+      <BlogsLoadingSkeleton isDark={isDark} />
     );
   }
 

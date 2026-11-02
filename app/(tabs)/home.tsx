@@ -1,18 +1,20 @@
+
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StatusBar,
-    Text,
-    View,
-    useColorScheme,
+  Alert,
+  Animated,
+  Easing,
+  Image,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  Text,
+  View,
+  useColorScheme,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -33,11 +35,262 @@ import { type Property } from "@/app/types/properties/property";
 import { fetchAgents } from "@/app/services/agent/agentApi";
 
 import {
-    fetchFeaturedProperties,
-    fetchMostViewedProperties,
-    fetchNearbyProperties,
-    fetchProperties,
+  fetchFeaturedProperties,
+  fetchMostViewedProperties,
+  fetchNearbyProperties,
+  fetchProperties,
 } from "@/app/services/properties/propertyApi";
+
+/* ============================================================
+   FACEBOOK-STYLE SKELETON LOADER
+   ============================================================ */
+
+interface SkeletonBlockProps {
+  width: number | string;
+  height: number;
+  radius?: number;
+  isDark: boolean;
+  color?: string;
+}
+
+function SkeletonBlock({
+  width,
+  height,
+  radius = 8,
+  isDark,
+  color,
+}: SkeletonBlockProps) {
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  const lightThemeColors = {
+    from: "#c4c4c4",
+    to: "#e7e7e7",
+  };
+
+  const darkThemeColors = {
+    from: "#303030",
+    to: "#505050",
+  };
+
+  const colors = isDark ? darkThemeColors : lightThemeColors;
+
+  const backgroundColor = useRef(
+    new Animated.Value(0),
+  ).current;
+
+  useEffect(() => {
+    const opacityAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 750,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 750,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    opacityAnimation.start();
+
+    return () => {
+      opacityAnimation.stop();
+      opacity.setValue(0);
+    };
+  }, [opacity]);
+
+  useEffect(() => {
+    const colorAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(backgroundColor, {
+          toValue: 1,
+          duration: 750,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(backgroundColor, {
+          toValue: 0,
+          duration: 750,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ]),
+    );
+
+    colorAnimation.start();
+
+    return () => {
+      colorAnimation.stop();
+      backgroundColor.setValue(0);
+    };
+  }, [backgroundColor]);
+
+  const animatedColor = backgroundColor.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.from, colors.to],
+  });
+
+  return (
+    <Animated.View
+      style={{
+        width,
+        height,
+        borderRadius: radius,
+        backgroundColor: color ?? animatedColor,
+        opacity: color ? opacity.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.65, 1],
+        }) : 1,
+      }}
+    />
+  );
+}
+
+/* ============================================================
+   PROPERTY SKELETON
+   ============================================================ */
+
+function PropertyLoadingSkeleton({ isDark }: { isDark: boolean }) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      scrollEnabled={false}
+      contentContainerStyle={{ gap: 14 }}
+    >
+      {[1, 2].map((item) => (
+        <View
+          key={item}
+          style={{
+            width: 260,
+            padding: 10,
+            borderRadius: 16,
+            backgroundColor: isDark ? "#171717" : "#ffffff",
+            borderWidth: 1,
+            borderColor: isDark ? "#292929" : "#e5e7eb",
+          }}
+        >
+          <SkeletonBlock
+            width="100%"
+            height={145}
+            radius={12}
+            isDark={isDark}
+          />
+
+          <View style={{ paddingTop: 13, gap: 10 }}>
+            <SkeletonBlock
+              width="75%"
+              height={14}
+              isDark={isDark}
+            />
+
+            <SkeletonBlock
+              width="50%"
+              height={12}
+              isDark={isDark}
+            />
+
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <SkeletonBlock
+                width={55}
+                height={12}
+                isDark={isDark}
+              />
+              <SkeletonBlock
+                width={55}
+                height={12}
+                isDark={isDark}
+              />
+              <SkeletonBlock
+                width={55}
+                height={12}
+                isDark={isDark}
+              />
+            </View>
+
+            <SkeletonBlock
+              width="45%"
+              height={17}
+              isDark={isDark}
+            />
+          </View>
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+/* ============================================================
+   AGENT SKELETON
+   ============================================================ */
+
+function AgentLoadingSkeleton({ isDark }: { isDark: boolean }) {
+  return (
+    <View
+      className={
+        isDark
+          ? "rounded-2xl border border-[#292929] bg-[#171717] p-4"
+          : "rounded-2xl border border-gray-200 bg-white p-4"
+      }
+    >
+      <View className="flex-row items-center">
+        <SkeletonBlock
+          width={68}
+          height={68}
+          radius={40}
+          isDark={isDark}
+        />
+
+        <View className="ml-4 flex-1">
+          <SkeletonBlock
+            width="65%"
+            height={15}
+            isDark={isDark}
+          />
+
+          <View className="mt-3">
+            <SkeletonBlock
+              width="45%"
+              height={12}
+              isDark={isDark}
+            />
+          </View>
+
+          <View className="mt-3">
+            <SkeletonBlock
+              width="75%"
+              height={11}
+              isDark={isDark}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View className="mt-5 flex-row justify-between">
+        <SkeletonBlock
+          width="28%"
+          height={12}
+          isDark={isDark}
+        />
+        <SkeletonBlock
+          width="28%"
+          height={12}
+          isDark={isDark}
+        />
+        <SkeletonBlock
+          width="28%"
+          height={12}
+          isDark={isDark}
+        />
+      </View>
+    </View>
+  );
+}
 
 /* ============================================================
    PROPERTY SECTION COMPONENT
@@ -113,24 +366,7 @@ function PropertySection({
       </View>
 
       {loading ? (
-        <View
-          className={
-            isDark
-              ? "items-center rounded-2xl border border-[#292929] bg-[#171717] py-10"
-              : "items-center rounded-2xl border border-gray-200 bg-white py-10"
-          }
-        >
-          <ActivityIndicator size="large" color="#ef4444" />
-          <Text
-            className={
-              isDark
-                ? "mt-3 text-sm text-gray-500"
-                : "mt-3 text-sm text-gray-600"
-            }
-          >
-            Loading {title.toLowerCase()}...
-          </Text>
-        </View>
+        <PropertyLoadingSkeleton isDark={isDark} />
       ) : sectionProperties.length === 0 ? (
         <View
           className={
@@ -144,6 +380,7 @@ function PropertySection({
             size={44}
             color={isDark ? "#444" : "#9ca3af"}
           />
+
           <Text
             className={
               isDark
@@ -153,6 +390,7 @@ function PropertySection({
           >
             No {title.toLowerCase()} available
           </Text>
+
           <Text
             className={
               isDark
@@ -242,6 +480,7 @@ function NearbyPropertySection({
     >
       <View className="mb-4 flex-row items-center">
         <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
+
         <View>
           <Text
             className={
@@ -252,6 +491,7 @@ function NearbyPropertySection({
           >
             Properties in My Location
           </Text>
+
           <Text
             className={
               isDark
@@ -275,7 +515,14 @@ function NearbyPropertySection({
       >
         {loadingNearby ? (
           <>
-            <ActivityIndicator size="small" color="#fff" />
+            <SkeletonBlock
+              width={12}
+              height={12}
+              radius={6}
+              isDark={false}
+              color="#ffffff"
+            />
+
             <Text className="ml-3 text-base font-bold text-white">
               Finding Properties...
             </Text>
@@ -303,6 +550,7 @@ function NearbyPropertySection({
             size={44}
             color={isDark ? "#555" : "#9ca3af"}
           />
+
           <Text
             className={
               isDark
@@ -312,6 +560,7 @@ function NearbyPropertySection({
           >
             Find properties near you
           </Text>
+
           <Text
             className={
               isDark
@@ -326,24 +575,7 @@ function NearbyPropertySection({
       )}
 
       {loadingNearby && (
-        <View
-          className={
-            isDark
-              ? "items-center rounded-2xl border border-[#292929] bg-[#171717] py-10"
-              : "items-center rounded-2xl border border-gray-200 bg-white py-10"
-          }
-        >
-          <ActivityIndicator size="large" color="#ef4444" />
-          <Text
-            className={
-              isDark
-                ? "mt-3 text-sm text-gray-500"
-                : "mt-3 text-sm text-gray-600"
-            }
-          >
-            Searching near your location...
-          </Text>
-        </View>
+        <PropertyLoadingSkeleton isDark={isDark} />
       )}
 
       {nearbyRequested && !loadingNearby && nearbyProperties.length === 0 && (
@@ -359,6 +591,7 @@ function NearbyPropertySection({
             size={44}
             color={isDark ? "#444" : "#9ca3af"}
           />
+
           <Text
             className={
               isDark
@@ -368,6 +601,7 @@ function NearbyPropertySection({
           >
             No nearby properties found
           </Text>
+
           <Text
             className={
               isDark
@@ -952,6 +1186,7 @@ export default function HomeScreen() {
         <View className="mt-2">
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
+
             <Text
               className={
                 isDark
@@ -964,18 +1199,7 @@ export default function HomeScreen() {
           </View>
 
           {loadingAgents ? (
-            <View className="items-center py-10">
-              <ActivityIndicator size="large" color="#ef4444" />
-              <Text
-                className={
-                  isDark
-                    ? "mt-3 text-sm text-gray-500"
-                    : "mt-3 text-sm text-gray-600"
-                }
-              >
-                Loading agents...
-              </Text>
-            </View>
+            <AgentLoadingSkeleton isDark={isDark} />
           ) : agents.length === 0 ? (
             <View
               className={
@@ -989,6 +1213,7 @@ export default function HomeScreen() {
                 size={48}
                 color={isDark ? "#444" : "#9ca3af"}
               />
+
               <Text
                 className={
                   isDark
@@ -998,6 +1223,7 @@ export default function HomeScreen() {
               >
                 No agents available
               </Text>
+
               <Text
                 className={
                   isDark
@@ -1038,6 +1264,7 @@ export default function HomeScreen() {
         <View className="mt-10">
           <View className="mb-4 flex-row items-center">
             <View className="mr-2 h-5 w-1 rounded-full bg-red-500" />
+
             <Text
               className={
                 isDark
@@ -1074,6 +1301,7 @@ export default function HomeScreen() {
               >
                 List Property
               </Text>
+
               <Text
                 className={
                   isDark
@@ -1113,6 +1341,7 @@ export default function HomeScreen() {
               >
                 Special Property Request
               </Text>
+
               <Text
                 className={
                   isDark
@@ -1152,6 +1381,7 @@ export default function HomeScreen() {
               >
                 Subscribe to our newsletter
               </Text>
+
               <Text
                 className={
                   isDark

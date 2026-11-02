@@ -2,26 +2,28 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
     ActivityIndicator,
-
     Alert,
-
+    Animated,
+    Easing,
     FlatList,
-
     Image,
-
     Pressable,
-
     RefreshControl,
-
     Text,
-
     TextInput,
-
     View,
+    type LayoutChangeEvent,
+    type StyleProp,
+    type ViewStyle,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -42,7 +44,6 @@ import { useTheme } from "@/app/components/theme/ThemeContext";
 
 import {
     fetchAgentDetails,
-
     type Property,
 } from "@/app/services/properties/propertyApi";
 
@@ -56,6 +57,461 @@ const getAgentDisplayType = (agentType?: string | null): string => {
     ? "Real Estate Agent"
     : "Scout";
 };
+
+// ============================================================
+// FACEBOOK-STYLE SHIMMER
+// ============================================================
+
+interface FacebookShimmerProps {
+  width?: number | `${number}%`;
+  height: number;
+  borderRadius?: number;
+  style?: StyleProp<ViewStyle>;
+  baseColor: string;
+  highlightColor: string;
+}
+
+function FacebookShimmer({
+  width = "100%",
+  height,
+  borderRadius = 8,
+  style,
+  baseColor,
+  highlightColor,
+}: FacebookShimmerProps) {
+  const shimmerAnimation = useRef(new Animated.Value(0)).current;
+
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(shimmerAnimation, {
+        toValue: 1,
+        duration: 1300,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [shimmerAnimation]);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    setContainerWidth(event.nativeEvent.layout.width);
+  };
+
+  const translateX = shimmerAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-110, containerWidth + 110],
+  });
+
+  return (
+    <View
+      onLayout={handleLayout}
+      style={[
+        {
+          width,
+          height,
+          borderRadius,
+          backgroundColor: baseColor,
+          overflow: "hidden",
+        },
+        style,
+      ]}
+    >
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          width: 90,
+          backgroundColor: highlightColor,
+          opacity: 0.65,
+          transform: [{ translateX }],
+        }}
+      />
+    </View>
+  );
+}
+
+// ============================================================
+// AGENT DETAILS LOADING SKELETON
+// ============================================================
+
+interface AgentDetailsSkeletonProps {
+  theme: ReturnType<typeof useTheme>["theme"];
+}
+
+function AgentDetailsSkeleton({ theme }: AgentDetailsSkeletonProps) {
+  const skeletonBase = theme.border;
+  const skeletonHighlight = theme.inputBackground;
+
+  return (
+    <SafeAreaView
+      className="flex-1"
+      style={{
+        backgroundColor: theme.background,
+      }}
+    >
+      {/* HEADER */}
+
+      <View
+        className="flex-row items-center px-4 py-3"
+        style={{
+          borderBottomWidth: 1,
+          borderBottomColor: theme.border,
+        }}
+      >
+        <Pressable
+          className="h-11 w-11 items-center justify-center rounded-full"
+          style={{
+            backgroundColor: theme.card,
+          }}
+        >
+          <Ionicons name="arrow-back" size={23} color={theme.icon} />
+        </Pressable>
+
+        <FacebookShimmer
+          width={155}
+          height={22}
+          borderRadius={6}
+          style={{
+            marginLeft: 12,
+          }}
+          baseColor={skeletonBase}
+          highlightColor={skeletonHighlight}
+        />
+      </View>
+
+      <FlatList
+        data={[1]}
+        keyExtractor={(item) => String(item)}
+        renderItem={() => null}
+        ListHeaderComponent={
+          <View className="px-4 pt-5">
+            {/* AGENT PROFILE SKELETON */}
+
+            <View
+              className="overflow-hidden rounded-2xl"
+              style={{
+                backgroundColor: theme.card,
+                borderWidth: 1,
+                borderColor: theme.border,
+              }}
+            >
+              <View className="items-center px-5 pb-6 pt-7">
+                <FacebookShimmer
+                  width={112}
+                  height={112}
+                  borderRadius={56}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+
+                <FacebookShimmer
+                  width={190}
+                  height={25}
+                  borderRadius={6}
+                  style={{
+                    marginTop: 18,
+                  }}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+
+                <FacebookShimmer
+                  width={125}
+                  height={27}
+                  borderRadius={20}
+                  style={{
+                    marginTop: 12,
+                  }}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+
+                <FacebookShimmer
+                  width={105}
+                  height={13}
+                  borderRadius={5}
+                  style={{
+                    marginTop: 12,
+                  }}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+              </View>
+
+              {/* CONTACT INFORMATION SKELETON */}
+
+              <View
+                className="px-4"
+                style={{
+                  borderTopWidth: 1,
+                  borderTopColor: theme.border,
+                }}
+              >
+                {[1, 2, 3, 4, 5].map((item) => (
+                  <View
+                    key={item}
+                    className="flex-row items-center py-4"
+                    style={{
+                      borderBottomWidth: item === 5 ? 0 : 1,
+                      borderBottomColor: theme.border,
+                    }}
+                  >
+                    <FacebookShimmer
+                      width={36}
+                      height={36}
+                      borderRadius={9}
+                      baseColor={skeletonBase}
+                      highlightColor={skeletonHighlight}
+                    />
+
+                    <View className="ml-3 flex-1">
+                      <FacebookShimmer
+                        width="35%"
+                        height={11}
+                        borderRadius={4}
+                        baseColor={skeletonBase}
+                        highlightColor={skeletonHighlight}
+                      />
+
+                      <FacebookShimmer
+                        width="65%"
+                        height={14}
+                        borderRadius={4}
+                        style={{
+                          marginTop: 7,
+                        }}
+                        baseColor={skeletonBase}
+                        highlightColor={skeletonHighlight}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* ABOUT SKELETON */}
+
+            <View className="mt-6">
+              <FacebookShimmer
+                width={90}
+                height={22}
+                borderRadius={5}
+                style={{
+                  marginBottom: 12,
+                }}
+                baseColor={skeletonBase}
+                highlightColor={skeletonHighlight}
+              />
+
+              <View
+                className="rounded-2xl p-4"
+                style={{
+                  backgroundColor: theme.card,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                }}
+              >
+                <FacebookShimmer
+                  width="100%"
+                  height={13}
+                  borderRadius={4}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+
+                <FacebookShimmer
+                  width="95%"
+                  height={13}
+                  borderRadius={4}
+                  style={{
+                    marginTop: 10,
+                  }}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+
+                <FacebookShimmer
+                  width="70%"
+                  height={13}
+                  borderRadius={4}
+                  style={{
+                    marginTop: 10,
+                  }}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+              </View>
+            </View>
+
+            {/* COVERAGE AREAS SKELETON */}
+
+            <View className="mt-6">
+              <FacebookShimmer
+                width={150}
+                height={22}
+                borderRadius={5}
+                style={{
+                  marginBottom: 12,
+                }}
+                baseColor={skeletonBase}
+                highlightColor={skeletonHighlight}
+              />
+
+              <View className="flex-row flex-wrap">
+                {[1, 2, 3].map((item) => (
+                  <FacebookShimmer
+                    key={item}
+                    width={item === 2 ? 125 : 105}
+                    height={40}
+                    borderRadius={12}
+                    style={{
+                      marginRight: 8,
+                      marginBottom: 8,
+                    }}
+                    baseColor={skeletonBase}
+                    highlightColor={skeletonHighlight}
+                  />
+                ))}
+              </View>
+            </View>
+
+            {/* SOCIAL PROFILES SKELETON */}
+
+            <View className="mt-6">
+              <FacebookShimmer
+                width={135}
+                height={22}
+                borderRadius={5}
+                style={{
+                  marginBottom: 12,
+                }}
+                baseColor={skeletonBase}
+                highlightColor={skeletonHighlight}
+              />
+
+              <View className="flex-row">
+                <FacebookShimmer
+                  width={110}
+                  height={43}
+                  borderRadius={12}
+                  style={{
+                    marginRight: 8,
+                  }}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+
+                <FacebookShimmer
+                  width={110}
+                  height={43}
+                  borderRadius={12}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+              </View>
+            </View>
+
+            {/* ASSOCIATED PROPERTIES HEADER SKELETON */}
+
+            <View className="mb-4 mt-8">
+              <FacebookShimmer
+                width={205}
+                height={23}
+                borderRadius={5}
+                baseColor={skeletonBase}
+                highlightColor={skeletonHighlight}
+              />
+
+              <FacebookShimmer
+                width="75%"
+                height={13}
+                borderRadius={4}
+                style={{
+                  marginTop: 9,
+                }}
+                baseColor={skeletonBase}
+                highlightColor={skeletonHighlight}
+              />
+            </View>
+
+            {/* PROPERTY CARD SKELETON */}
+
+            <View
+              className="overflow-hidden rounded-2xl"
+              style={{
+                backgroundColor: theme.card,
+                borderWidth: 1,
+                borderColor: theme.border,
+              }}
+            >
+              <FacebookShimmer
+                width="100%"
+                height={190}
+                borderRadius={0}
+                baseColor={skeletonBase}
+                highlightColor={skeletonHighlight}
+              />
+
+              <View className="p-4">
+                <FacebookShimmer
+                  width="75%"
+                  height={18}
+                  borderRadius={5}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+
+                <FacebookShimmer
+                  width="45%"
+                  height={15}
+                  borderRadius={5}
+                  style={{
+                    marginTop: 12,
+                  }}
+                  baseColor={skeletonBase}
+                  highlightColor={skeletonHighlight}
+                />
+
+                <View className="mt-4 flex-row">
+                  <FacebookShimmer
+                    width={75}
+                    height={13}
+                    borderRadius={4}
+                    style={{
+                      marginRight: 15,
+                    }}
+                    baseColor={skeletonBase}
+                    highlightColor={skeletonHighlight}
+                  />
+
+                  <FacebookShimmer
+                    width={75}
+                    height={13}
+                    borderRadius={4}
+                    baseColor={skeletonBase}
+                    highlightColor={skeletonHighlight}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+        }
+        contentContainerStyle={{
+          paddingBottom: 35,
+        }}
+        showsVerticalScrollIndicator={false}
+      />
+    </SafeAreaView>
+  );
+}
 
 export default function AgentDetailsScreen() {
 
@@ -1252,100 +1708,11 @@ export default function AgentDetailsScreen() {
   // ============================================================
 
   // LOADING SCREEN
-
   // ============================================================
 
   if (loading) {
 
-    return (
-
-      <SafeAreaView
-
-        className="flex-1"
-
-        style={{
-
-          backgroundColor: theme.background,
-
-        }}
-
-      >
-
-        <View
-
-          className="flex-row items-center px-4 py-3"
-
-          style={{
-
-            borderBottomWidth: 1,
-
-            borderBottomColor: theme.border,
-
-          }}
-
-        >
-
-          <Pressable
-
-            onPress={handleBack}
-
-            className="h-11 w-11 items-center justify-center rounded-full"
-
-            style={{
-
-              backgroundColor: theme.card,
-
-            }}
-
-          >
-
-            <Ionicons name="arrow-back" size={23} color={theme.icon} />
-
-          </Pressable>
-
-          <Text
-
-            className="ml-3 text-xl font-bold"
-
-            style={{
-
-              color: theme.text,
-
-            }}
-
-          >
-
-            Agent Details
-
-          </Text>
-
-        </View>
-
-        <View className="flex-1 items-center justify-center">
-
-          <ActivityIndicator size="large" color={theme.accent} />
-
-          <Text
-
-            className="mt-3 text-sm"
-
-            style={{
-
-              color: theme.textMuted,
-
-            }}
-
-          >
-
-            Loading agent details...
-
-          </Text>
-
-        </View>
-
-      </SafeAreaView>
-
-    );
+    return <AgentDetailsSkeleton theme={theme} />;
 
   }
 

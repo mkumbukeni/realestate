@@ -1,18 +1,21 @@
-
 // app/(tabs)/properties/[id].tsx
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 import {
-    ActivityIndicator,
-    Alert,
-    Linking,
-    Pressable,
-    ScrollView,
-    StatusBar,
-    Text,
-    View,
-    useColorScheme,
+  Alert,
+  Animated,
+  Easing,
+  Linking,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  Text,
+  View,
+  useColorScheme,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,16 +29,16 @@ import SideMenu from "@/app/components/sidebar/SideMenu";
 import { useAuth } from "@/app/components/auth/AuthContext";
 
 import type {
-    Property,
-    PropertyMedia,
-    PropertyMediaItem,
+  Property,
+  PropertyMedia,
+  PropertyMediaItem,
 } from "@/app/types/properties/property";
 
 import {
-    fetchAgentDetails,
-    fetchProperties,
-    fetchPropertyImages,
-    fetchPropertyVideos,
+  fetchAgentDetails,
+  fetchProperties,
+  fetchPropertyImages,
+  fetchPropertyVideos,
 } from "@/app/services/properties/propertyApi";
 
 import type { Agent } from "@/app/types/agents/agent";
@@ -51,7 +54,7 @@ import PropertyImageGallery from "@/app/components/properties/PropertyDetails/Pr
 import PropertyHighlights from "@/app/components/properties/PropertyDetails/PropertyHighlights";
 
 import PropertyInformation, {
-    type PropertyInformationData,
+  type PropertyInformationData,
 } from "@/app/components/properties/PropertyDetails/PropertyInformation";
 
 import PropertyAmenities from "@/app/components/properties/PropertyDetails/PropertyAmenities";
@@ -59,7 +62,7 @@ import PropertyAmenities from "@/app/components/properties/PropertyDetails/Prope
 import PropertyVideosSection from "@/app/components/properties/PropertyDetails/PropertyVideosSection";
 
 import PropertyOpenHouse, {
-    type PropertyOpenHouseItem,
+  type PropertyOpenHouseItem,
 } from "@/app/components/properties/PropertyDetails/PropertyOpenHouse";
 
 import PropertyMessageModal from "@/app/components/properties/PropertyDetails/PropertyMessageModal";
@@ -67,14 +70,14 @@ import PropertyMessageModal from "@/app/components/properties/PropertyDetails/Pr
 import { trackPropertyView } from "@/app/services/properties/propertyViewApi";
 
 import {
-    getPropertyAmenities,
-    getPropertyCoordinates,
-    getPropertyDescription,
-    getPropertyListingType,
-    getPropertyLocationText,
-    getPropertyOpenHouses,
-    getPropertyType,
-    getPropertyValue,
+  getPropertyAmenities,
+  getPropertyCoordinates,
+  getPropertyDescription,
+  getPropertyListingType,
+  getPropertyLocationText,
+  getPropertyOpenHouses,
+  getPropertyType,
+  getPropertyValue,
 } from "@/app/components/properties/PropertyDetails/propertyDetailsUtils";
 
 // ============================================================
@@ -84,6 +87,505 @@ import {
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const BASE_API_URL = API_URL?.replace(/\/+$/, "") ?? "";
+
+// ============================================================
+// FACEBOOK-STYLE SHIMMER COMPONENT
+// ============================================================
+
+type FacebookShimmerProps = {
+  width?: ViewStyle["width"];
+  height: number;
+  radius?: number;
+  isDark: boolean;
+  style?: StyleProp<ViewStyle>;
+};
+
+function FacebookShimmer({
+  width = "100%",
+  height,
+  radius = 8,
+  isDark,
+  style,
+}: FacebookShimmerProps) {
+  const animation = useRef(new Animated.Value(0)).current;
+
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const measuredWidth = event.nativeEvent.layout.width;
+
+    if (measuredWidth !== containerWidth) {
+      setContainerWidth(measuredWidth);
+    }
+  };
+
+  useEffect(() => {
+    if (containerWidth <= 0) {
+      return;
+    }
+
+    animation.setValue(0);
+
+    const shimmerAnimation = Animated.loop(
+      Animated.timing(animation, {
+        toValue: 1,
+        duration: 1250,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+
+    shimmerAnimation.start();
+
+    return () => {
+      shimmerAnimation.stop();
+    };
+  }, [animation, containerWidth]);
+
+  const translateX = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-120, containerWidth + 120],
+  });
+
+  const baseColor = isDark ? "#303030" : "#D8DDE5";
+  const highlightColor = isDark ? "#555555" : "#FFFFFF";
+
+  return (
+    <View
+      onLayout={handleLayout}
+      style={[
+        {
+          width,
+          height,
+          borderRadius: radius,
+          backgroundColor: baseColor,
+          overflow: "hidden",
+        },
+        style,
+      ]}
+    >
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: -8,
+          bottom: -8,
+          left: 0,
+          width: 90,
+          borderRadius: radius,
+          backgroundColor: highlightColor,
+          opacity: isDark ? 0.85 : 1,
+          transform: [{ translateX }],
+        }}
+      />
+    </View>
+  );
+}
+
+// ============================================================
+// PROPERTY DETAILS LOADING SKELETON
+// ============================================================
+
+function PropertyDetailsSkeleton({ isDark }: { isDark: boolean }) {
+  return (
+    <SafeAreaView
+      className={isDark ? "flex-1 bg-[#0d0d0d]" : "flex-1 bg-gray-50"}
+      edges={["top", "left", "right"]}
+    >
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#0d0d0d" : "#f9fafb"}
+      />
+
+      {/* HEADER SKELETON */}
+
+      <View
+        className={
+          isDark
+            ? "flex-row items-center justify-between border-b border-zinc-800 bg-[#0d0d0d] px-4 py-3"
+            : "flex-row items-center justify-between border-b border-gray-200 bg-white px-4 py-3"
+        }
+      >
+        <View className="flex-row items-center">
+          <View
+            className={
+              isDark
+                ? "h-11 w-11 items-center justify-center rounded-full bg-[#202020]"
+                : "h-11 w-11 items-center justify-center rounded-full bg-gray-200"
+            }
+          >
+            <Ionicons
+              name="arrow-back"
+              size={22}
+              color={isDark ? "#777777" : "#9CA3AF"}
+            />
+          </View>
+
+          <View className="ml-3">
+            <FacebookShimmer
+              width={145}
+              height={16}
+              radius={5}
+              isDark={isDark}
+            />
+
+            <View className="mt-2">
+              <FacebookShimmer
+                width={85}
+                height={10}
+                radius={4}
+                isDark={isDark}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View
+          className={
+            isDark
+              ? "h-11 w-11 items-center justify-center rounded-full bg-[#202020]"
+              : "h-11 w-11 items-center justify-center rounded-full bg-gray-200"
+          }
+        >
+          <Ionicons
+            name="menu-outline"
+            size={25}
+            color={isDark ? "#777777" : "#9CA3AF"}
+          />
+        </View>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 45 }}
+      >
+        {/* PROPERTY IMAGE SKELETON */}
+
+        <View className="px-4 pt-4">
+          <FacebookShimmer
+            width="100%"
+            height={245}
+            radius={16}
+            isDark={isDark}
+          />
+
+          <View className="mt-3 flex-row items-center justify-center gap-2">
+            <FacebookShimmer
+              width={7}
+              height={7}
+              radius={10}
+              isDark={isDark}
+            />
+            <FacebookShimmer
+              width={7}
+              height={7}
+              radius={10}
+              isDark={isDark}
+            />
+            <FacebookShimmer
+              width={7}
+              height={7}
+              radius={10}
+              isDark={isDark}
+            />
+            <FacebookShimmer
+              width={7}
+              height={7}
+              radius={10}
+              isDark={isDark}
+            />
+          </View>
+        </View>
+
+        {/* PROPERTY INFORMATION SKELETON */}
+
+        <View className="mt-6 px-4">
+          <FacebookShimmer
+            width="72%"
+            height={23}
+            radius={6}
+            isDark={isDark}
+          />
+
+          <View className="mt-3 flex-row items-center">
+            <FacebookShimmer
+              width={95}
+              height={13}
+              radius={5}
+              isDark={isDark}
+            />
+
+            <View className="ml-3">
+              <FacebookShimmer
+                width={75}
+                height={13}
+                radius={5}
+                isDark={isDark}
+              />
+            </View>
+          </View>
+
+          <View className="mt-4">
+            <FacebookShimmer
+              width="55%"
+              height={20}
+              radius={5}
+              isDark={isDark}
+            />
+          </View>
+
+          <View className="mt-3">
+            <FacebookShimmer
+              width="85%"
+              height={12}
+              radius={5}
+              isDark={isDark}
+            />
+          </View>
+        </View>
+
+        {/* PROPERTY HIGHLIGHTS SKELETON */}
+
+        <View className="mt-7 px-4">
+          <FacebookShimmer
+            width={145}
+            height={19}
+            radius={5}
+            isDark={isDark}
+          />
+
+          <View
+            className={
+              isDark
+                ? "mt-4 flex-row justify-between rounded-xl border border-[#292929] bg-[#171717] p-4"
+                : "mt-4 flex-row justify-between rounded-xl border border-gray-200 bg-white p-4"
+            }
+          >
+            {[1, 2, 3, 4].map((item) => (
+              <View key={item} className="items-center">
+                <FacebookShimmer
+                  width={28}
+                  height={25}
+                  radius={6}
+                  isDark={isDark}
+                />
+
+                <View className="mt-2">
+                  <FacebookShimmer
+                    width={42}
+                    height={10}
+                    radius={4}
+                    isDark={isDark}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* DESCRIPTION SKELETON */}
+
+        <View className="mt-8 px-4">
+          <FacebookShimmer
+            width={125}
+            height={20}
+            radius={5}
+            isDark={isDark}
+          />
+
+          <View
+            className={
+              isDark
+                ? "mt-4 rounded-xl border border-[#292929] bg-[#171717] p-4"
+                : "mt-4 rounded-xl border border-gray-200 bg-white p-4"
+            }
+          >
+            <FacebookShimmer
+              width="100%"
+              height={12}
+              radius={4}
+              isDark={isDark}
+            />
+
+            <View className="mt-3">
+              <FacebookShimmer
+                width="94%"
+                height={12}
+                radius={4}
+                isDark={isDark}
+              />
+            </View>
+
+            <View className="mt-3">
+              <FacebookShimmer
+                width="88%"
+                height={12}
+                radius={4}
+                isDark={isDark}
+              />
+            </View>
+
+            <View className="mt-3">
+              <FacebookShimmer
+                width="65%"
+                height={12}
+                radius={4}
+                isDark={isDark}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* AMENITIES SKELETON */}
+
+        <View className="mt-8 px-4">
+          <FacebookShimmer
+            width={135}
+            height={20}
+            radius={5}
+            isDark={isDark}
+          />
+
+          <View className="mt-4 flex-row flex-wrap gap-3">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <FacebookShimmer
+                key={item}
+                width={90}
+                height={34}
+                radius={8}
+                isDark={isDark}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* VIDEO SKELETON */}
+
+        <View className="mt-8 px-4">
+          <FacebookShimmer
+            width={125}
+            height={20}
+            radius={5}
+            isDark={isDark}
+          />
+
+          <View className="mt-4">
+            <FacebookShimmer
+              width="100%"
+              height={190}
+              radius={14}
+              isDark={isDark}
+            />
+          </View>
+        </View>
+
+        {/* BUTTON SKELETON */}
+
+        <View className="mt-8 px-4">
+          <FacebookShimmer
+            width="100%"
+            height={54}
+            radius={12}
+            isDark={isDark}
+          />
+        </View>
+
+        {/* OPEN HOUSE SKELETON */}
+
+        <View className="mt-8 px-4">
+          <FacebookShimmer
+            width={145}
+            height={20}
+            radius={5}
+            isDark={isDark}
+          />
+
+          <View className="mt-4">
+            <FacebookShimmer
+              width="100%"
+              height={90}
+              radius={12}
+              isDark={isDark}
+            />
+          </View>
+        </View>
+
+        {/* MAP SKELETON */}
+
+        <View className="mt-8 px-4">
+          <FacebookShimmer
+            width={120}
+            height={20}
+            radius={5}
+            isDark={isDark}
+          />
+
+          <View className="mt-4">
+            <FacebookShimmer
+              width="100%"
+              height={190}
+              radius={14}
+              isDark={isDark}
+            />
+          </View>
+        </View>
+
+        {/* AGENT SKELETON */}
+
+        <View className="mt-8 px-4">
+          <FacebookShimmer
+            width={135}
+            height={20}
+            radius={5}
+            isDark={isDark}
+          />
+
+          <View
+            className={
+              isDark
+                ? "mt-4 flex-row items-center rounded-xl border border-[#292929] bg-[#171717] p-4"
+                : "mt-4 flex-row items-center rounded-xl border border-gray-200 bg-white p-4"
+            }
+          >
+            <FacebookShimmer
+              width={58}
+              height={58}
+              radius={35}
+              isDark={isDark}
+            />
+
+            <View className="ml-4 flex-1">
+              <FacebookShimmer
+                width="65%"
+                height={14}
+                radius={5}
+                isDark={isDark}
+              />
+
+              <View className="mt-3">
+                <FacebookShimmer
+                  width="45%"
+                  height={11}
+                  radius={4}
+                  isDark={isDark}
+                />
+              </View>
+
+              <View className="mt-3">
+                <FacebookShimmer
+                  width="75%"
+                  height={11}
+                  radius={4}
+                  isDark={isDark}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
 
 // ============================================================
 // MAIN SCREEN
@@ -780,34 +1282,11 @@ export default function PropertyDetailsScreen() {
   };
 
   // ============================================================
-  // LOADING SCREEN
+  // FACEBOOK-STYLE LOADING SCREEN
   // ============================================================
 
   if (loading) {
-    return (
-      <SafeAreaView
-        className={isDark ? "flex-1 bg-[#0d0d0d]" : "flex-1 bg-white"}
-      >
-        <StatusBar
-          barStyle={isDark ? "light-content" : "dark-content"}
-          backgroundColor={isDark ? "#0d0d0d" : "#ffffff"}
-        />
-
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#dc2626" />
-
-          <Text
-            className={
-              isDark
-                ? "mt-4 text-sm text-zinc-400"
-                : "mt-4 text-sm text-gray-600"
-            }
-          >
-            Loading property...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <PropertyDetailsSkeleton isDark={isDark} />;
   }
 
   // ============================================================

@@ -1,7 +1,13 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import {
-  ActivityIndicator,
+  Animated,
+  Easing,
   Image,
   Pressable,
   ScrollView,
@@ -9,6 +15,9 @@ import {
   Text,
   View,
   useColorScheme,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -21,6 +30,323 @@ import {
   getBlogById,
   type Blog,
 } from "@/app/services/blogs/blogApi";
+
+/*
+|--------------------------------------------------------------------------
+| Facebook-Style Shimmer
+|--------------------------------------------------------------------------
+*/
+
+function FacebookShimmer({
+  isDark,
+  style,
+}: {
+  isDark: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const shimmerAnimation = useRef(
+    new Animated.Value(0)
+  ).current;
+
+  const [containerWidth, setContainerWidth] =
+    useState(0);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(shimmerAnimation, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [shimmerAnimation]);
+
+  const handleLayout = (
+    event: LayoutChangeEvent
+  ) => {
+    setContainerWidth(
+      event.nativeEvent.layout.width
+    );
+  };
+
+  const translateX = shimmerAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-110, containerWidth + 110],
+  });
+
+  return (
+    <View
+      onLayout={handleLayout}
+      style={[
+        {
+          overflow: "hidden",
+          backgroundColor: isDark
+            ? "#292929"
+            : "#e5e7eb",
+        },
+        style,
+      ]}
+    >
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          width: 110,
+          transform: [{ translateX }],
+          backgroundColor: isDark
+            ? "rgba(255,255,255,0.07)"
+            : "rgba(255,255,255,0.65)",
+        }}
+      />
+    </View>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Blog Details Loading Skeleton
+|--------------------------------------------------------------------------
+*/
+
+function BlogDetailsLoadingSkeleton({
+  isDark,
+  screenBackground,
+  headerBackground,
+  borderColor,
+  primaryText,
+  onBack,
+}: {
+  isDark: boolean;
+  screenBackground: string;
+  headerBackground: string;
+  borderColor: string;
+  primaryText: string;
+  onBack: () => void;
+}) {
+  return (
+    <SafeAreaView
+      className={`flex-1 ${
+        isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+      }`}
+    >
+      <StatusBar
+        barStyle={
+          isDark ? "light-content" : "dark-content"
+        }
+        backgroundColor={screenBackground}
+      />
+
+      {/* Header */}
+
+      <View
+        className={`flex-row items-center border-b px-4 py-3 ${borderColor}`}
+        style={{
+          backgroundColor: headerBackground,
+        }}
+      >
+        <Pressable
+          onPress={onBack}
+          className={`h-10 w-10 items-center justify-center rounded-full ${
+            isDark ? "bg-[#202020]" : "bg-gray-100"
+          }`}
+        >
+          <Ionicons
+            name="arrow-back"
+            size={21}
+            color={isDark ? "#ffffff" : "#111827"}
+          />
+        </Pressable>
+
+        <Text
+          className={`ml-3 text-base font-semibold ${primaryText}`}
+        >
+          Blog
+        </Text>
+      </View>
+
+      {/* Featured Image Skeleton */}
+
+      <FacebookShimmer
+        isDark={isDark}
+        style={{
+          width: "100%",
+          height: 230,
+        }}
+      />
+
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 20,
+          paddingBottom: 40,
+        }}
+      >
+        {/* Designation */}
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: 85,
+            height: 25,
+            borderRadius: 20,
+          }}
+        />
+
+        {/* Title */}
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "95%",
+            height: 23,
+            borderRadius: 5,
+            marginTop: 17,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "75%",
+            height: 23,
+            borderRadius: 5,
+            marginTop: 9,
+          }}
+        />
+
+        {/* Author / Date / Views */}
+
+        <View
+          className={`mt-5 flex-row items-center border-b pb-4 ${
+            isDark
+              ? "border-[#303030]"
+              : "border-gray-200"
+          }`}
+        >
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 25,
+            }}
+          />
+
+          <View className="ml-3 flex-1">
+            <FacebookShimmer
+              isDark={isDark}
+              style={{
+                width: 110,
+                height: 13,
+                borderRadius: 4,
+              }}
+            />
+
+            <FacebookShimmer
+              isDark={isDark}
+              style={{
+                width: 85,
+                height: 11,
+                borderRadius: 4,
+                marginTop: 8,
+              }}
+            />
+          </View>
+
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              width: 40,
+              height: 12,
+              borderRadius: 4,
+            }}
+          />
+        </View>
+
+        {/* Article Content */}
+
+        <View className="pt-6">
+          {Array.from({ length: 5 }).map(
+            (_, paragraphIndex) => (
+              <View
+                key={`paragraph-${paragraphIndex}`}
+                className="mb-6"
+              >
+                <FacebookShimmer
+                  isDark={isDark}
+                  style={{
+                    width: "100%",
+                    height: 13,
+                    borderRadius: 4,
+                  }}
+                />
+
+                <FacebookShimmer
+                  isDark={isDark}
+                  style={{
+                    width: "95%",
+                    height: 13,
+                    borderRadius: 4,
+                    marginTop: 10,
+                  }}
+                />
+
+                <FacebookShimmer
+                  isDark={isDark}
+                  style={{
+                    width: "90%",
+                    height: 13,
+                    borderRadius: 4,
+                    marginTop: 10,
+                  }}
+                />
+
+                <FacebookShimmer
+                  isDark={isDark}
+                  style={{
+                    width: "65%",
+                    height: 13,
+                    borderRadius: 4,
+                    marginTop: 10,
+                  }}
+                />
+              </View>
+            )
+          )}
+        </View>
+
+        {/* Footer */}
+
+        <View
+          className={`mt-3 border-t pt-5 ${
+            isDark
+              ? "border-[#303030]"
+              : "border-gray-200"
+          }`}
+        >
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              width: "80%",
+              height: 12,
+              borderRadius: 4,
+            }}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -233,63 +559,14 @@ export default function BlogDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView
-        className={`flex-1 ${
-          isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
-        }`}
-      >
-        <StatusBar
-          barStyle={
-            isDark ? "light-content" : "dark-content"
-          }
-          backgroundColor={screenBackground}
-        />
-
-        {/* Header */}
-
-        <View
-          className={`flex-row items-center border-b px-4 py-3 ${borderColor}`}
-          style={{
-            backgroundColor: headerBackground,
-          }}
-        >
-          <Pressable
-            onPress={() => router.back()}
-            className={`h-10 w-10 items-center justify-center rounded-full ${
-              isDark ? "bg-[#202020]" : "bg-gray-100"
-            }`}
-          >
-            <Ionicons
-              name="arrow-back"
-              size={21}
-              color={isDark ? "#ffffff" : "#111827"}
-            />
-          </Pressable>
-
-          <Text
-            className={`ml-3 text-base font-semibold ${primaryText}`}
-          >
-            Blog
-          </Text>
-        </View>
-
-        {/* Loading */}
-
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator
-            size="large"
-            color="#ef4444"
-          />
-
-          <Text
-            className={`mt-4 text-sm ${
-              isDark ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            Loading blog...
-          </Text>
-        </View>
-      </SafeAreaView>
+      <BlogDetailsLoadingSkeleton
+        isDark={isDark}
+        screenBackground={screenBackground}
+        headerBackground={headerBackground}
+        borderColor={borderColor}
+        primaryText={primaryText}
+        onBack={() => router.back()}
+      />
     );
   }
 
