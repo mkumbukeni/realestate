@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   ScrollView,
@@ -8,15 +7,12 @@ import {
   Pressable,
   Linking,
   useColorScheme,
-  StyleSheet,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // Local video: project-root/assets/videos/about.mp4
 const ABOUT_VIDEO = require("../../../assets/videos/about.mp4");
@@ -36,14 +32,18 @@ function InfoCard({
 }: InfoCardProps) {
   return (
     <View
-      className={`mb-4 rounded-2xl border p-5 ${
+      className={`mb-4 w-full rounded-2xl border p-5 ${
         isDark
           ? "border-[#383838] bg-[#202020]"
           : "border-gray-200 bg-white"
       }`}
     >
       <View className="mb-3 flex-row items-center">
-        <View className="mr-3 h-11 w-11 items-center justify-center rounded-xl bg-red-100 dark:bg-red-950">
+        <View
+          className={`mr-3 h-11 w-11 items-center justify-center rounded-xl ${
+            isDark ? "bg-red-950" : "bg-red-100"
+          }`}
+        >
           <Ionicons name={icon} size={23} color="#dc2626" />
         </View>
 
@@ -95,36 +95,52 @@ function AboutHero() {
   });
 
   return (
-    <View style={styles.heroContainer}>
+    <View className="relative h-[360px] w-full justify-center overflow-hidden bg-[#171717]">
+      {/* Background video */}
       <VideoView
         player={player}
-        style={styles.heroVideo}
+        className="absolute bottom-0 left-0 right-0 top-0"
         contentFit="cover"
         nativeControls={false}
         allowsPictureInPicture={false}
       />
 
       {/* Dark overlay for readable text */}
-      <View style={styles.heroOverlay} pointerEvents="none" />
+      <View
+        className="absolute bottom-0 left-0 right-0 top-0 bg-black/50"
+        pointerEvents="none"
+      />
 
       {/* Hero text */}
-      <View style={styles.heroContent} pointerEvents="none">
-        <View style={styles.heroIcon}>
+      <View
+        className="w-full items-start justify-center px-6"
+        pointerEvents="none"
+      >
+        <View className="mb-4 h-14 w-14 items-center justify-center rounded-2xl bg-red-600">
           <Ionicons name="home-outline" size={30} color="#ffffff" />
         </View>
 
-        <Text style={styles.heroTitle}>About Us</Text>
+        <Text className="text-4xl font-extrabold tracking-wide text-white">
+          About Us
+        </Text>
 
-        <View style={styles.heroAccent} />
+        <View className="my-4 h-1 w-16 rounded-full bg-red-600" />
 
-        <Text style={styles.heroDescription}>
+        <Text className="max-w-[500px] text-base font-medium leading-[25px] text-white">
           We are a dedicated real estate company helping people find
           their dream homes and investment opportunities.
         </Text>
 
-        <View style={styles.brandRow}>
-          <Ionicons name="business-outline" size={17} color="#ffffff" />
-          <Text style={styles.brandText}>iMORRCS Real Estate</Text>
+        <View className="mt-5 flex-row items-center">
+          <Ionicons
+            name="business-outline"
+            size={17}
+            color="#ffffff"
+          />
+
+          <Text className="ml-2 text-sm font-semibold text-white">
+            iMORRCS Real Estate
+          </Text>
         </View>
       </View>
     </View>
@@ -135,6 +151,12 @@ export default function AboutScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
   const router = useRouter();
+
+  // Update the layout when the device rotates or the window resizes.
+  const { width, height } = useWindowDimensions();
+
+  // Two columns on wide screens or landscape orientation.
+  const isTwoColumn = width >= 700 || width > height;
 
   const openEmail = async () => {
     try {
@@ -154,10 +176,9 @@ export default function AboutScreen() {
 
   return (
     <SafeAreaView
-      style={[
-        styles.screen,
-        { backgroundColor: isDark ? "#0d0d0d" : "#f9fafb" },
-      ]}
+      className={`flex-1 ${
+        isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+      }`}
       edges={["top", "left", "right"]}
     >
       <StatusBar
@@ -166,17 +187,22 @@ export default function AboutScreen() {
       />
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        className="w-full flex-1"
+        contentContainerClassName="w-full pb-6"
         showsVerticalScrollIndicator={false}
       >
-        {/* BACKGROUND VIDEO AND INTRO */}
+        {/* FULL-WIDTH BACKGROUND VIDEO AND INTRO */}
         <AboutHero />
 
-        <View className="px-4 pt-5">
-          {/* INTRODUCTION */}
+        {/* PAGE CONTENT */}
+        <View
+          className={`w-full self-center px-4 pt-5 ${
+            isTwoColumn ? "max-w-[1200px]" : ""
+          }`}
+        >
+          {/* INTRODUCTION - FULL WIDTH */}
           <View
-            className={`mb-5 rounded-2xl border p-5 ${
+            className={`mb-5 w-full rounded-2xl border p-5 ${
               isDark
                 ? "border-[#383838] bg-[#202020]"
                 : "border-gray-200 bg-white"
@@ -196,194 +222,220 @@ export default function AboutScreen() {
             </Text>
           </View>
 
-          {/* OUR STORY */}
-          <InfoCard
-            icon="book-outline"
-            title="Our Story"
-            isDark={isDark}
+          {/* INFORMATION CARDS */}
+          <View
+            className={`w-full ${
+              isTwoColumn
+                ? "flex-row flex-wrap justify-between"
+                : "flex-col"
+            }`}
           >
-            <Text
-              className={`text-sm leading-6 ${
-                isDark ? "text-gray-300" : "text-gray-700"
-              }`}
+            {/* OUR STORY */}
+            <InfoCard
+              icon="book-outline"
+              title="Our Story"
+              isDark={isDark}
             >
-              We were founded with the belief that everyone deserves
-              a place to call home. We aim to simplify the property
-              buying and renting process through trust, transparency,
-              and technology.
-            </Text>
-          </InfoCard>
-
-          {/* OUR MISSION */}
-          <InfoCard
-            icon="flag-outline"
-            title="Our Mission"
-            isDark={isDark}
-          >
-            <Text
-              className={`text-sm leading-6 ${
-                isDark ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              To simplify the property buying and renting process
-              through trust, transparency, and technology while
-              delivering quality service to our customers.
-            </Text>
-          </InfoCard>
-
-          {/* OUR VISION */}
-          <InfoCard
-            icon="eye-outline"
-            title="Our Vision"
-            isDark={isDark}
-          >
-            <Text
-              className={`text-sm leading-6 ${
-                isDark ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              To become the most customer-centric real estate company
-              by delivering quality service and fostering long-term
-              relationships.
-            </Text>
-          </InfoCard>
-
-          {/* WHY CHOOSE US */}
-          <InfoCard
-            icon="shield-checkmark-outline"
-            title="Why Choose Us?"
-            isDark={isDark}
-          >
-            <BulletItem
-              text="Experienced and professional agents"
-              isDark={isDark}
-            />
-            <BulletItem
-              text="Wide selection of properties"
-              isDark={isDark}
-            />
-            <BulletItem
-              text="Transparent and secure transactions"
-              isDark={isDark}
-            />
-            <BulletItem
-              text="Customer-first approach"
-              isDark={isDark}
-            />
-            <BulletItem
-              text="Support from start to finish"
-              isDark={isDark}
-            />
-          </InfoCard>
-
-          {/* OUR SERVICES */}
-          <InfoCard
-            icon="business-outline"
-            title="Our Services"
-            isDark={isDark}
-          >
-            <BulletItem text="Property Sales" isDark={isDark} />
-            <BulletItem text="Property Rentals" isDark={isDark} />
-            <BulletItem
-              text="Investment Consulting"
-              isDark={isDark}
-            />
-            <BulletItem
-              text="Property Management"
-              isDark={isDark}
-            />
-            <BulletItem text="Market Analysis" isDark={isDark} />
-
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push("/(tabs)/services")}
-              className="mt-3 flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-3.5 active:bg-red-700"
-            >
-              <Text className="mr-2 text-sm font-bold text-white">
-                View All Services
-              </Text>
-              <Ionicons
-                name="arrow-forward"
-                size={18}
-                color="#ffffff"
-              />
-            </Pressable>
-          </InfoCard>
-
-          {/* CONTACT US */}
-          <InfoCard
-            icon="call-outline"
-            title="Contact Us"
-            isDark={isDark}
-          >
-            <Text
-              className={`mb-4 text-base font-bold ${
-                isDark ? "text-white" : "text-gray-900"
-              }`}
-            >
-              iMORRCS Real Estate
-            </Text>
-
-            <View className="mb-4 flex-row items-start">
-              <Ionicons
-                name="location-outline"
-                size={20}
-                color="#dc2626"
-              />
               <Text
-                className={`ml-3 flex-1 text-sm leading-6 ${
+                className={`text-sm leading-6 ${
                   isDark ? "text-gray-300" : "text-gray-700"
                 }`}
               >
-                P.O. Box 990, Blantyre, Malawi
+                We were founded with the belief that everyone deserves
+                a place to call home. We aim to simplify the property
+                buying and renting process through trust, transparency,
+                and technology.
               </Text>
-            </View>
+            </InfoCard>
 
-            <Pressable
-              onPress={() => openPhone("+265990101303")}
-              className="mb-4 flex-row items-center"
+            {/* OUR MISSION */}
+            <InfoCard
+              icon="flag-outline"
+              title="Our Mission"
+              isDark={isDark}
             >
-              <Ionicons
-                name="call-outline"
-                size={20}
-                color="#dc2626"
-              />
-              <Text className="ml-3 flex-1 text-sm text-red-600">
-                +265 990 101 303
+              <Text
+                className={`text-sm leading-6 ${
+                  isDark ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                To simplify the property buying and renting process
+                through trust, transparency, and technology while
+                delivering quality service to our customers.
               </Text>
-            </Pressable>
+            </InfoCard>
 
-            <Pressable
-              onPress={() => openPhone("+265880101303")}
-              className="mb-4 flex-row items-center"
+            {/* OUR VISION */}
+            <InfoCard
+              icon="eye-outline"
+              title="Our Vision"
+              isDark={isDark}
             >
-              <Ionicons
-                name="call-outline"
-                size={20}
-                color="#dc2626"
-              />
-              <Text className="ml-3 flex-1 text-sm text-red-600">
-                +265 880 101 303
+              <Text
+                className={`text-sm leading-6 ${
+                  isDark ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                To become the most customer-centric real estate company
+                by delivering quality service and fostering long-term
+                relationships.
               </Text>
-            </Pressable>
+            </InfoCard>
 
-            <Pressable
-              onPress={openEmail}
-              className="flex-row items-center"
+            {/* WHY CHOOSE US */}
+            <InfoCard
+              icon="shield-checkmark-outline"
+              title="Why Choose Us?"
+              isDark={isDark}
             >
-              <Ionicons
-                name="mail-outline"
-                size={20}
-                color="#dc2626"
+              <BulletItem
+                text="Experienced and professional agents"
+                isDark={isDark}
               />
-              <Text className="ml-3 flex-1 text-sm text-red-600">
-                imorrcsafrica@gmail.com
+
+              <BulletItem
+                text="Wide selection of properties"
+                isDark={isDark}
+              />
+
+              <BulletItem
+                text="Transparent and secure transactions"
+                isDark={isDark}
+              />
+
+              <BulletItem
+                text="Customer-first approach"
+                isDark={isDark}
+              />
+
+              <BulletItem
+                text="Support from start to finish"
+                isDark={isDark}
+              />
+            </InfoCard>
+
+            {/* OUR SERVICES */}
+            <InfoCard
+              icon="business-outline"
+              title="Our Services"
+              isDark={isDark}
+            >
+              <BulletItem text="Property Sales" isDark={isDark} />
+
+              <BulletItem text="Property Rentals" isDark={isDark} />
+
+              <BulletItem
+                text="Investment Consulting"
+                isDark={isDark}
+              />
+
+              <BulletItem
+                text="Property Management"
+                isDark={isDark}
+              />
+
+              <BulletItem text="Market Analysis" isDark={isDark} />
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push("/#")}
+                className="mt-3 flex-row items-center justify-center rounded-xl bg-red-600 px-5 py-3.5 active:bg-red-700"
+              >
+                <Text className="mr-2 text-sm font-bold text-white">
+                  View All Services
+                </Text>
+
+                <Ionicons
+                  name="arrow-forward"
+                  size={18}
+                  color="#ffffff"
+                />
+              </Pressable>
+            </InfoCard>
+
+            {/* CONTACT US */}
+            <InfoCard
+              icon="call-outline"
+              title="Contact Us"
+              isDark={isDark}
+            >
+              <Text
+                className={`mb-4 text-base font-bold ${
+                  isDark ? "text-white" : "text-gray-900"
+                }`}
+              >
+                iMORRCS Real Estate
               </Text>
-            </Pressable>
-          </InfoCard>
+
+              {/* ADDRESS */}
+              <View className="mb-4 flex-row items-start">
+                <Ionicons
+                  name="location-outline"
+                  size={20}
+                  color="#dc2626"
+                />
+
+                <Text
+                  className={`ml-3 flex-1 text-sm leading-6 ${
+                    isDark ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
+                  P.O. Box 990, Blantyre, Malawi
+                </Text>
+              </View>
+
+              {/* PHONE 1 */}
+              <Pressable
+                onPress={() => openPhone("+265990101303")}
+                className="mb-4 flex-row items-center"
+              >
+                <Ionicons
+                  name="call-outline"
+                  size={20}
+                  color="#dc2626"
+                />
+
+                <Text className="ml-3 flex-1 text-sm text-red-600">
+                  +265 990 101 303
+                </Text>
+              </Pressable>
+
+              {/* PHONE 2 */}
+              <Pressable
+                onPress={() => openPhone("+265880101303")}
+                className="mb-4 flex-row items-center"
+              >
+                <Ionicons
+                  name="call-outline"
+                  size={20}
+                  color="#dc2626"
+                />
+
+                <Text className="ml-3 flex-1 text-sm text-red-600">
+                  +265 880 101 303
+                </Text>
+              </Pressable>
+
+              {/* EMAIL */}
+              <Pressable
+                onPress={openEmail}
+                className="flex-row items-center"
+              >
+                <Ionicons
+                  name="mail-outline"
+                  size={20}
+                  color="#dc2626"
+                />
+
+                <Text className="ml-3 flex-1 text-sm text-red-600">
+                  imorrcsafrica@gmail.com
+                </Text>
+              </Pressable>
+            </InfoCard>
+          </View>
 
           {/* FOOTER */}
-          <View className="mb-4 mt-2 items-center">
+          <View className="mb-4 mt-2 w-full items-center">
             <Text
               className={`text-center text-xs ${
                 isDark ? "text-gray-500" : "text-gray-400"
@@ -391,6 +443,7 @@ export default function AboutScreen() {
             >
               iMORRCS Real Estate
             </Text>
+
             <Text
               className={`mt-1 text-center text-xs ${
                 isDark ? "text-gray-500" : "text-gray-400"
@@ -404,74 +457,3 @@ export default function AboutScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 24,
-  },
-  heroContainer: {
-    width: "100%",
-    height: 360,
-    overflow: "hidden",
-    backgroundColor: "#171717",
-    justifyContent: "center",
-  },
-  heroVideo: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.52)",
-  },
-  heroContent: {
-    paddingHorizontal: 24,
-    alignItems: "flex-start",
-    justifyContent: "center",
-  },
-  heroIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: "#dc2626",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  heroTitle: {
-    color: "#ffffff",
-    fontSize: 36,
-    fontWeight: "800",
-    letterSpacing: 0.2,
-  },
-  heroAccent: {
-    width: 64,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#dc2626",
-    marginVertical: 16,
-  },
-  heroDescription: {
-    color: "#ffffff",
-    fontSize: 16,
-    lineHeight: 25,
-    fontWeight: "500",
-    maxWidth: 500,
-  },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 20,
-  },
-  brandText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-});

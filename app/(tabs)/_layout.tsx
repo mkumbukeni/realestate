@@ -114,6 +114,14 @@ export default function TabLayout() {
           ),
         }}
       />
+
+      {/* Keep the profile route accessible, but hide it from the tab bar */}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -23,12 +23,70 @@ export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme !== "light";
 
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
 
   const accountEmail =
     typeof user?.email === "string"
       ? user.email.trim().toLowerCase()
       : "";
+
+  // Redirect users who are not logged in.
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/(tabs)/home");
+    }
+  }, [isLoggedIn, router]);
+
+  // Do not display profile content to logged-out users.
+  if (!isLoggedIn) {
+    return (
+      <SafeAreaView
+        className={`flex-1 items-center justify-center ${
+          isDark ? "bg-[#0d0d0d]" : "bg-gray-50"
+        }`}
+        edges={["top", "left", "right"]}
+      >
+        <StatusBar
+          barStyle={isDark ? "light-content" : "dark-content"}
+          backgroundColor={isDark ? "#0d0d0d" : "#f9fafb"}
+        />
+
+        <View className="items-center px-6">
+          <Ionicons
+            name="lock-closed-outline"
+            size={48}
+            color="#ef4444"
+          />
+
+          <Text
+            className={`mt-4 text-center text-xl font-bold ${
+              isDark ? "text-white" : "text-black"
+            }`}
+          >
+            Login Required
+          </Text>
+
+          <Text
+            className={`mt-2 text-center text-sm leading-6 ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            Please log in to view your profile.
+          </Text>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.replace("/(tabs)/home")}
+            className="mt-5 rounded-lg bg-red-600 px-6 py-3 active:bg-red-700"
+          >
+            <Text className="text-sm font-semibold text-white">
+              Login
+            </Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -103,7 +161,9 @@ export default function ProfileScreen() {
               accessibilityRole="button"
               className="rounded-lg bg-red-600 px-6 py-3 active:bg-red-700"
             >
-              <Text className="text-sm font-medium text-white">Update</Text>
+              <Text className="text-sm font-medium text-white">
+                Update
+              </Text>
             </Pressable>
           </View>
 
@@ -169,11 +229,11 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* UPDATE PASSWORD - SEPARATE COMPONENT */}
+          {/* UPDATE PASSWORD */}
 
           <UpdatePasswordSection />
 
-          {/* HISTORY - SEPARATE COMPONENT */}
+          {/* PROFILE HISTORY */}
 
           <ProfileHistorySection />
         </ScrollView>
