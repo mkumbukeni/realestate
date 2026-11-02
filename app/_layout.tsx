@@ -9,8 +9,10 @@ import {
   useRouter,
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  Animated,
+  Easing,
   Pressable,
   Text,
   View,
@@ -36,6 +38,71 @@ import {
 } from "@/app/components/theme/ThemeContext";
 
 import SideMenu from "@/app/components/sidebar/SideMenu";
+import MorricsLogo from "../assets/images/imorrcs.svg";
+
+/* ============================================================
+   ROTATING LOGO
+   ============================================================ */
+
+function RotatingLogo() {
+  const { isDark } = useTheme();
+
+  const rotation = useRef(
+    new Animated.Value(0)
+  ).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        // Wait 3 seconds before rotating
+        Animated.delay(3000),
+
+        // Rotate through 360 degrees
+        Animated.timing(rotation, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+
+        // Reset instantly
+        Animated.timing(rotation, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+      rotation.setValue(0);
+    };
+  }, [rotation]);
+
+const rotateY = rotation.interpolate({
+  inputRange: [0, 1],
+  outputRange: ["0deg", "360deg"],
+});
+  return (
+    <Animated.View
+  style={{
+    transform: [
+      { perspective: 800 },
+      { rotateY },
+    ],
+  }}
+>
+  <MorricsLogo
+    width={40}
+    height={40}
+    color={isDark ? "#FFFFFF" : "#000000"}
+  />
+</Animated.View>
+  );
+}
 
 /* ============================================================
    THEME TOGGLE BUTTON
@@ -57,8 +124,8 @@ function ThemeToggleButton() {
           : "Switch to dark mode"
       }
       className="
-        h-8
-        w-8
+        h-10
+        w-10
         items-center
         justify-center
         bg-transparent
@@ -98,8 +165,8 @@ function GlobalMenuButton({
       accessibilityRole="button"
       accessibilityLabel="Open menu"
       className="
-        h-11
-        w-11
+        h-10
+        w-10
         items-center
         justify-center
         bg-transparent
@@ -143,8 +210,8 @@ function GlobalAuthButton({
           : "Open login and register menu"
       }
       className={`
-        h-8
-        w-8
+        h-10
+        w-10
         items-center
         justify-center
         rounded-full
@@ -208,36 +275,55 @@ function GlobalHeader({
   const { isDark } = useTheme();
 
   return (
-   <View
-  className={`
-    absolute
-    left-0
-    right-0
-    top-0
-    z-50
-    h-[110px]
-    flex-row
-    items-center
-    border-b
-    pl-5
-    pr-2
-    pt-[38px]
-    ${
-      isDark
-        ? "border-[#222] bg-[#0d0d0d]"
-        : "border-gray-200 bg-white"
-    }
-  `}
->
+    <View
+      className={`
+        absolute
+        left-0
+        right-0
+        top-0
+        z-50
+        h-[100px]
+        flex-row
+        items-center
+        border-b
+        pl-3
+        pr-4
+        ${
+          isDark
+            ? "border-[#222] bg-[#0d0d0d]"
+            : "border-gray-200 bg-white"
+        }
+      `}
+    >
       {/* ======================================================
-          LEFT - TITLE
+          LEFT - ROTATING LOGO
           ====================================================== */}
 
-      <View className="flex-1 items-start justify-center">
+      <View className="z-10 h-10 w-10 items-center justify-center">
+        <RotatingLogo />
+      </View>
+
+      {/* ======================================================
+          TITLE - SHIFTED LEFT WITH MORE RIGHT SPACING
+          ====================================================== */}
+
+      <View
+        pointerEvents="none"
+        className="
+          absolute
+          left-14
+          right-36
+          top-0
+          h-full
+          items-center
+          justify-center
+        "
+      >
         <Text
           numberOfLines={1}
+          adjustsFontSizeToFit
           className="
-            text-left
+            text-center
             text-xl
             font-bold
             text-red-500
@@ -251,7 +337,7 @@ function GlobalHeader({
           RIGHT - THEME + AUTH + THREE DOTS
           ====================================================== */}
 
-      <View className="flex-row items-center justify-end gap-4">
+      <View className="ml-auto flex-row items-center justify-end gap-5">
         <ThemeToggleButton />
 
         <GlobalAuthButton
@@ -644,6 +730,7 @@ function RootContent() {
   // Global internet connectivity state for every screen in the app.
   // Keep the Stack mounted while offline so the user returns to the
   // exact screen they were viewing when connectivity is restored.
+
   const [isInternetAvailable, setIsInternetAvailable] =
     useState<boolean | null>(null);
 
@@ -969,7 +1056,9 @@ function RootContent() {
             accessibilityViewIsModal
             accessibilityRole="alert"
             className={`absolute inset-0 z-[9999] items-center justify-center px-8 ${
-              isDark ? "bg-[#0d0d0d]" : "bg-white"
+              isDark
+                ? "bg-[#0d0d0d]"
+                : "bg-white"
             }`}
           >
             <View
@@ -992,7 +1081,9 @@ function RootContent() {
 
             <Text
               className={`mb-3 text-center text-2xl font-bold ${
-                isDark ? "text-white" : "text-gray-900"
+                isDark
+                  ? "text-white"
+                  : "text-gray-900"
               }`}
             >
               {isInternetAvailable === null
@@ -1002,7 +1093,9 @@ function RootContent() {
 
             <Text
               className={`max-w-sm text-center text-base leading-6 ${
-                isDark ? "text-gray-400" : "text-gray-600"
+                isDark
+                  ? "text-gray-400"
+                  : "text-gray-600"
               }`}
             >
               {isInternetAvailable === null
