@@ -1,3 +1,4 @@
+
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import React, {
@@ -17,6 +18,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
@@ -42,6 +44,13 @@ type ShimmerProps = {
   highlightColor: string;
   style?: StyleProp<ViewStyle>;
 };
+
+// ============================================================
+// RESPONSIVE GRID CONFIGURATION
+// ============================================================
+
+const GRID_GAP = 16;
+const SCREEN_PADDING = 16;
 
 // ============================================================
 // FILTER OPTIONS
@@ -173,13 +182,10 @@ function AgentCardSkeleton({
       style={{
         backgroundColor: cardBackground,
         borderColor,
+        flex: 1,
       }}
     >
-      {/* Agent profile row */}
-
       <View className="flex-row items-center">
-        {/* Profile image placeholder */}
-
         <FacebookShimmer
           width={68}
           height={68}
@@ -187,8 +193,6 @@ function AgentCardSkeleton({
           baseColor={baseColor}
           highlightColor={highlightColor}
         />
-
-        {/* Agent details */}
 
         <View className="ml-4 flex-1">
           <FacebookShimmer
@@ -231,8 +235,6 @@ function AgentCardSkeleton({
         </View>
       </View>
 
-      {/* Divider */}
-
       <View
         className="my-4"
         style={{
@@ -240,8 +242,6 @@ function AgentCardSkeleton({
           backgroundColor: borderColor,
         }}
       />
-
-      {/* Contact information */}
 
       <View className="flex-row items-center">
         <Ionicons name="call-outline" size={16} color={highlightColor} />
@@ -271,8 +271,6 @@ function AgentCardSkeleton({
         </View>
       </View>
 
-      {/* Bottom action placeholder */}
-
       <View className="mt-5 flex-row items-center justify-between">
         <FacebookShimmer
           width={100}
@@ -295,19 +293,16 @@ function AgentCardSkeleton({
 }
 
 // ============================================================
-// AGENT LIST LOADING SKELETON
+// RESPONSIVE LOADING SKELETON
 // ============================================================
 
 function AgentsLoadingSkeleton({
   theme,
+  numColumns,
 }: {
   theme: ReturnType<typeof useTheme>["theme"];
+  numColumns: number;
 }) {
-  /*
-   * theme.border gives the skeleton a visible base in both themes.
-   * theme.inputBackground provides the moving highlight.
-   */
-
   const baseColor = theme.border;
   const highlightColor = theme.inputBackground;
 
@@ -315,7 +310,7 @@ function AgentsLoadingSkeleton({
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{
-        padding: 16,
+        padding: SCREEN_PADDING,
         paddingBottom: 30,
       }}
     >
@@ -337,26 +332,31 @@ function AgentsLoadingSkeleton({
         />
       </View>
 
-      <AgentCardSkeleton
-        baseColor={baseColor}
-        highlightColor={highlightColor}
-        cardBackground={theme.inputBackground}
-        borderColor={theme.border}
-      />
-
-      <AgentCardSkeleton
-        baseColor={baseColor}
-        highlightColor={highlightColor}
-        cardBackground={theme.inputBackground}
-        borderColor={theme.border}
-      />
-
-      <AgentCardSkeleton
-        baseColor={baseColor}
-        highlightColor={highlightColor}
-        cardBackground={theme.inputBackground}
-        borderColor={theme.border}
-      />
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: GRID_GAP,
+        }}
+      >
+        {Array.from({ length: numColumns * 2 }).map((_, index) => (
+          <View
+            key={index}
+            style={{
+              width: `${100 / numColumns}%`,
+              flex: 1,
+              minWidth: numColumns > 1 ? 0 : undefined,
+            }}
+          >
+            <AgentCardSkeleton
+              baseColor={baseColor}
+              highlightColor={highlightColor}
+              cardBackground={theme.inputBackground}
+              borderColor={theme.border}
+            />
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -370,18 +370,48 @@ export default function AgentsScreen() {
 
   const { theme } = useTheme();
 
+  const { width: windowWidth, height: windowHeight } =
+    useWindowDimensions();
+
+  // ============================================================
+  // RESPONSIVE COLUMN CALCULATION
+  // ============================================================
+
+  const isLandscape = windowWidth > windowHeight;
+
+  const numColumns = useMemo(() => {
+    if (windowWidth < 600) {
+      return 1;
+    }
+
+    if (windowWidth < 900) {
+      return 2;
+    }
+
+    if (windowWidth < 1200) {
+      return 3;
+    }
+
+    return 4;
+  }, [windowWidth]);
+
+  // Calculate card width based on available screen width.
+
+  const cardWidth = useMemo(() => {
+    const availableWidth = windowWidth - SCREEN_PADDING * 2;
+    const totalGaps = GRID_GAP * (numColumns - 1);
+
+    return (availableWidth - totalGaps) / numColumns;
+  }, [windowWidth, numColumns]);
+
   // ============================================================
   // STATE
   // ============================================================
 
   const [agents, setAgents] = useState<Agent[]>([]);
-
   const [loading, setLoading] = useState(true);
-
   const [refreshing, setRefreshing] = useState(false);
-
   const [search, setSearch] = useState("");
-
   const [activeFilter, setActiveFilter] = useState<AgentFilter>("all");
 
   // ============================================================
@@ -391,15 +421,12 @@ export default function AgentsScreen() {
   const loadAgents = useCallback(async (forceRefresh = false) => {
     try {
       const result = await fetchAgents(forceRefresh);
-
       setAgents(result);
     } catch (error) {
       console.error("Failed to load agents:", error);
-
       setAgents([]);
     } finally {
       setLoading(false);
-
       setRefreshing(false);
     }
   }, []);
@@ -414,7 +441,6 @@ export default function AgentsScreen() {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-
     void loadAgents(true);
   }, [loadAgents]);
 
@@ -439,8 +465,6 @@ export default function AgentsScreen() {
   // ============================================================
 
   const normalizedSearch = search.trim().toLowerCase();
-
-  // Use one shared predicate for search and counts.
 
   const matchesSearch = useCallback(
     (agent: Agent) => {
@@ -492,8 +516,6 @@ export default function AgentsScreen() {
   // CATEGORY COUNTS
   // ============================================================
 
-  // Counts and list data use identical category and search conditions.
-
   const categoryCounts = useMemo(() => {
     const counts: Record<AgentFilter, number> = {
       all: 0,
@@ -533,12 +555,22 @@ export default function AgentsScreen() {
   // RENDER AGENT
   // ============================================================
 
-  const renderAgent = ({ item }: { item: Agent }) => (
-    <AgentCard
-      agent={item}
-      isFullWidth
-      onPress={handleAgentPress}
-    />
+  const renderAgent = useCallback(
+    ({ item }: { item: Agent }) => (
+      <View
+        style={{
+          width: cardWidth,
+          marginBottom: GRID_GAP,
+        }}
+      >
+        <AgentCard
+          agent={item}
+          isFullWidth={numColumns === 1}
+          onPress={handleAgentPress}
+        />
+      </View>
+    ),
+    [cardWidth, numColumns, handleAgentPress],
   );
 
   // ============================================================
@@ -616,10 +648,16 @@ export default function AgentsScreen() {
 
         {/* CATEGORY BUTTONS */}
 
-        <View className="mt-4 flex-row gap-2">
+        <View
+          className="mt-4 flex-row gap-2"
+          style={{
+            maxWidth: isLandscape ? 850 : undefined,
+            alignSelf: isLandscape ? "center" : "stretch",
+            width: "100%",
+          }}
+        >
           {FILTER_OPTIONS.map((option) => {
             const selected = activeFilter === option.value;
-
             const count = categoryCounts[option.value];
 
             return (
@@ -655,8 +693,6 @@ export default function AgentsScreen() {
                   {option.label}
                 </Text>
 
-                {/* COUNT BADGE */}
-
                 {selected && !loading && (
                   <View
                     className="absolute items-center justify-center rounded-full bg-white"
@@ -687,6 +723,9 @@ export default function AgentsScreen() {
           style={{
             backgroundColor: theme.inputBackground,
             borderColor: theme.border,
+            maxWidth: isLandscape ? 850 : undefined,
+            width: "100%",
+            alignSelf: isLandscape ? "center" : "stretch",
           }}
         >
           <Ionicons
@@ -728,14 +767,28 @@ export default function AgentsScreen() {
       {/* AGENT LIST / LOADING SKELETON */}
 
       {loading ? (
-        <AgentsLoadingSkeleton theme={theme} />
+        <AgentsLoadingSkeleton
+          theme={theme}
+          numColumns={numColumns}
+        />
       ) : (
         <FlatList
+          key={`agents-grid-${numColumns}`}
           data={filteredAgents}
           keyExtractor={(item) => String(item.id)}
           renderItem={renderAgent}
+          numColumns={numColumns}
+          columnWrapperStyle={
+            numColumns > 1
+              ? {
+                  justifyContent: "flex-start",
+                  gap: GRID_GAP,
+                }
+              : undefined
+          }
           contentContainerStyle={{
-            padding: 16,
+            paddingHorizontal: SCREEN_PADDING,
+            paddingTop: 16,
             paddingBottom: 30,
             flexGrow: 1,
           }}

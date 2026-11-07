@@ -1,13 +1,26 @@
-
 // app/(tabs)/properties/index.tsx
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import {
+  Animated,
+  Easing,
   RefreshControl,
   ScrollView,
   StatusBar,
+  View,
   useWindowDimensions,
+  type LayoutChangeEvent,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -19,7 +32,6 @@ import RegisterModal from "@/app/components/auth/RegisterModal";
 
 import PropertiesHeader from "@/app/components/properties/home/PropertiesHeader";
 import PropertiesGrid from "@/app/components/properties/home/PropertiesGrid";
-import PropertiesLoadingState from "@/app/components/properties/home/PropertiesLoadingState";
 import PropertiesErrorState from "@/app/components/properties/home/PropertiesErrorState";
 import PropertyFilters, {
   type DetailedPropertyFilters,
@@ -29,6 +41,357 @@ import { usePropertiesScreen } from "@/app/hooks/properties/usePropertiesScreen"
 import { getPropertyId } from "@/app/utils/properties/propertiesScreen.utils";
 
 import type { Property } from "@/app/types/properties/property";
+
+/*
+|--------------------------------------------------------------------------
+| Facebook-Style Shimmer
+|--------------------------------------------------------------------------
+*/
+
+function FacebookShimmer({
+  isDark,
+  style,
+}: {
+  isDark: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const shimmerAnimation = useRef(
+    new Animated.Value(0)
+  ).current;
+
+  const [containerWidth, setContainerWidth] =
+    useState(0);
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.timing(shimmerAnimation, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+    };
+  }, [shimmerAnimation]);
+
+  const handleLayout = (
+    event: LayoutChangeEvent
+  ) => {
+    setContainerWidth(
+      event.nativeEvent.layout.width
+    );
+  };
+
+  const translateX = shimmerAnimation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-110, containerWidth + 110],
+  });
+
+  return (
+    <View
+      onLayout={handleLayout}
+      style={[
+        {
+          overflow: "hidden",
+          backgroundColor: isDark
+            ? "#292929"
+            : "#e5e7eb",
+        },
+        style,
+      ]}
+    >
+      <Animated.View
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          width: 110,
+          transform: [{ translateX }],
+          backgroundColor: isDark
+            ? "rgba(255,255,255,0.07)"
+            : "rgba(255,255,255,0.65)",
+        }}
+      />
+    </View>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Property Card Skeleton
+|--------------------------------------------------------------------------
+*/
+
+function PropertyCardSkeleton({
+  isDark,
+}: {
+  isDark: boolean;
+}) {
+  return (
+    <View
+      className={`mb-5 overflow-hidden rounded-xl border ${
+        isDark
+          ? "border-[#303030] bg-[#171717]"
+          : "border-gray-200 bg-white"
+      }`}
+    >
+      <FacebookShimmer
+        isDark={isDark}
+        style={{
+          width: "100%",
+          height: 190,
+        }}
+      />
+
+      <View className="p-4">
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "75%",
+            height: 17,
+            borderRadius: 5,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "45%",
+            height: 13,
+            borderRadius: 4,
+            marginTop: 12,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "60%",
+            height: 17,
+            borderRadius: 4,
+            marginTop: 15,
+          }}
+        />
+
+        <View className="mt-4 flex-row items-center">
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              width: 42,
+              height: 12,
+              borderRadius: 4,
+            }}
+          />
+
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              width: 42,
+              height: 12,
+              borderRadius: 4,
+              marginLeft: 18,
+            }}
+          />
+
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              width: 42,
+              height: 12,
+              borderRadius: 4,
+              marginLeft: 18,
+            }}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Properties Loading Skeleton
+|--------------------------------------------------------------------------
+*/
+
+function PropertiesLoadingSkeleton({
+  isDark,
+  screenTitle,
+}: {
+  isDark: boolean;
+  screenTitle: string;
+}) {
+  return (
+    <SafeAreaView
+      className={`flex-1 ${
+        isDark ? "bg-[#0d0d0d]" : "bg-white"
+      }`}
+    >
+      <StatusBar
+        barStyle={
+          isDark ? "light-content" : "dark-content"
+        }
+        backgroundColor={
+          isDark ? "#0d0d0d" : "#ffffff"
+        }
+      />
+
+      {/* Header */}
+
+      <View className="px-5 pt-5">
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: 180,
+            height: 27,
+            borderRadius: 5,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "75%",
+            height: 12,
+            borderRadius: 4,
+            marginTop: 12,
+          }}
+        />
+      </View>
+
+      {/* Listing Filters */}
+
+      <View className="mx-5 mt-5 flex-row">
+        {[1, 2, 3].map((item) => (
+          <FacebookShimmer
+            key={item}
+            isDark={isDark}
+            style={{
+              width: 85,
+              height: 35,
+              borderRadius: 20,
+              marginRight: 10,
+            }}
+          />
+        ))}
+      </View>
+
+      {/* Detailed Filters */}
+
+      <View
+        className={`mx-5 mt-5 rounded-xl border p-4 ${
+          isDark
+            ? "border-[#303030] bg-[#171717]"
+            : "border-gray-200 bg-white"
+        }`}
+      >
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: 145,
+            height: 17,
+            borderRadius: 4,
+          }}
+        />
+
+        <View className="mt-4 flex-row">
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              flex: 1,
+              height: 42,
+              borderRadius: 8,
+              marginRight: 10,
+            }}
+          />
+
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              flex: 1,
+              height: 42,
+              borderRadius: 8,
+            }}
+          />
+        </View>
+
+        <View className="mt-3 flex-row">
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              flex: 1,
+              height: 42,
+              borderRadius: 8,
+              marginRight: 10,
+            }}
+          />
+
+          <FacebookShimmer
+            isDark={isDark}
+            style={{
+              flex: 1,
+              height: 42,
+              borderRadius: 8,
+            }}
+          />
+        </View>
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: "100%",
+            height: 40,
+            borderRadius: 8,
+            marginTop: 15,
+          }}
+        />
+      </View>
+
+      {/* Property Count */}
+
+      <View className="mx-5 mt-5 flex-row items-center justify-between">
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: 115,
+            height: 13,
+            borderRadius: 4,
+          }}
+        />
+
+        <FacebookShimmer
+          isDark={isDark}
+          style={{
+            width: 75,
+            height: 13,
+            borderRadius: 4,
+          }}
+        />
+      </View>
+
+      {/* Property Cards */}
+
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 15,
+          paddingBottom: 25,
+        }}
+      >
+        <PropertyCardSkeleton isDark={isDark} />
+        <PropertyCardSkeleton isDark={isDark} />
+        <PropertyCardSkeleton isDark={isDark} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
 
 // ============================================================
 // PROPERTY FILTER FIELD TYPES
@@ -462,7 +825,7 @@ export default function PropertiesScreen() {
 
   if (loading) {
     return (
-      <PropertiesLoadingState
+      <PropertiesLoadingSkeleton
         isDark={isDark}
         screenTitle={screenTitle}
       />
@@ -500,12 +863,12 @@ export default function PropertiesScreen() {
         backgroundColor={isDark ? "#0d0d0d" : "#ffffff"}
       />
 
-      {/* ====================================================== */}
-      {/* FIXED HEADER                                           */}
-      {/*                                                        */}
-      {/* PropertiesHeader displays the screen title and the     */}
-      {/* All / For Sale / For Rent buttons.                     */}
-      {/* ====================================================== */}
+      {/* ======================================================
+          FIXED HEADER
+
+          PropertiesHeader displays the screen title and the
+          All / For Sale / For Rent buttons.
+      ====================================================== */}
 
       <PropertiesHeader
         isDark={isDark}
@@ -520,12 +883,12 @@ export default function PropertiesScreen() {
         onDetailedFiltersChange={handleDetailedFiltersChange}
       />
 
-      {/* ====================================================== */}
-      {/* MAIN SCROLL AREA                                       */}
-      {/*                                                        */}
-      {/* The detailed filter, Search/Clear buttons and property */}
-      {/* grid all live inside this single ScrollView.           */}
-      {/* ====================================================== */}
+      {/* ======================================================
+          MAIN SCROLL AREA
+
+          The detailed filter, Search/Clear buttons and property
+          grid all live inside this single ScrollView.
+      ====================================================== */}
 
       <ScrollView
         className={
@@ -548,9 +911,9 @@ export default function PropertiesScreen() {
           flexGrow: 1,
         }}
       >
-        {/* ==================================================== */}
-        {/* DEEP / DETAILED FILTER                               */}
-        {/* ==================================================== */}
+        {/* ====================================================
+            DEEP / DETAILED FILTER
+        ==================================================== */}
 
         <PropertyFilters
           section="details"
@@ -564,9 +927,9 @@ export default function PropertiesScreen() {
           onFiltersChange={handleDetailedFiltersChange}
         />
 
-        {/* ==================================================== */}
-        {/* PROPERTY GRID                                        */}
-        {/* ==================================================== */}
+        {/* ====================================================
+            PROPERTY GRID
+        ==================================================== */}
 
         <PropertiesGrid
           properties={propertiesAfterDetailedFilters}
@@ -578,9 +941,9 @@ export default function PropertiesScreen() {
         />
       </ScrollView>
 
-      {/* ====================================================== */}
-      {/* AUTHENTICATION REQUIRED MODAL                          */}
-      {/* ====================================================== */}
+      {/* ======================================================
+          AUTHENTICATION REQUIRED MODAL
+      ====================================================== */}
 
       <AuthRequiredModal
         visible={authRequiredVisible}
@@ -589,9 +952,9 @@ export default function PropertiesScreen() {
         onRegister={handleAuthRequiredRegister}
       />
 
-      {/* ====================================================== */}
-      {/* LOGIN MODAL                                           */}
-      {/* ====================================================== */}
+      {/* ======================================================
+          LOGIN MODAL
+      ====================================================== */}
 
       <LoginModal
         visible={loginVisible}
@@ -600,9 +963,9 @@ export default function PropertiesScreen() {
         onRegister={handleLoginOpenRegister}
       />
 
-      {/* ====================================================== */}
-      {/* REGISTER MODAL                                        */}
-      {/* ====================================================== */}
+      {/* ======================================================
+          REGISTER MODAL
+      ====================================================== */}
 
       <RegisterModal
         visible={registerVisible}

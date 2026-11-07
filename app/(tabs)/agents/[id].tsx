@@ -21,6 +21,7 @@ import {
     Text,
     TextInput,
     View,
+    useWindowDimensions,
     type LayoutChangeEvent,
     type StyleProp,
     type ViewStyle,
@@ -518,6 +519,9 @@ export default function AgentDetailsScreen() {
   const router = useRouter();
 
   const { theme } = useTheme();
+
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   const { user, isLoggedIn } = useAuth();
 
@@ -2039,12 +2043,19 @@ export default function AgentDetailsScreen() {
                 borderWidth: 1,
 
                 borderColor: theme.border,
+                flexDirection: isLandscape ? "row" : "column",
 
               }}
 
             >
 
-              <View className="items-center px-5 pb-6 pt-7">
+              <View
+                className="items-center px-5 pb-6 pt-7"
+                style={{
+                  flex: isLandscape ? 0.42 : undefined,
+                  justifyContent: "center",
+                }}
+              >
 
                 {agent.image ? (
 
@@ -2155,17 +2166,15 @@ export default function AgentDetailsScreen() {
               {/* ================================================= */}
 
               <View
-
                 className="px-4"
-
                 style={{
-
-                  borderTopWidth: 1,
-
+                  flex: isLandscape ? 0.58 : undefined,
+                  borderTopWidth: isLandscape ? 0 : 1,
+                  borderLeftWidth: isLandscape ? 1 : 0,
                   borderTopColor: theme.border,
-
+                  borderLeftColor: theme.border,
+                  justifyContent: "center",
                 }}
-
               >
 
                 {agent.email ? (
